@@ -68,11 +68,32 @@ namespace steiner {
             bool merge;
         };
 
-        unordered_map<dynamic_bitset<>, CostInfo> *costs_;
+        struct PruneBoundEntry {
+            PruneBoundEntry(unsigned int cost, dynamic_bitset<> label) : cost(cost), label(label) {
+            }
+            unsigned int cost;
+            dynamic_bitset<> label;
+        };
+
+        struct PruneDistEntry {
+            PruneDistEntry(unsigned int cost, unsigned int terminal) : cost(cost), terminal(terminal) {
+            }
+
+            unsigned int cost;
+            unsigned int terminal;
+        };
+
+        unordered_map<dynamic_bitset<>, CostInfo>* costs_;
+        unordered_map<dynamic_bitset<>, PruneBoundEntry> pruneBoundCache;
+        unordered_map<dynamic_bitset<>, PruneDistEntry> pruneDistCache;
 
         void process_neighbors(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
-
         void process_labels(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
+
+        bool prune(unsigned int n, unsigned int cost, dynamic_bitset<>* label);
+        bool prune(unsigned int n, unsigned int cost, dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
+        inline void prune_check_bound(unsigned int n, unsigned int cost, dynamic_bitset<>* label);
+        inline unsigned int prune_combine(dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
     };
 }
 

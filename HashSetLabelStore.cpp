@@ -36,7 +36,7 @@ void HashSetLabelIterator::findNext() {
 
         auto cbit = target->find_first();
         while (cbit < target->size()) {
-            if ((*pos)[cbit]) {
+            if (pos->test(cbit)) {
                 disjoint = false;
                 break;
             }
