@@ -84,7 +84,6 @@ void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* lab
                     nbc->second.merge = false;
                 }
 
-                // TODO: Prune and heuristic...
                 queue_.emplace(newCost + heuristic_->calculate( nb.node, label), nb.node, *label);
             }
         }
@@ -110,7 +109,6 @@ void steiner::HsvSolver::process_labels(unsigned int n, dynamic_bitset<>* label,
                     nbc->second.merge = true;
                 }
 
-                // TODO: Prune and heuristic...
                 queue_.emplace(newCost + heuristic_->calculate(n, &combined), n, combined);
             }
         }
@@ -151,19 +149,18 @@ void HsvSolver::prune_check_bound(unsigned int n, unsigned int cost, dynamic_bit
 
     // find minimum distance between n and any terminal not in the label (including root)
     auto dist = instance_->getGraph()->getDistances()[root_][n];
-    if (dist < dist_c) {
-        dist_c = dist;
-        dist_t = root_;
-    }
+    dist_t = root_;
+
     // distance to terminals outside the label
-    for (auto t: terminals_) {
-        // Terminal outside the label
-        if (!(label->test(tmap_[t]))) {
-            dist = instance_->getGraph()->getDistances()[t][n];
-            if (dist < dist_c) {
-                dist_c = dist;
-                dist_t = t;
+    auto closest = instance_->getClosestTerminals(n);
+    for (int i=0; i < sizeof(closest)/sizeof(*closest) ;i++) {
+        auto elem = instance_->getClosestTerminals(n);
+        if (!(label->test(tmap_[elem->node]))) {
+            if (dist_c > elem->cost) {
+                dist_c = elem->cost;
+                dist_t = elem->node;
             }
+            break;
         }
     }
 
@@ -189,14 +186,14 @@ void HsvSolver::prune_check_bound(unsigned int n, unsigned int cost, dynamic_bit
                     entry.terminal = root_;
                 }
 
-                // Compare to all other terminals
-                for (auto t2: terminals_) {
-                    if (t2 != t && !(label->test(tmap_[t]))) {
-                        dist = instance_->getGraph()->getDistances()[t][t2];
-                        if (dist < entry.cost) {
-                            entry.cost = dist;
-                            entry.terminal = t2;
+                for (int i=0; i < sizeof(closest)/sizeof(*closest) ;i++) {
+                    auto elem = instance_->getClosestTerminals(n);
+                    if (t != elem->node && !(label->test(tmap_[elem->node]))) {
+                        if (entry.cost > elem->cost) {
+                            entry.cost = elem->cost;
+                            entry.terminal = elem->node;
                         }
+                        break;
                     }
                 }
             }
