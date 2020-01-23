@@ -7,19 +7,20 @@
 
 #include "SteinerHeuristic.h"
 #include "../Graph.h"
+#include "../SteinerInstance.h"
 // TODO: Put the hashing for bitsets somewhere else...
 #include "../HashSetLabelStore.h"
 namespace steiner {
     class MstHeuristic : public SteinerHeuristic {
     public:
-        MstHeuristic(Graph* g, unordered_map<unsigned int, unsigned int>* tmap, unordered_set<unsigned int>* terminals,
-                     unsigned int root) : g_(g), tmap_(tmap), terminals_(terminals), root_(root) {
+        MstHeuristic(SteinerInstance* instance, unordered_map<unsigned int, unsigned int>* tmap, unordered_set<unsigned int>* terminals,
+                     unsigned int root) : instance_(instance), tmap_(tmap), terminals_(terminals), root_(root) {
 
         }
         unsigned int calculate(unsigned int n, dynamic_bitset<> *label) override;
 
     private:
-        Graph* g_;
+        SteinerInstance* instance_;
         unordered_map<unsigned int, unsigned int>* tmap_;
         unordered_set<unsigned int>* terminals_;
         unsigned int root_;

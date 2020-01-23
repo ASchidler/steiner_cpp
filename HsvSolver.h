@@ -24,13 +24,14 @@ namespace steiner {
         ~HsvSolver() {
             delete[] costs_;
             delete heuristic_;
+            delete store_;
         }
 
         Graph* solver();
 
     private:
         SteinerInstance *instance_;
-        HashSetLabelStore store_;
+        LabelStore* store_;
         unsigned int root_;
         unordered_map<unsigned int, unsigned int> tmap_;
         unordered_set<unsigned int> terminals_;

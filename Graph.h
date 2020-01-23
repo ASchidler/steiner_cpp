@@ -13,6 +13,22 @@ using namespace std;
 //TODO: Use nNodes in constructor as upper bound, count nodes when added, and map them? Coordinate with instance type
 
 namespace steiner {
+    struct Neighbor {
+        Neighbor(unsigned int node, unsigned int cost) : node(node), cost(cost) {
+        }
+        Neighbor() : node(0), cost(0) {
+        }
+        unsigned int node;
+        unsigned int cost;
+
+        bool operator<(const Neighbor& p2) const {
+            return cost > p2.cost || (cost == p2.cost && node > p2.node);
+        }
+        bool operator>(const Neighbor& p2) const {
+            return cost < p2.cost || (cost == p2.cost && node > p2.node);
+        }
+    };
+
     class Graph {
     public:
         ~Graph() {
@@ -30,22 +46,14 @@ namespace steiner {
             return this->nodes_.size();
         }
 
-        struct Neighbor {
-            Neighbor(unsigned int node, unsigned int cost) : node(node), cost(cost) {
-            }
-            unsigned int node;
-            unsigned int cost;
-
-            bool operator<(const Neighbor& p2) const {
-                return cost > p2.cost || (cost == p2.cost && node > p2.node);
-            }
-        };
+        vector<unsigned int>* getNodes(){
+            return &nodes_;
+        }
 
         vector<vector<Neighbor>> nb;
 
         unsigned int getNodeMapping(unsigned int externalId);
 
-        // TODO: Restricted Version to only some nodes?
         void findDistances();
         void findDistances(unsigned int u);
         unsigned int** getDistances() {

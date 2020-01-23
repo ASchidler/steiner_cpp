@@ -7,8 +7,9 @@
 using namespace std;
 using namespace boost;
 
-steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), store_(instance_->getTerminals()->size(), instance->getGraph()->getNumNodes()) {
+steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getNumNodes()];
+    store_ = new HashSetLabelStore(instance_->getTerminals()->size() - 1, instance->getGraph()->getNumNodes());
 
     int i = -1;
     for(auto t:*instance->getTerminals()) {
@@ -22,7 +23,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), 
         i++;
     }
     nTerminals_ = terminals_.size();
-    heuristic_ = new MstHeuristic(instance->getGraph(), &tmap_, &terminals_, root_);
+    heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
 }
 
 steiner::Graph* steiner::HsvSolver::solver() {
@@ -32,12 +33,6 @@ steiner::Graph* steiner::HsvSolver::solver() {
         result->addVertex(root_);
         return result;
     }
-
-    // Find distances from terminals to other nodes. Actually t to t would suffice
-    for (auto t: terminals_) {
-        instance_->getGraph()->findDistances(t);
-    }
-    instance_->getGraph()->findDistances(root_);
 
     for(const auto& elem: this->terminals_) {
         auto label = dynamic_bitset<>(nTerminals_);
@@ -60,7 +55,7 @@ steiner::Graph* steiner::HsvSolver::solver() {
                 break;
             }
         }
-        store_.addLabel(entry.node, &entry.label);
+        store_->addLabel(entry.node, &entry.label);
         process_neighbors(entry.node, &entry.label, cost);
         process_labels(entry.node, &entry.label, cost);
     }
@@ -97,7 +92,7 @@ void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* lab
 
 }
 void steiner::HsvSolver::process_labels(unsigned int n, dynamic_bitset<>* label, unsigned int cost) {
-    auto other_set = store_.findLabels(n, label);
+    auto other_set = store_->findLabels(n, label);
     for (; other_set->hasNext(); ++(*other_set)) {
         auto combined = *label | **other_set;
         auto newCost = cost + costs_[n].find(**other_set)->second.cost;

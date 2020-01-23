@@ -10,7 +10,7 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     auto opposite = (~*label);
     //Special case where only on terminal left...
     if (opposite.empty())
-        return g_->getDistances()[root_][n];
+        return instance_->getGraph()->getDistances()[root_][n];
 
     auto result = cache_.find(*label);
 
@@ -18,7 +18,7 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     auto ts = std::vector<unsigned int>();
     ts.push_back(root_);
     for (auto t: *terminals_) {
-        if(!(opposite.test((*tmap_)[t]))) {
+        if(opposite.test((*tmap_)[t])) {
             ts.push_back(t);
         }
     }
@@ -30,19 +30,19 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
         cost = calcMst(ts);
     }
 
-    unsigned int minVal[] = {UINT_MAX, UINT_MAX};
-    for(auto t: ts) {
-        auto dist = g_->getDistances()[t][n];
-        if (dist < minVal[0]) {
-            minVal[1] = minVal[0];
-            minVal[0] = dist;
-        } else if (dist == minVal[0] || dist < minVal[1]) {
-            minVal[1] = dist;
+    unsigned int minVal[2];
+    int j = 0;
+
+    auto closest = (Neighbor*) instance_->getClosestTerminals(n);
+    for(int i=0; j < 2 ;i++) {
+        auto nb = closest[i];
+
+        if(nb.node == root_ || opposite.test((*tmap_)[nb.node])) {
+            minVal[j] = nb.cost;
+            j++;
         }
-
-        return (minVal[0] + minVal[1] + cost) / 2;
     }
-
+    return (minVal[0] + minVal[1] + cost) / 2;
 }
 
 unsigned int MstHeuristic::calcMst(vector<unsigned int>& ts) {
@@ -75,7 +75,7 @@ unsigned int MstHeuristic::calcMst(vector<unsigned int>& ts) {
 
         for(int k=0; k < ts.size(); k++) {
             if (! taken[k]) {
-                auto dist = g_->getDistances()[ts[idx]][ts[k]];
+                auto dist = instance_->getGraph()->getDistances()[ts[idx]][ts[k]];
                 if (dist < minEdge[k])
                     minEdge[k] = dist;
             }
