@@ -22,6 +22,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), 
         i++;
     }
     nTerminals_ = terminals_.size();
+    heuristic_ = new MstHeuristic(instance->getGraph(), &tmap_, &terminals_, root_);
 }
 
 steiner::Graph* steiner::HsvSolver::solver() {
@@ -40,7 +41,7 @@ steiner::Graph* steiner::HsvSolver::solver() {
 
     for(const auto& elem: this->terminals_) {
         auto label = dynamic_bitset<>(nTerminals_);
-        label[tmap_[elem]] = true;
+        label.set(tmap_[elem]);
         auto entry = QueueEntry(0, elem, label);
         auto pred = Predecessor();
         pred.label = nullptr;
@@ -89,7 +90,7 @@ void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* lab
                 }
 
                 // TODO: Prune and heuristic...
-                queue_.emplace(newCost, nb.node, *label);
+                queue_.emplace(newCost + heuristic_->calculate( nb.node, label), nb.node, *label);
             }
         }
     }
@@ -115,7 +116,7 @@ void steiner::HsvSolver::process_labels(unsigned int n, dynamic_bitset<>* label,
                 }
 
                 // TODO: Prune and heuristic...
-                queue_.emplace(newCost, n, combined);
+                queue_.emplace(newCost + heuristic_->calculate(n, &combined), n, combined);
             }
         }
     }

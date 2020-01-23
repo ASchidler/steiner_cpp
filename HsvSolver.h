@@ -11,6 +11,7 @@
 #include "LabelStore.h"
 #include "HashSetLabelStore.h"
 #include "LabelIterator.h"
+#include "Heuristic/MstHeuristic.h"
 
 using namespace std;
 
@@ -22,6 +23,7 @@ namespace steiner {
 
         ~HsvSolver() {
             delete[] costs_;
+            delete heuristic_;
         }
 
         Graph* solver();
@@ -86,6 +88,7 @@ namespace steiner {
         unordered_map<dynamic_bitset<>, CostInfo>* costs_;
         unordered_map<dynamic_bitset<>, PruneBoundEntry> pruneBoundCache;
         unordered_map<dynamic_bitset<>, PruneDistEntry> pruneDistCache;
+        SteinerHeuristic* heuristic_;
 
         void process_neighbors(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
         void process_labels(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
