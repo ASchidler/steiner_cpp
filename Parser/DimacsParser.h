@@ -12,7 +12,7 @@ namespace steiner {
     class DimacsParser : SteinerParser {
     public:
         ~DimacsParser() {
-            
+
         }
         steiner::SteinerInstance* parse(string& path) override;
 

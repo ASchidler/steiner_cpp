@@ -9,7 +9,7 @@ bool DualAscent::hasRun = false;
 cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
-// TODO: Implement the 2 other variants...
+// TODO: Implement the 2 other variants... at least 3
 
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unordered_set<node_id>* ts) {
     Graph *dg = g->copy();
@@ -45,17 +45,21 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unorder
             }
         }
 
+        // Min Cost 0 means hit an active component
         if (minCost == 0) {
             active.erase(elem.node);
         } else {
             // Increment bound
             bound += minCost;
             bool tFound = false;
+
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             cost_id newWeight = 0;
             for (auto ce: edges) { // update weight loop
                 dg->nb[ce.u][ce.v] -= minCost;
-
+                assert(dg->nb[ce.u][ce.v] >= 0);
+                assert(cut.find(ce.v) != cut.end());
+                assert(cut.find(ce.u) == cut.end());
                 // Is now zero
                 if (ce.cost == minCost) {
                     if (active.find(ce.u) != active.end()) {

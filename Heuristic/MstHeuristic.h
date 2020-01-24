@@ -26,7 +26,7 @@ namespace steiner {
         node_id root_;
         unordered_map<dynamic_bitset<>, cost_id> cache_;
 
-        cost_id calcMst(vector<node_id>& ts);
+        cost_id calcMst(dynamic_bitset<>* label);
     };
 }
 

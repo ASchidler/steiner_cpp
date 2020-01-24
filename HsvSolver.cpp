@@ -27,8 +27,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
     nTerminals_ = terminals_.size();
-    //heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
-    heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
+    heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
+    //heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
 }
 
 steiner::Graph* steiner::HsvSolver::solver() {

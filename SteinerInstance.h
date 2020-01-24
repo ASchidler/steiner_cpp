@@ -27,20 +27,15 @@ namespace steiner {
             closest_terminals_ = new NodeWithCost*[g->getNumNodes()];
 
             for(int n=0; n < g->getNumNodes(); n++) {
-                auto size = terminals->size();
-                if (terminals_.find(n) != terminals_.end())
-                    size--;
-                closest_terminals_[n] = new NodeWithCost[size];
+                closest_terminals_[n] = new NodeWithCost[terminals->size()];
 
                 int i = 0;
                 for (auto t: terminals_) {
-                    if (t != n) {
-                        closest_terminals_[n][i].node = t;
-                        closest_terminals_[n][i].cost = g->getDistances()[t][n];
-                        i++;
-                    }
+                    closest_terminals_[n][i].node = t;
+                    closest_terminals_[n][i].cost = g->getDistances()[t][n];
+                    i++;
                 }
-                std::sort(closest_terminals_[n], closest_terminals_[n] + size, greater<NodeWithCost>());
+                std::sort(closest_terminals_[n], closest_terminals_[n] + terminals->size(), greater<NodeWithCost>());
             }
         }
 
