@@ -12,6 +12,7 @@ using namespace boost;
 namespace steiner {
     class LabelIterator {
     public:
+        virtual ~LabelIterator() {}
         virtual const dynamic_bitset<> &operator*() = 0;
         virtual dynamic_bitset<> *operator->() = 0;
         virtual LabelIterator &operator++() = 0;

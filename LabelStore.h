@@ -8,15 +8,17 @@
 #include <boost/dynamic_bitset.hpp>
 #include <list>
 #include "LabelIterator.h"
+#include "steiner.h"
 
 using namespace boost;
 
 namespace steiner {
     class LabelStore {
     public:
-        LabelStore(unsigned int width, unsigned int nNodes) : width(width), nNodes(nNodes) {}
-        virtual void addLabel(unsigned int node, dynamic_bitset<> *newLabel) = 0;
-        virtual LabelIterator* findLabels(unsigned int node, dynamic_bitset<> *target) = 0;
+        virtual ~LabelStore() {}
+        LabelStore(node_id width, node_id nNodes) : width(width), nNodes(nNodes) {}
+        virtual void addLabel(node_id node, dynamic_bitset<> *newLabel) = 0;
+        virtual LabelIterator* findLabels(node_id node, dynamic_bitset<> *target) = 0;
     protected:
         unsigned int width;
         unsigned int nNodes;

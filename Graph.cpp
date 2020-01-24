@@ -6,33 +6,33 @@
 
 //TODO: Directed  version??
 //TODO: Create iterator over edges? Return only if u < v for undirected.
-void steiner::Graph::addEdge(unsigned int u, unsigned int v, unsigned int cost) {
+void steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     auto un = addNode(u);
     auto vn = addNode(v);
-    this->nb[un].insert(pair<unsigned int, unsigned int>(vn, cost));
-    this->nb[vn].insert(pair<unsigned int, unsigned int>(un, cost));
+    this->nb[un].insert(pair<node_id, cost_id>(vn, cost));
+    this->nb[vn].insert(pair<node_id, cost_id>(un, cost));
 }
 
-unsigned int steiner::Graph::getNodeMapping(unsigned int externalId) {
+node_id steiner::Graph::getNodeMapping(node_id externalId) {
     return nodeMap_.find(externalId)->second;
 }
 
-unsigned int steiner::Graph::addNode(unsigned int u) {
+node_id steiner::Graph::addNode(node_id u) {
     auto result = nodeMap_.find(u);
 
     if (result == nodeMap_.end()) {
         nb.emplace_back();
-        nodeMap_.insert(pair<unsigned int, unsigned int>(u, maxNodeId_));
-        nodes_.push_back(maxNodeId_);
-        maxNodeId_++;
-        return maxNodeId_ - 1;
+        nodeMap_.insert(pair<node_id, node_id>(u, nb.size() - 1));
+        nodeReverseMap_.insert(pair<node_id, node_id>(nb.size() - 1, u));
+        nodes_.push_back(nb.size() - 1);
+        return nb.size() - 1;
     }
 
     return result->second;
 }
 
 void steiner::Graph::findDistances() {
-    distances_ = new unsigned int*[getNumNodes()];
+    distances_ = new cost_id*[getNumNodes()];
     for(size_t i=0; i < getNumNodes(); i++) {
         distances_[i] = nullptr;
     }
@@ -42,26 +42,26 @@ void steiner::Graph::findDistances() {
     }
 }
 
-void steiner::Graph::findDistances(unsigned int u) {
+void steiner::Graph::findDistances(node_id u) {
     // Init distances
     if (distances_ == nullptr) {
-        distances_ = new unsigned int*[getNumNodes()];
+        distances_ = new cost_id*[getNumNodes()];
         for(size_t i=0; i < getNumNodes(); i++) {
             distances_[i] = nullptr;
         }
     }
     if (distances_[u] == nullptr) {
-        distances_[u] = new unsigned int[getNumNodes()];
+        distances_[u] = new cost_id[getNumNodes()];
     }
     for(size_t i=0; i < getNumNodes(); i++) {
-        distances_[u][i] = UINT_MAX;
+        distances_[u][i] = MAXCOST;
     }
 
     // We could initialize with other known distances...
 
     // Dijkstra
     auto q = priority_queue<NodeWithCost>();
-    auto visited = unordered_set<unsigned int>();
+    auto visited = unordered_set<node_id>();
     q.emplace(u, 0);
     distances_[u][u] = 0;
 

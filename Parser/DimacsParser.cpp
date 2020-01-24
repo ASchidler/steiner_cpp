@@ -6,14 +6,15 @@
 #include "../SteinerInstance.h"
 #include <iostream>
 #include <boost/algorithm/string.hpp>
+#include "../steiner.h"
 
 steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
     fstream fl;
 
     fl.open(file, ios::in);
     auto* g = new Graph();
-    auto ts = unordered_set<unsigned int>();
-    unsigned int lineResult[3];
+    auto ts = unordered_set<node_id>();
+    cost_id lineResult[3];
 
     //TODO: Error Handling
     if (fl.is_open()) {
@@ -49,9 +50,9 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                     }
                 }
                 if (is_terminal) {
-                    ts.insert(lineResult[0]);
+                    ts.insert((node_id)lineResult[0]);
                 } else if (is_edge) {
-                    g->addEdge(lineResult[0], lineResult[1], lineResult[2]);
+                    g->addEdge((node_id)lineResult[0], (node_id)lineResult[1], lineResult[2]);
                 }
             }
         }

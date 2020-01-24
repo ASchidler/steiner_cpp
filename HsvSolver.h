@@ -14,6 +14,7 @@
 #include "Heuristic/MstHeuristic.h"
 #include "Algorithms/DualAscent.h"
 #include "Heuristic/DualAscentHeuristic.h"
+#include "steiner.h"
 
 using namespace std;
 
@@ -34,19 +35,19 @@ namespace steiner {
     private:
         SteinerInstance *instance_;
         LabelStore* store_;
-        unsigned int root_;
-        unordered_map<unsigned int, unsigned int> tmap_;
-        unordered_set<unsigned int> terminals_;
-        unsigned int nTerminals_;
+        node_id root_;
+        unordered_map<node_id, node_id> tmap_;
+        unordered_set<node_id> terminals_;
+        node_id nTerminals_;
 
         struct QueueEntry {
-            QueueEntry(unsigned int cost, unsigned int node, dynamic_bitset<> label) : cost(cost), node(node),
+            QueueEntry(cost_id cost, node_id node, dynamic_bitset<> label) : cost(cost), node(node),
                                                                                        label(std::move(label)) {
 
             }
 
-            unsigned int cost;
-            unsigned int node;
+            cost_id cost;
+            node_id node;
             dynamic_bitset<> label;
             bool operator<(const QueueEntry& p2) const
             {
@@ -60,7 +61,7 @@ namespace steiner {
         priority_queue<QueueEntry> queue_;
 
         union Predecessor {
-            unsigned int node;
+            node_id node;
             const dynamic_bitset<> *label;
         };
 
@@ -68,24 +69,24 @@ namespace steiner {
             CostInfo(unsigned int cost, Predecessor prev, bool merge) : cost(cost), prev(prev), merge(merge) {
             }
 
-            unsigned int cost;
+            cost_id cost;
             Predecessor prev;
             bool merge;
         };
 
         struct PruneBoundEntry {
-            PruneBoundEntry(unsigned int cost, dynamic_bitset<> label) : cost(cost), label(label) {
+            PruneBoundEntry(cost_id cost, dynamic_bitset<> label) : cost(cost), label(std::move(label)) {
             }
-            unsigned int cost;
+            node_id cost;
             dynamic_bitset<> label;
         };
 
         struct PruneDistEntry {
-            PruneDistEntry(unsigned int cost, unsigned int terminal) : cost(cost), terminal(terminal) {
+            PruneDistEntry(cost_id cost, node_id terminal) : cost(cost), terminal(terminal) {
             }
 
-            unsigned int cost;
-            unsigned int terminal;
+            cost_id cost;
+            node_id terminal;
         };
 
         unordered_map<dynamic_bitset<>, CostInfo>* costs_;
@@ -93,12 +94,12 @@ namespace steiner {
         unordered_map<dynamic_bitset<>, PruneDistEntry> pruneDistCache;
         SteinerHeuristic* heuristic_;
 
-        void process_neighbors(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
-        void process_labels(unsigned int n, dynamic_bitset<> *label, unsigned int cost);
+        inline void process_neighbors(node_id n, dynamic_bitset<> *label, cost_id cost);
+        inline void process_labels(node_id n, dynamic_bitset<> *label, cost_id cost);
 
-        bool prune(unsigned int n, unsigned int cost, dynamic_bitset<>* label);
-        bool prune(unsigned int n, unsigned int cost, dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
-        inline void prune_check_bound(unsigned int n, unsigned int cost, dynamic_bitset<>* label);
+        bool prune(node_id n, cost_id cost, dynamic_bitset<>* label);
+        bool prune(node_id n, cost_id cost, dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
+        inline void prune_check_bound(node_id n, cost_id cost, dynamic_bitset<>* label);
         inline unsigned int prune_combine(dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
     };
 }

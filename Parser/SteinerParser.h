@@ -10,6 +10,8 @@
 
 namespace steiner {
     class SteinerParser {
+    public:
+        virtual ~SteinerParser() {}
         virtual steiner::SteinerInstance* parse(std::string& path) = 0;
     };
 }

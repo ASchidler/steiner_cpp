@@ -6,6 +6,7 @@
 #define STEINER_CPP_GRAPH_H
 #include <cstdint>
 #include <bits/stdc++.h>
+#include "steiner.h"
 
 using namespace std;
 
@@ -14,12 +15,12 @@ using namespace std;
 
 namespace steiner {
     struct NodeWithCost {
-        NodeWithCost(unsigned int node, unsigned int cost) : node(node), cost(cost) {
+        NodeWithCost(node_id node, cost_id cost) : node(node), cost(cost) {
         }
         NodeWithCost() : node(0), cost(0) {
         }
-        unsigned int node;
-        unsigned int cost;
+        node_id node;
+        cost_id cost;
 
         // TODO: These are actually the wrong way so that priority queues are min queues...
         bool operator<(const NodeWithCost& p2) const {
@@ -31,12 +32,12 @@ namespace steiner {
     };
 
     struct Edge {
-        Edge(unsigned int u, unsigned int v, unsigned int cost) : u(u), v(v), cost(cost) {
+        Edge(node_id u, node_id v, cost_id cost) : u(u), v(v), cost(cost) {
         }
 
-        unsigned int u;
-        unsigned int v;
-        unsigned int cost;
+        node_id u;
+        node_id v;
+        cost_id cost;
     };
 
     class Graph {
@@ -49,33 +50,33 @@ namespace steiner {
                 delete[] distances_;
             }
         }
-        unsigned int addNode(unsigned int u);
-        void addEdge(unsigned int u, unsigned int v, unsigned int cost);
+        node_id addNode(node_id u);
+        void addEdge(node_id u, node_id v, cost_id cost);
 
-        unsigned int getNumNodes() {
+        node_id getNumNodes() {
             return this->nodes_.size();
         }
 
-        vector<unsigned int>* getNodes(){
+        vector<node_id>* getNodes(){
             return &nodes_;
         }
 
-        vector<unordered_map<unsigned int, unsigned int>> nb;
+        vector<unordered_map<node_id, cost_id>> nb;
 
-        unsigned int getNodeMapping(unsigned int externalId);
+        node_id getNodeMapping(node_id externalId);
 
         void findDistances();
-        void findDistances(unsigned int u);
-        unsigned int** getDistances() {
+        void findDistances(node_id u);
+        cost_id** getDistances() {
             return distances_;
         }
 
         Graph* copy();
     private:
-        vector<unsigned int> nodes_ = vector<unsigned int>();
-        unordered_map<unsigned int, unsigned int> nodeMap_ = unordered_map<unsigned int, unsigned int>();
-        unsigned int maxNodeId_ = 0;
-        unsigned int** distances_ = nullptr;
+        vector<node_id> nodes_;
+        unordered_map<node_id, node_id> nodeMap_;
+        unordered_map<node_id, node_id> nodeReverseMap_;
+        cost_id** distances_ = nullptr;
     };
 }
 #endif //STEINER_CPP_GRAPH_H

@@ -21,7 +21,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     int i = 0;
     for(auto t:*instance->getTerminals()) {
         if (t != root_) {
-            tmap_.insert(pair<unsigned int, unsigned int>(t, i));
+            tmap_.insert(pair<node_id, node_id>(t, i));
             terminals_.insert(t);
             i++;
         }
@@ -68,7 +68,7 @@ steiner::Graph* steiner::HsvSolver::solver() {
     return new Graph();
 }
 
-void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* label, unsigned int cost) {
+void steiner::HsvSolver::process_neighbors(node_id n, dynamic_bitset<>* label, cost_id cost) {
     // TODO: Are these getter calls expensive? Maybe retrieve graph once..
     for (auto nb: instance_->getGraph()->nb[n]) {
         auto newCost = cost + nb.second;
@@ -95,7 +95,7 @@ void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* lab
     }
 
 }
-void steiner::HsvSolver::process_labels(unsigned int n, dynamic_bitset<>* label, unsigned int cost) {
+void steiner::HsvSolver::process_labels(node_id n, dynamic_bitset<>* label, cost_id cost) {
     auto other_set = store_->findLabels(n, label);
     for (; other_set->hasNext(); ++(*other_set)) {
         auto combined = *label | **other_set;
@@ -121,7 +121,7 @@ void steiner::HsvSolver::process_labels(unsigned int n, dynamic_bitset<>* label,
     delete other_set;
 }
 
-bool HsvSolver::prune(unsigned int n, unsigned int cost, dynamic_bitset<> *label) {
+bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label) {
     // TODO: Another label copy...
     auto result = pruneBoundCache.find(*label);
     if (result != pruneBoundCache.end()) {
@@ -134,7 +134,7 @@ bool HsvSolver::prune(unsigned int n, unsigned int cost, dynamic_bitset<> *label
     return false;
 }
 
-bool HsvSolver::prune(unsigned int n, unsigned int cost, dynamic_bitset<> *label1, const dynamic_bitset<>* label2,
+bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label1, const dynamic_bitset<>* label2,
                       dynamic_bitset<> *combined) {
     auto result = pruneBoundCache.find(*combined);
     if (result != pruneBoundCache.end()) {
@@ -148,13 +148,10 @@ bool HsvSolver::prune(unsigned int n, unsigned int cost, dynamic_bitset<> *label
     return false;
 }
 
-void HsvSolver::prune_check_bound(unsigned int n, unsigned int cost, dynamic_bitset<> *label) {
-    unsigned int dist_c = UINT8_MAX;
-    unsigned int dist_t = 0;
-
+void HsvSolver::prune_check_bound(node_id n, cost_id cost, dynamic_bitset<> *label) {
     // find minimum distance between n and any terminal not in the label (including root)
-    auto dist = instance_->getGraph()->getDistances()[root_][n];
-    dist_t = root_;
+    auto dist_c = instance_->getGraph()->getDistances()[root_][n];
+    auto dist_t = root_;
 
     // distance to terminals outside the label
     auto closest = instance_->getClosestTerminals(n);
@@ -179,7 +176,7 @@ void HsvSolver::prune_check_bound(unsigned int n, unsigned int cost, dynamic_bit
         }
     // Otherwise calculate the distance between terminals in the label and not in the label (includes root)
     } else {
-        PruneDistEntry entry(UINT_MAX, UINT_MAX);
+        PruneDistEntry entry(MAXCOST, 0);
 
         // TODO: Precalculate closest terminals...
         for (auto t: terminals_) {

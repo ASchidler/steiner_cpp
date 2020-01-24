@@ -14,7 +14,7 @@ using namespace std;
 namespace steiner {
     class SteinerInstance {
     public:
-        SteinerInstance(Graph *g, unordered_set<unsigned int> *terminals) : g_(g) {
+        SteinerInstance(Graph *g, unordered_set<node_id> *terminals) : g_(g) {
             for (auto t: *terminals) {
                 terminals_.insert(g->getNodeMapping(t));
             }
@@ -48,11 +48,11 @@ namespace steiner {
             return this->g_;
         }
 
-        unordered_set<unsigned int> *getTerminals() {
+        unordered_set<node_id> *getTerminals() {
             return &(this->terminals_);
         }
 
-        NodeWithCost* getClosestTerminals(unsigned int n) {
+        NodeWithCost* getClosestTerminals(node_id n) {
             return closest_terminals_[n];
         }
 
@@ -64,7 +64,7 @@ namespace steiner {
         }
     private:
         Graph *g_;
-        unordered_set<unsigned int> terminals_;
+        unordered_set<node_id> terminals_;
         NodeWithCost** closest_terminals_;
     };
 }

@@ -15,9 +15,8 @@ using namespace boost;
 namespace steiner {
     class DualAscentHeuristic : public SteinerHeuristic {
     public:
-        DualAscentHeuristic(SteinerInstance *instance, unordered_map<unsigned int, unsigned int> *tmap,
-                            unordered_set<unsigned int> *terminals,
-                            unsigned int root) : instance_(instance), tmap_(tmap), terminals_(terminals), root_(root) {
+        DualAscentHeuristic(SteinerInstance* instance, unordered_map<node_id, node_id>* tmap, unordered_set<node_id>* terminals,
+                            node_id root) : instance_(instance), tmap_(tmap), terminals_(terminals), root_(root) {
 
         }
 
@@ -27,17 +26,17 @@ namespace steiner {
             }
         }
 
-        unsigned int calculate(unsigned int n, dynamic_bitset<> *label);
+        cost_id calculate(node_id n, dynamic_bitset<> *label);
 
     private:
-        SteinerInstance *instance_;
-        unordered_map<unsigned int, unsigned int> *tmap_;
-        unordered_set<unsigned int> *terminals_;
-        unsigned int root_;
-        unordered_map<dynamic_bitset<>, unsigned int *> cache_;
+        SteinerInstance* instance_;
+        unordered_map<node_id, node_id>* tmap_;
+        unordered_set<node_id>* terminals_;
+        node_id root_;
+        unordered_map<dynamic_bitset<>, cost_id*> cache_;
         unsigned int queryCount_ = 0;
 
-        unsigned int *precalculate(dynamic_bitset<> *label);
+        cost_id *precalculate(dynamic_bitset<> *label);
     };
 }
 

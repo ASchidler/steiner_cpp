@@ -6,7 +6,7 @@
 
 using namespace steiner;
 
-unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
+cost_id MstHeuristic::calculate(node_id n, dynamic_bitset<> *label) {
     //Special case where only on terminal left...
     if (label->count() == terminals_->size())
         return instance_->getGraph()->getDistances()[root_][n];
@@ -14,7 +14,7 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     auto result = cache_.find(*label);
 
     //TODO: Precalc closest terminals
-    auto ts = std::vector<unsigned int>();
+    auto ts = std::vector<node_id>();
     ts.push_back(root_);
     for (auto t: *terminals_) {
         if(!label->test((*tmap_)[t])) {
@@ -22,14 +22,14 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
         }
     }
 
-    unsigned int cost = 0;
+    cost_id cost = 0;
     if (result != cache_.end())
         cost = result->second;
     else {
         cost = calcMst(ts);
     }
 
-    unsigned int minVal[2];
+    cost_id minVal[2];
     int j = 0;
 
     // two closest distances between n and terminals
@@ -45,15 +45,15 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     return (minVal[0] + minVal[1] + cost) / 2;
 }
 
-unsigned int MstHeuristic::calcMst(vector<unsigned int>& ts) {
-    unsigned int minEdge[ts.size()];
+cost_id MstHeuristic::calcMst(vector<node_id>& ts) {
+    cost_id minEdge[ts.size()];
     bool taken[ts.size()];
-    unsigned int val;
+    cost_id val;
     int idx = -1;
-    unsigned int sumEdges = 0;
+    cost_id sumEdges = 0;
 
     for(size_t i=0; i < ts.size(); i++) {
-        minEdge[i] = UINT_MAX;
+        minEdge[i] = MAXCOST;
         taken[i] = false;
     }
 
@@ -61,7 +61,7 @@ unsigned int MstHeuristic::calcMst(vector<unsigned int>& ts) {
     minEdge[0] = 0;
 
     for(int i=0; i < ts.size(); i++) {
-        val = UINT_MAX;
+        val = MAXCOST;
         for(int k=0; k < ts.size(); k++) {
             if (minEdge[k] < val) {
                 val = minEdge[k];
@@ -70,7 +70,7 @@ unsigned int MstHeuristic::calcMst(vector<unsigned int>& ts) {
         }
 
         taken[idx] = true;
-        minEdge[idx] = UINT_MAX;
+        minEdge[idx] = MAXCOST;
         sumEdges += val;
 
         for(int k=0; k < ts.size(); k++) {

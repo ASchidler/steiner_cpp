@@ -5,6 +5,7 @@
 #ifndef STEINER_HASHSETLABELSTORE_H
 #define STEINER_HASHSETLABELSTORE_H
 
+#include "steiner.h"
 #include "LabelStore.h"
 #include <boost/dynamic_bitset.hpp>
 #include <boost/functional/hash.hpp>
@@ -14,20 +15,6 @@ using namespace boost;
 using namespace std;
 using namespace steiner;
 
-namespace std {
-
-    template <typename Block, typename Alloc> struct hash<boost::dynamic_bitset<Block, Alloc> > {
-        size_t operator()(boost::dynamic_bitset<Block, Alloc> const& bs) const {
-            size_t seed = boost::hash_value(bs.size());
-
-            std::vector<Block> blocks(bs.num_blocks());
-            boost::hash_range(seed, blocks.begin(), blocks.end());
-
-            return seed;
-        }
-    };
-
-}
 
 namespace steiner {
     class HashSetLabelIterator : public LabelIterator {
@@ -50,7 +37,7 @@ namespace steiner {
 
     class HashSetLabelStore : public LabelStore {
     public:
-        HashSetLabelStore(unsigned int width, unsigned int nNodes) : LabelStore(width, nNodes) {
+        HashSetLabelStore(node_id width, node_id nNodes) : LabelStore(width, nNodes) {
             this->labels_ = new unordered_set<dynamic_bitset<>>[nNodes];
 
             for (size_t i = 0; i < nNodes; i++) {
@@ -62,9 +49,9 @@ namespace steiner {
             delete[] this->labels_;
         }
 
-        void addLabel(unsigned int node, dynamic_bitset<> *newLabel) override;
+        void addLabel(node_id node, dynamic_bitset<> *newLabel) override;
 
-        HashSetLabelIterator* findLabels(unsigned int node, dynamic_bitset<> *target) override;
+        HashSetLabelIterator* findLabels(node_id node, dynamic_bitset<> *target) override;
 
     private:
         unordered_set<dynamic_bitset<>> *labels_;
