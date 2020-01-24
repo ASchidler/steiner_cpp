@@ -86,13 +86,17 @@ void steiner::Graph::findDistances(node_id u) {
 
 steiner::Graph *steiner::Graph::copy() {
     auto* cp = new Graph();
+    // Add nodes first, guarantees that the mapping stays the same
     for (auto n: nodes_) {
-        // In case only one node, or disconnected...
         cp->addNode(n);
+    }
+
+    for (auto n: nodes_) {
         for (auto v: nb[n]) {
             cp->addEdge(n, v.first, v.second);
         }
     }
+
 
     return cp;
 }

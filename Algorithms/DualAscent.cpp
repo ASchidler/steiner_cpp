@@ -36,45 +36,39 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unorder
 
         // This is not necessary for correctness, but this ensures that the estimated weight is about right
         // and leads got generally better bounds
-        if (! q.empty()) {
-            auto elem2 = q.top();
-            if (edges.size() > 1.25 * elem2.cost) {
-                elem.cost = edges.size();
-                q.push(elem);
-                continue;
-            }
-        }
+//        if (! q.empty()) {
+//            auto elem2 = q.top();
+//            if (edges.size() > 1.25 * elem2.cost) {
+//                elem.cost = edges.size();
+//                q.push(elem);
+//                continue;
+//            }
+//        }
 
         // Min Cost 0 means hit an active component
-        if (minCost == 0) {
-            active.erase(elem.node);
-        } else {
+        if (minCost > 0) {
             // Increment bound
             bound += minCost;
-            bool tFound = false;
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             cost_id newWeight = 0;
+            bool tFound = false;
             for (auto ce: edges) { // update weight loop
                 dg->nb[ce.u][ce.v] -= minCost;
-                assert(dg->nb[ce.u][ce.v] >= 0);
-                assert(cut.find(ce.v) != cut.end());
-                assert(cut.find(ce.u) == cut.end());
-                // Is now zero
+
+                // Is now zero, i.e. is part of the component
                 if (ce.cost == minCost) {
-                    if (active.find(ce.u) != active.end()) {
-                        active.erase(elem.node);
-                        tFound = true;
-                        // Do not stop here, finish updating the weights!
-                    }
-                    newWeight += g->nb[ce.u].size() - 1;
+                    tFound = tFound || active.count(ce.u) > 0; // Do not stop here, finish updating the weights!
+                    newWeight += g->nb[ce.u].size() - 1; // Estimate incoming edges gained from this node
                 }
             } // end update weight loop
 
             // Add back to queue
             if (!tFound) {
-                elem.cost = newWeight;
+                elem.cost = newWeight + edges.size();
                 q.push(elem);
+            } else {
+                active.erase(elem.node);
             }
         }
     } // end main loop
@@ -98,7 +92,7 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, unordered_set<node_id> *active
         bfs_queue.pop_back();
 
         for (auto u: dg->nb[v]) {
-            if (cut->find(u.first) == cut->end()) {
+            if (cut->count(u.first) == 0) {
                 // Strictly speaking a pred relation is not necessary, as we always have symmetric directed graphs, but this causes cache misses (I guess)
                 // The question is, if the stuff below would cause them anyways...
                 auto cost = dg->nb[u.first][v];
@@ -106,7 +100,8 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, unordered_set<node_id> *active
                 // 0 means traversable edge
                 if (cost == 0) {
                     // Found active vertex? Stop, component is connected
-                    if (active->find(u.first) != active->end()) {
+                    if (active->count(u.first) > 0) {
+                        active->erase(n);
                         return 0;
                     }
                     bfs_queue.push_back(u.first);
@@ -119,12 +114,11 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, unordered_set<node_id> *active
     }// end cut loop
 
     // Find minimum cost and remove edges that are inside the cut
-    // TODO: Is this efficient?
     cost_id minCost = MAXCOST;
     auto cEdge = edges->begin();
 
     while (cEdge != edges->end()) {
-        if (cut->find(cEdge->u) != cut->end()) {
+        if (cut->count(cEdge->u) > 0) {
             edges->erase(cEdge);
         } else {
             if (cEdge->cost < minCost)

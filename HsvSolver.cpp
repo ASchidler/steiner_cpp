@@ -27,8 +27,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
     nTerminals_ = terminals_.size();
-    heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
-    //heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
+    //heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
+    heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
 }
 
 steiner::Graph* steiner::HsvSolver::solver() {
@@ -73,7 +73,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, dynamic_bitset<>* label, c
     for (auto nb: instance_->getGraph()->nb[n]) {
         auto newCost = cost + nb.second;
         // TODO: Maybe do not copy label all the time? If labels are stored centrally once created, pointers could be
-        // used. Thay would also simplify hashing. But how to find labels in a central store?, use a central HashSet?
+        // used. That would also simplify hashing. But how to find labels in a central store?, use a central HashSet?
         // Could be put into the central label store, as each label goes through there...
 
         auto nbc = costs_[nb.first].find(*label);
