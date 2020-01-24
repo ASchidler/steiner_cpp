@@ -13,6 +13,7 @@
 #include "LabelIterator.h"
 #include "Heuristic/MstHeuristic.h"
 #include "Algorithms/DualAscent.h"
+#include "Heuristic/DualAscentHeuristic.h"
 
 using namespace std;
 

@@ -7,9 +7,8 @@
 using namespace steiner;
 
 unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
-    auto opposite = (~*label);
     //Special case where only on terminal left...
-    if (opposite.empty())
+    if (label->count() == terminals_->size())
         return instance_->getGraph()->getDistances()[root_][n];
 
     auto result = cache_.find(*label);
@@ -18,7 +17,7 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     auto ts = std::vector<unsigned int>();
     ts.push_back(root_);
     for (auto t: *terminals_) {
-        if(opposite.test((*tmap_)[t])) {
+        if(!label->test((*tmap_)[t])) {
             ts.push_back(t);
         }
     }
@@ -33,11 +32,12 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     unsigned int minVal[2];
     int j = 0;
 
+    // two closest distances between n and terminals
     auto closest = (NodeWithCost*) instance_->getClosestTerminals(n);
     for(int i=0; j < 2 ;i++) {
         auto nb = closest[i];
 
-        if(nb.node == root_ || opposite.test((*tmap_)[nb.node])) {
+        if(nb.node == root_ || !label->test((*tmap_)[nb.node])) {
             minVal[j] = nb.cost;
             j++;
         }

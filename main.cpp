@@ -28,7 +28,8 @@ int main(int argc, char* argv[]) {
     SteinerInstance* s = parser.parse(filename);
 
     for(auto t: *s->getTerminals()) {
-        auto result = DualAscent::calculate(s->getGraph(), *s->getTerminals()->begin(), s->getTerminals());
+        auto result = DualAscent::calculate(s->getGraph(), t, s->getTerminals());
+        cout << result->bound << endl;
         delete result;
     }
     cout << DualAscent::bestResult << endl;

@@ -6,8 +6,10 @@
 using namespace steiner;
 
 bool DualAscent::hasRun = false;
-unsigned int DualAscent::bestResult = UINT_MAX;
+unsigned int DualAscent::bestResult = 0;
 unsigned int DualAscent::bestRoot = 0;
+
+// TODO: Implement the 3 other variants...
 
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, unordered_set<unsigned int>* ts) {
     Graph *dg = g->copy();
@@ -15,44 +17,49 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, un
     auto q = priority_queue<NodeWithCost>();
     auto active = unordered_set<unsigned int>();
 
+    // Initialize active components and queue
     for (auto t: *ts) {
         active.insert(t);
         if (t != root)
             q.emplace(t, 0);
     }
 
+    // run until not active components
     while (!q.empty()) { // main loop
         auto elem = q.top();
         q.pop();
 
-        // Find cut
+        // Find cut, i.e. vertices in the weakly connected component of t and edges leading in
         vector<unsigned int> bfs_queue;
         bfs_queue.push_back(elem.node);
-        vector<Edge> edges;
         unordered_set<unsigned int> cut;
+        cut.insert(elem.node);
+
+        vector<Edge> edges;
+        edges.reserve(elem.cost); //Size according to cost, as this should approx fit.
         bool tFound = false;
 
         while (!bfs_queue.empty() && !tFound) { // cut loop
-            auto n = bfs_queue.back();
+            auto v = bfs_queue.back();
             bfs_queue.pop_back();
 
-            for (auto nb: dg->nb[n]) {
-                if (cut.find(nb.first) == cut.end()) {
+            for (auto u: dg->nb[v]) {
+                if (cut.find(u.first) == cut.end()) {
                     // TODO: Introduce pred dictionary into graph?
-                    // Strictly speaking it is not necessary, as we always have symmetric directed graphs, but this causes cache missies
-                    auto cost = dg->nb[nb.first][n];
+                    // Strictly speaking it is not necessary, as we always have symmetric directed graphs, but this causes cache misses (I guess)
+                    auto cost = dg->nb[u.first][v];
 
                     // 0 means traversable edge
                     if (cost == 0) {
                         // Found active vertex? Stop, component is connected
-                        if (active.find(nb.first) != active.end()) {
+                        if (active.find(u.first) != active.end()) {
                             tFound = true;
                             break;
                         }
-                        bfs_queue.push_back(nb.first);
-                        cut.insert(nb.first);
+                        bfs_queue.push_back(u.first);
+                        cut.insert(u.first);
                     } else {
-                        edges.emplace_back(n, nb.first, cost);
+                        edges.emplace_back(u.first, v, cost);
                     }
                 }
             }
@@ -64,12 +71,13 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, un
             continue;
         }
 
-        unsigned int minCost = UINT_MAX;
-        // TODO: Is this efficient?
-        auto cEdge = edges.begin();
         // Find minimum cost and remove edges that are inside the cut
+        // TODO: Is this efficient?
+        unsigned int minCost = UINT_MAX;
+        auto cEdge = edges.begin();
+
         while (cEdge != edges.end()) {
-            if (cut.find(cEdge->v) != cut.end()) {
+            if (cut.find(cEdge->u) != cut.end()) {
                 edges.erase(cEdge);
             } else {
                 if (cEdge->cost < minCost)
@@ -78,7 +86,8 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, un
             }
         }
 
-        // Check if the queue weight was about accurate
+        // This is not necessary for correctness, but this ensures that the estimated weight is about right
+        // and leads got generally better bounds
         if (! q.empty()) {
             auto elem2 = q.top();
             if (edges.size() > 1.25 * elem2.cost) {
@@ -91,15 +100,17 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, un
         // Increment bound
         bound += minCost;
 
-        // Update weights
+        // Update edge costs and estimate new weight, i.e. number of incoming edges
         unsigned int newWeight = 0;
         for (auto ce: edges) { // update weight loop
-            dg->nb[ce.v][ce.u] -= minCost;
+            dg->nb[ce.u][ce.v] -= minCost;
+
             // Is now zero
             if (ce.cost == minCost) {
-                if (!tFound && active.find(ce.v) != active.end()) {
-                    active.erase(ce.v);
+                if (active.find(ce.u) != active.end()) {
+                    active.erase(elem.node);
                     tFound = true;
+                    break;
                 }
                 newWeight += g->nb[ce.v].size() - 1;
             }
@@ -112,8 +123,9 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, unsigned int root, un
         }
     } // end main loop
 
+    // Store best result and especially best root
     DualAscent::hasRun = true;
-    if (bound < DualAscent::bestResult) {
+    if (bound > DualAscent::bestResult) {
         DualAscent::bestResult = bound;
         DualAscent::bestRoot = root;
     }
