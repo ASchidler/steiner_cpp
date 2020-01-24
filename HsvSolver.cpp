@@ -30,7 +30,7 @@ steiner::Graph* steiner::HsvSolver::solver() {
     // Special case, only root
     if (terminals_.empty()) {
         auto result = new Graph();
-        result->addVertex(root_);
+        result->addNode(root_);
         return result;
     }
 
@@ -66,25 +66,25 @@ steiner::Graph* steiner::HsvSolver::solver() {
 void steiner::HsvSolver::process_neighbors(unsigned int n, dynamic_bitset<>* label, unsigned int cost) {
     // TODO: Are these getter calls expensive? Maybe retrieve graph once..
     for (auto nb: instance_->getGraph()->nb[n]) {
-        auto newCost = cost + nb.cost;
+        auto newCost = cost + nb.second;
         // TODO: Maybe do not copy label all the time? If labels are stored centrally once created, pointers could be
         // used. Thay would also simplify hashing. But how to find labels in a central store?, use a central HashSet?
         // Could be put into the central label store, as each label goes through there...
 
-        auto nbc = costs_[nb.node].find(*label);
-        if (nbc == costs_[nb.node].end() || nbc->second.cost > newCost) {
+        auto nbc = costs_[nb.first].find(*label);
+        if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
             if (! prune(n, newCost, label)) {
-                if (nbc == costs_[nb.node].end()) {
+                if (nbc == costs_[nb.first].end()) {
                     auto pred = Predecessor();
                     pred.node = n;
-                    costs_[nb.node].insert(pair<dynamic_bitset<>, CostInfo>(*label, CostInfo(newCost, pred, false)));
+                    costs_[nb.first].insert(pair<dynamic_bitset<>, CostInfo>(*label, CostInfo(newCost, pred, false)));
                 } else {
                     nbc->second.cost = newCost;
                     nbc->second.prev.node = n;
                     nbc->second.merge = false;
                 }
 
-                queue_.emplace(newCost + heuristic_->calculate( nb.node, label), nb.node, *label);
+                queue_.emplace(newCost + heuristic_->calculate( nb.first, label), nb.first, *label);
             }
         }
     }

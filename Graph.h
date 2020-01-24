@@ -39,7 +39,7 @@ namespace steiner {
                 delete[] distances_;
             }
         }
-        unsigned int addVertex(unsigned int u);
+        unsigned int addNode(unsigned int u);
         void addEdge(unsigned int u, unsigned int v, unsigned int cost);
 
         unsigned int getNumNodes() {
@@ -50,7 +50,7 @@ namespace steiner {
             return &nodes_;
         }
 
-        vector<vector<Neighbor>> nb;
+        vector<unordered_map<unsigned int, unsigned int>> nb;
 
         unsigned int getNodeMapping(unsigned int externalId);
 
@@ -59,6 +59,8 @@ namespace steiner {
         unsigned int** getDistances() {
             return distances_;
         }
+
+        Graph* copy();
     private:
         vector<unsigned int> nodes_ = vector<unsigned int>();
         unordered_map<unsigned int, unsigned int> nodeMap_ = unordered_map<unsigned int, unsigned int>();
