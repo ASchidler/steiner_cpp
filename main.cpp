@@ -7,6 +7,7 @@
 #include "HsvSolver.h"
 #include <fstream>
 #include "Parser/DimacsParser.h"
+#include "Algorithms/DualAscent.h"
 
 using namespace steiner;
 
@@ -26,8 +27,15 @@ int main(int argc, char* argv[]) {
     auto parser = DimacsParser();
     SteinerInstance* s = parser.parse(filename);
 
+    for(auto t: *s->getTerminals()) {
+        auto result = DualAscent::calculate(s->getGraph(), *s->getTerminals()->begin(), s->getTerminals());
+        delete result;
+    }
+    cout << DualAscent::bestResult << endl;
+
     auto solver = HsvSolver(s);
     solver.solver();
+
     delete s;
     return 0;
 }

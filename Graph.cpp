@@ -60,7 +60,7 @@ void steiner::Graph::findDistances(unsigned int u) {
     // We could initialize with other known distances...
 
     // Dijkstra
-    auto q = priority_queue<Neighbor>();
+    auto q = priority_queue<NodeWithCost>();
     auto visited = unordered_set<unsigned int>();
     q.emplace(u, 0);
     distances_[u][u] = 0;

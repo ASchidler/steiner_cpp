@@ -12,6 +12,7 @@
 #include "HashSetLabelStore.h"
 #include "LabelIterator.h"
 #include "Heuristic/MstHeuristic.h"
+#include "Algorithms/DualAscent.h"
 
 using namespace std;
 

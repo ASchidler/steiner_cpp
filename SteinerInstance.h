@@ -24,13 +24,13 @@ namespace steiner {
                 g->findDistances(t);
             }
             // Now calculate the closest terminals
-            closest_terminals_ = new Neighbor*[g->getNumNodes()];
+            closest_terminals_ = new NodeWithCost*[g->getNumNodes()];
 
             for(int n=0; n < g->getNumNodes(); n++) {
                 auto size = terminals->size();
                 if (terminals_.find(n) != terminals_.end())
                     size--;
-                closest_terminals_[n] = new Neighbor[size];
+                closest_terminals_[n] = new NodeWithCost[size];
 
                 int i = 0;
                 for (auto t: terminals_) {
@@ -40,7 +40,7 @@ namespace steiner {
                         i++;
                     }
                 }
-                std::sort(closest_terminals_[n], closest_terminals_[n] + size, greater<Neighbor>());
+                std::sort(closest_terminals_[n], closest_terminals_[n] + size, greater<NodeWithCost>());
             }
         }
 
@@ -52,7 +52,7 @@ namespace steiner {
             return &(this->terminals_);
         }
 
-        Neighbor* getClosestTerminals(unsigned int n) {
+        NodeWithCost* getClosestTerminals(unsigned int n) {
             return closest_terminals_[n];
         }
 
@@ -65,7 +65,7 @@ namespace steiner {
     private:
         Graph *g_;
         unordered_set<unsigned int> terminals_;
-        Neighbor** closest_terminals_;
+        NodeWithCost** closest_terminals_;
     };
 }
 #endif //STEINER_STEINERINSTANCE_H

@@ -11,16 +11,20 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getNumNodes()];
     store_ = new HashSetLabelStore(instance_->getTerminals()->size() - 1, instance->getGraph()->getNumNodes());
 
-    int i = -1;
+    // TODO: Make this configurable?
+    if (DualAscent::hasRun) {
+        root_ = DualAscent::bestRoot;
+    } else {
+        root_ = *instance_->getTerminals()->begin();
+    }
+
+    int i = 0;
     for(auto t:*instance->getTerminals()) {
-        if (i == -1) {
-            root_ = t;
-        }
-        else {
+        if (t != root_) {
             tmap_.insert(pair<unsigned int, unsigned int>(t, i));
             terminals_.insert(t);
+            i++;
         }
-        i++;
     }
     nTerminals_ = terminals_.size();
     heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);

@@ -33,7 +33,7 @@ unsigned int MstHeuristic::calculate(unsigned int n, dynamic_bitset<> *label) {
     unsigned int minVal[2];
     int j = 0;
 
-    auto closest = (Neighbor*) instance_->getClosestTerminals(n);
+    auto closest = (NodeWithCost*) instance_->getClosestTerminals(n);
     for(int i=0; j < 2 ;i++) {
         auto nb = closest[i];
 

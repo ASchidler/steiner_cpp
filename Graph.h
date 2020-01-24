@@ -13,20 +13,30 @@ using namespace std;
 //TODO: Use nNodes in constructor as upper bound, count nodes when added, and map them? Coordinate with instance type
 
 namespace steiner {
-    struct Neighbor {
-        Neighbor(unsigned int node, unsigned int cost) : node(node), cost(cost) {
+    struct NodeWithCost {
+        NodeWithCost(unsigned int node, unsigned int cost) : node(node), cost(cost) {
         }
-        Neighbor() : node(0), cost(0) {
+        NodeWithCost() : node(0), cost(0) {
         }
         unsigned int node;
         unsigned int cost;
 
-        bool operator<(const Neighbor& p2) const {
+        // TODO: These are actually the wrong way so that priority queues are min queues...
+        bool operator<(const NodeWithCost& p2) const {
             return cost > p2.cost || (cost == p2.cost && node > p2.node);
         }
-        bool operator>(const Neighbor& p2) const {
+        bool operator>(const NodeWithCost& p2) const {
             return cost < p2.cost || (cost == p2.cost && node > p2.node);
         }
+    };
+
+    struct Edge {
+        Edge(unsigned int u, unsigned int v, unsigned int cost) : u(u), v(v), cost(cost) {
+        }
+
+        unsigned int u;
+        unsigned int v;
+        unsigned int cost;
     };
 
     class Graph {
