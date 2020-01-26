@@ -8,7 +8,7 @@ using namespace steiner;
 
 cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
     //Special case where only root left
-    if (label->count() == terminals_->size())
+    if (label->all())
         return instance_->getGraph()->getDistances()[root_][n];
 
     auto result = cache_.find(*label);

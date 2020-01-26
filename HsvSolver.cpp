@@ -119,7 +119,6 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
 }
 
 bool HsvSolver::prune(node_id n, cost_id cost, const dynamic_bitset<> *label) {
-    // TODO: Another label copy...
     auto result = pruneBoundCache.find(*label);
     if (result != pruneBoundCache.end()) {
         if (cost > result->second.cost)
@@ -151,15 +150,18 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     auto dist_t = root_;
 
     // distance to terminals outside the label
-    auto closest = instance_->getClosestTerminals(n);
-    for (int i=0; i < sizeof(closest)/sizeof(*closest) ;i++) {
-        auto elem = instance_->getClosestTerminals(n);
-        if (!(label->test(tmap_[elem->node]))) {
-            if (dist_c > elem->cost) {
-                dist_c = elem->cost;
-                dist_t = elem->node;
+    if (! label->all()) {
+        // Since we know there is at least one bit unset, this will terminate.
+        auto closest = instance_->getClosestTerminals(n);
+        while (true) {
+            if (!(label->test(tmap_[closest->node]))) {
+                if (dist_c > closest->cost) {
+                    dist_c = closest->cost;
+                    dist_t = closest->node;
+                }
+                break;
             }
-            break;
+            closest++;
         }
     }
 
@@ -175,24 +177,27 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     } else {
         PruneDistEntry entry(MAXCOST, 0);
 
-        // TODO: Precalculate closest terminals...
         for (auto t: terminals_) {
             // Terminal is in the label
             if (label->test(tmap_[t])) {
+                // Test t to root
                 auto dist = instance_->getGraph()->getDistances()[t][root_];
                 if (dist < entry.cost) {
                     entry.cost = dist;
                     entry.terminal = root_;
                 }
 
-                for (int i=0; i < sizeof(closest)/sizeof(*closest) ;i++) {
-                    auto elem = instance_->getClosestTerminals(n);
-                    if (t != elem->node && !(label->test(tmap_[elem->node]))) {
-                        if (entry.cost > elem->cost) {
-                            entry.cost = elem->cost;
-                            entry.terminal = elem->node;
+                if (! label->all()) {
+                    auto closest = instance_->getClosestTerminals(t);
+                    while (true) {
+                        if (!(label->test(tmap_[closest->node]))) {
+                            if (entry.cost > closest->cost) {
+                                entry.cost = closest->cost;
+                                entry.terminal = closest->node;
+                            }
+                            break;
                         }
-                        break;
+                        closest++;
                     }
                 }
             }
@@ -207,7 +212,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
         }
     }
 
-    // Either way, we now have the minimum distance...
+    // Store in cache
     auto existing = pruneBoundCache.find(*label);
     if (existing == pruneBoundCache.end()) {
         PruneBoundEntry newEntry(dist_c + cost, dynamic_bitset<>(nTerminals_));
@@ -223,14 +228,14 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
 unsigned int HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dynamic_bitset<> *label2, dynamic_bitset<> *combined) {
     auto result1 = pruneBoundCache.find(*label1);
     if (result1 == pruneBoundCache.end())
-        return UINT_MAX;
+        return MAXCOST;
     auto result2 = pruneBoundCache.find(*label2);
     if (result2 == pruneBoundCache.end())
-        return UINT_MAX;
+        return MAXCOST;
 
     // At least one set must be disjoint...
     if ((*label1 & result2->second.label).any() && (*label2 & result1->second.label).any())
-        return UINT_MAX;
+        return MAXCOST;
 
     // TODO: These many dynamic set creations are probably not very efficient
     auto cost = result1->second.cost + result2->second.cost;

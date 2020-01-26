@@ -84,7 +84,7 @@ namespace steiner {
         // TODO: This is really ugly (result)
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
 
-        Graph* copy();
+        Graph* copy(bool copyMapping);
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;

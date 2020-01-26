@@ -9,7 +9,7 @@ using namespace steiner;
 
 cost_id DualAscentHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
     //Special case where only on terminal left...
-    if (label->count() == terminals_->size())
+    if (label->all())
         return instance_->getGraph()->getDistances()[root_][n];
 
     auto result = cache_.find(*label);
@@ -20,7 +20,7 @@ cost_id DualAscentHeuristic::calculate(node_id n, const dynamic_bitset<> *label)
         values = precalculate(label);
 
 
-    //TODO: Add memory saver
+    //TODO: Add memory saver (?)
     return values[n];
 }
 
