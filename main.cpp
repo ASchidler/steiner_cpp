@@ -26,17 +26,20 @@ int main(int argc, char* argv[]) {
 
     auto parser = DimacsParser();
     SteinerInstance* s = parser.parse(filename);
-
+    int i = 0;
     for(auto t: *s->getTerminals()) {
         auto result = DualAscent::calculate(s->getGraph(), t, s->getTerminals());
         cout << result->bound << endl;
         delete result;
+        i++;
+        if (i >= 0)
+            break;
     }
     cout << DualAscent::bestResult << endl;
 
     auto solver = HsvSolver(s);
-    solver.solver();
-
+    auto tree = solver.solve();
+    cout << tree->cost << endl;
     delete s;
     return 0;
 }

@@ -6,7 +6,7 @@
 #include "../SteinerInstance.h"
 #include <iostream>
 #include <boost/algorithm/string.hpp>
-#include "../steiner.h"
+#include "../Steiner.h"
 
 steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
     fstream fl;

@@ -5,7 +5,7 @@
 #ifndef STEINER_HASHSETLABELSTORE_H
 #define STEINER_HASHSETLABELSTORE_H
 
-#include "steiner.h"
+#include "Steiner.h"
 #include "LabelStore.h"
 #include <boost/dynamic_bitset.hpp>
 #include <boost/functional/hash.hpp>
@@ -20,7 +20,7 @@ namespace steiner {
     class HashSetLabelIterator : public LabelIterator {
     public:
         explicit HashSetLabelIterator(unordered_set<dynamic_bitset<>>::iterator start,
-                unordered_set<dynamic_bitset<>>::iterator end, dynamic_bitset<>* target) :
+                unordered_set<dynamic_bitset<>>::iterator end, const dynamic_bitset<>* target) :
                 pos(start), end(end), target(target) {
             findNext();
         }
@@ -31,7 +31,7 @@ namespace steiner {
     private:
         unordered_set<dynamic_bitset<>>::iterator pos;
         unordered_set<dynamic_bitset<>>::iterator end;
-        dynamic_bitset<>* target;
+        const dynamic_bitset<>* target;
         void findNext();
     };
 
@@ -45,13 +45,13 @@ namespace steiner {
             }
         }
 
-        ~HashSetLabelStore() {
+        ~HashSetLabelStore() override {
             delete[] this->labels_;
         }
 
-        void addLabel(node_id node, dynamic_bitset<> *newLabel) override;
+        void addLabel(node_id node, const dynamic_bitset<> *newLabel) override;
 
-        HashSetLabelIterator* findLabels(node_id node, dynamic_bitset<> *target) override;
+        HashSetLabelIterator* findLabels(node_id node, const dynamic_bitset<> *target) override;
 
     private:
         unordered_set<dynamic_bitset<>> *labels_;

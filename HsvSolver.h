@@ -14,7 +14,8 @@
 #include "Heuristic/MstHeuristic.h"
 #include "Algorithms/DualAscent.h"
 #include "Heuristic/DualAscentHeuristic.h"
-#include "steiner.h"
+#include "Steiner.h"
+#include "SteinerTree.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ using namespace std;
 namespace steiner {
     class HsvSolver {
     public:
-        HsvSolver(SteinerInstance *instance);
+        explicit HsvSolver(SteinerInstance *instance);
 
         ~HsvSolver() {
             delete[] costs_;
@@ -30,7 +31,7 @@ namespace steiner {
             delete store_;
         }
 
-        Graph* solver();
+        SteinerTree* solve();
 
     private:
         SteinerInstance *instance_;
@@ -68,7 +69,6 @@ namespace steiner {
         struct CostInfo {
             CostInfo(unsigned int cost, Predecessor prev, bool merge) : cost(cost), prev(prev), merge(merge) {
             }
-
             cost_id cost;
             Predecessor prev;
             bool merge;
@@ -94,13 +94,16 @@ namespace steiner {
         unordered_map<dynamic_bitset<>, PruneDistEntry> pruneDistCache;
         SteinerHeuristic* heuristic_;
 
-        inline void process_neighbors(node_id n, dynamic_bitset<> *label, cost_id cost);
-        inline void process_labels(node_id n, dynamic_bitset<> *label, cost_id cost);
+        inline void process_neighbors(node_id n, const dynamic_bitset<> *label, cost_id cost);
+        inline void process_labels(node_id n, const dynamic_bitset<> *label, cost_id cost);
 
-        bool prune(node_id n, cost_id cost, dynamic_bitset<>* label);
-        bool prune(node_id n, cost_id cost, dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
-        inline void prune_check_bound(node_id n, cost_id cost, dynamic_bitset<>* label);
-        inline unsigned int prune_combine(dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
+        bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label);
+        bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
+        inline void prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<>* label);
+        inline unsigned int prune_combine(const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
+
+        SteinerTree* backTrack();
+        void backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result);
     };
 }
 

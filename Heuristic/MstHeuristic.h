@@ -17,7 +17,7 @@ namespace steiner {
                      node_id root) : instance_(instance), tmap_(tmap), terminals_(terminals), root_(root) {
 
         }
-        cost_id calculate(node_id n, dynamic_bitset<> *label) override;
+        cost_id calculate(node_id n, const dynamic_bitset<> *label) override;
 
     private:
         SteinerInstance* instance_;
@@ -26,7 +26,7 @@ namespace steiner {
         node_id root_;
         unordered_map<dynamic_bitset<>, cost_id> cache_;
 
-        cost_id calcMst(dynamic_bitset<>* label);
+        cost_id calcMst(const dynamic_bitset<>* label);
     };
 }
 

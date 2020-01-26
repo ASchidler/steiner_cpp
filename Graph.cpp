@@ -3,14 +3,21 @@
 //
 
 #include "Graph.h"
+using namespace steiner;
 
-//TODO: Directed  version??
 //TODO: Create iterator over edges? Return only if u < v for undirected.
-void steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
+bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     auto un = addNode(u);
     auto vn = addNode(v);
-    this->nb[un].insert(pair<node_id, cost_id>(vn, cost));
-    this->nb[vn].insert(pair<node_id, cost_id>(un, cost));
+
+    if (nb[un].count(vn) == 0 || nb[un][vn] > cost) {
+        this->nb[un].insert(pair<node_id, cost_id>(vn, cost));
+        this->nb[vn].insert(pair<node_id, cost_id>(un, cost));
+
+        return true;
+    }
+
+    return false;
 }
 
 node_id steiner::Graph::getNodeMapping(node_id externalId) {
@@ -24,7 +31,7 @@ node_id steiner::Graph::addNode(node_id u) {
         nb.emplace_back();
         nodeMap_.insert(pair<node_id, node_id>(u, nb.size() - 1));
         nodeReverseMap_.insert(pair<node_id, node_id>(nb.size() - 1, u));
-        nodes_.push_back(nb.size() - 1);
+        nodes_.insert(nb.size() - 1);
         return nb.size() - 1;
     }
 
@@ -99,4 +106,31 @@ steiner::Graph *steiner::Graph::copy() {
 
 
     return cp;
+}
+
+
+void steiner::Graph::removeNode(node_id u) {
+    for(auto elem: nb[u]) {
+        nb[elem.first].erase(u);
+    }
+    nb[u].clear();
+    nodes_.erase(u);
+}
+
+void Graph::removeEdge(node_id u, node_id v) {
+    nb[u].erase(v);
+    nb[v].erase(u);
+}
+
+void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+    vector<Edge> ret;
+    for(auto n: nb[remove]) {
+        if (n.first != target) {
+            if (addEdge(target, n.first, n.second) && result != nullptr) {
+                result->emplace_back(remove, target, n.first, n.second);
+            }
+        }
+    }
+
+    removeNode(remove);
 }

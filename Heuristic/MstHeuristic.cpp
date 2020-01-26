@@ -6,7 +6,7 @@
 
 using namespace steiner;
 
-cost_id MstHeuristic::calculate(node_id n, dynamic_bitset<> *label) {
+cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
     //Special case where only root left
     if (label->count() == terminals_->size())
         return instance_->getGraph()->getDistances()[root_][n];
@@ -33,7 +33,7 @@ cost_id MstHeuristic::calculate(node_id n, dynamic_bitset<> *label) {
     return cost / 2;
 }
 
-cost_id MstHeuristic::calcMst(dynamic_bitset<> *label) {
+cost_id MstHeuristic::calcMst(const dynamic_bitset<> *label) {
     // Find terminals outside sub-solution
     auto ts = std::vector<node_id>();
     ts.push_back(root_);

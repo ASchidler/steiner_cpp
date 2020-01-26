@@ -14,30 +14,7 @@ using namespace std;
 namespace steiner {
     class SteinerInstance {
     public:
-        SteinerInstance(Graph *g, unordered_set<node_id> *terminals) : g_(g) {
-            for (auto t: *terminals) {
-                terminals_.insert(g->getNodeMapping(t));
-            }
-
-            // Find distances from terminals to other nodes.
-            for (auto t: terminals_) {
-                g->findDistances(t);
-            }
-            // Now calculate the closest terminals
-            closest_terminals_ = new NodeWithCost*[g->getNumNodes()];
-
-            for(int n=0; n < g->getNumNodes(); n++) {
-                closest_terminals_[n] = new NodeWithCost[terminals->size()];
-
-                int i = 0;
-                for (auto t: terminals_) {
-                    closest_terminals_[n][i].node = t;
-                    closest_terminals_[n][i].cost = g->getDistances()[t][n];
-                    i++;
-                }
-                std::sort(closest_terminals_[n], closest_terminals_[n] + terminals->size(), greater<NodeWithCost>());
-            }
-        }
+        SteinerInstance(Graph *g, unordered_set<node_id> *terminals);
 
         Graph *getGraph() {
             return this->g_;
@@ -57,10 +34,30 @@ namespace steiner {
             }
             delete[] closest_terminals_;
         }
+
+        bool addEdge(node_id u, node_id v, cost_id c);
+        void removeNode(node_id u);
+        void removeEdge(node_id u, node_id v);
+        void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+
     private:
         Graph *g_;
         unordered_set<node_id> terminals_;
         NodeWithCost** closest_terminals_;
+
+
+    };
+
+    struct MergedEdges {
+        MergedEdges(node_id removed, node_id u, node_id v, cost_id cu, cost_id cv) :
+            newEdge(u, v, cu + cv),
+            oldEdge1(removed, u, cu),
+            oldEdge2(removed, v, cv) {
+
+        }
+        Edge newEdge;
+        Edge oldEdge1;
+        Edge oldEdge2;
     };
 }
 #endif //STEINER_STEINERINSTANCE_H

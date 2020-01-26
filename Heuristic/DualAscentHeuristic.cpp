@@ -7,7 +7,7 @@
 
 using namespace steiner;
 
-cost_id DualAscentHeuristic::calculate(node_id n, dynamic_bitset<> *label) {
+cost_id DualAscentHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
     //Special case where only on terminal left...
     if (label->count() == terminals_->size())
         return instance_->getGraph()->getDistances()[root_][n];
@@ -24,8 +24,8 @@ cost_id DualAscentHeuristic::calculate(node_id n, dynamic_bitset<> *label) {
     return values[n];
 }
 
-cost_id* DualAscentHeuristic::precalculate(dynamic_bitset<> *label) {
-    //TODO: The test and choice for method is missing
+cost_id* DualAscentHeuristic::precalculate(const dynamic_bitset<> *label) {
+    //TODO: The test and choice for method is missing, i.e. implement multiple methods...
 
     unordered_set<node_id> ts;
     ts.insert(root_);

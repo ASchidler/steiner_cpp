@@ -27,15 +27,14 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
     nTerminals_ = terminals_.size();
-    //heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
-    heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
+    heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
+    //heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
 }
 
-steiner::Graph* steiner::HsvSolver::solver() {
+SteinerTree* steiner::HsvSolver::solve() {
     // Special case, only root
     if (terminals_.empty()) {
-        auto result = new Graph();
-        result->addNode(root_);
+        auto result = new SteinerTree(root_);
         return result;
     }
 
@@ -56,8 +55,7 @@ steiner::Graph* steiner::HsvSolver::solver() {
         auto cost = costs_[entry.node].find(entry.label)->second.cost;
         if (entry.node == root_ ) {
             if((~entry.label).none()) {
-                cout << cost << endl;
-                break;
+                return backTrack();
             }
         }
         store_->addLabel(entry.node, &entry.label);
@@ -65,10 +63,10 @@ steiner::Graph* steiner::HsvSolver::solver() {
         process_labels(entry.node, &entry.label, cost);
     }
 
-    return new Graph();
+    return nullptr;
 }
 
-void steiner::HsvSolver::process_neighbors(node_id n, dynamic_bitset<>* label, cost_id cost) {
+void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* label, cost_id cost) {
     // TODO: Are these getter calls expensive? Maybe retrieve graph once..
     for (auto nb: instance_->getGraph()->nb[n]) {
         auto newCost = cost + nb.second;
@@ -95,7 +93,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, dynamic_bitset<>* label, c
     }
 
 }
-void steiner::HsvSolver::process_labels(node_id n, dynamic_bitset<>* label, cost_id cost) {
+void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label, cost_id cost) {
     auto other_set = store_->findLabels(n, label);
     for (; other_set->hasNext(); ++(*other_set)) {
         auto combined = *label | **other_set;
@@ -107,11 +105,11 @@ void steiner::HsvSolver::process_labels(node_id n, dynamic_bitset<>* label, cost
                 if (nbc == costs_[n].end()) {
                     auto pred = Predecessor();
                     pred.label = &(**other_set);
-                    costs_[n].insert(pair<dynamic_bitset<>, CostInfo>(combined, CostInfo(newCost, pred, false)));
+                    costs_[n].insert(pair<dynamic_bitset<>, CostInfo>(combined, CostInfo(newCost, pred, true)));
                 } else {
+                    nbc->second.merge = true;
                     nbc->second.cost = newCost;
                     nbc->second.prev.label = &(**other_set);
-                    nbc->second.merge = true;
                 }
 
                 queue_.emplace(newCost + heuristic_->calculate(n, &combined), n, combined);
@@ -121,7 +119,7 @@ void steiner::HsvSolver::process_labels(node_id n, dynamic_bitset<>* label, cost
     delete other_set;
 }
 
-bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label) {
+bool HsvSolver::prune(node_id n, cost_id cost, const dynamic_bitset<> *label) {
     // TODO: Another label copy...
     auto result = pruneBoundCache.find(*label);
     if (result != pruneBoundCache.end()) {
@@ -134,7 +132,7 @@ bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label) {
     return false;
 }
 
-bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label1, const dynamic_bitset<>* label2,
+bool HsvSolver::prune(node_id n, cost_id cost, const dynamic_bitset<> *label1, const dynamic_bitset<>* label2,
                       dynamic_bitset<> *combined) {
     auto result = pruneBoundCache.find(*combined);
     if (result != pruneBoundCache.end()) {
@@ -148,7 +146,7 @@ bool HsvSolver::prune(node_id n, cost_id cost, dynamic_bitset<> *label1, const d
     return false;
 }
 
-void HsvSolver::prune_check_bound(node_id n, cost_id cost, dynamic_bitset<> *label) {
+void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<> *label) {
     // find minimum distance between n and any terminal not in the label (including root)
     auto dist_c = instance_->getGraph()->getDistances()[root_][n];
     auto dist_t = root_;
@@ -223,7 +221,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, dynamic_bitset<> *lab
     }
 }
 
-unsigned int HsvSolver::prune_combine(dynamic_bitset<> *label1, const dynamic_bitset<> *label2, dynamic_bitset<> *combined) {
+unsigned int HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dynamic_bitset<> *label2, dynamic_bitset<> *combined) {
     auto result1 = pruneBoundCache.find(*label1);
     if (result1 == pruneBoundCache.end())
         return UINT_MAX;
@@ -242,4 +240,33 @@ unsigned int HsvSolver::prune_combine(dynamic_bitset<> *label1, const dynamic_bi
     pruneBoundCache.insert(pair<dynamic_bitset<>, PruneBoundEntry>(*combined, entry));
 
     return cost;
+}
+
+SteinerTree *HsvSolver::backTrack() {
+    auto result = new SteinerTree(root_);
+    auto fullLabel = dynamic_bitset<>(terminals_.size());
+    fullLabel.flip();
+    backTrackSub(root_, &fullLabel, result);
+
+    return result;
+}
+
+void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result) {
+    //auto c = costs_[n][(dynamic_bitset<>)*label];
+    auto c = costs_[n].find(*label)->second;
+    if (c.merge) {
+        // Found a leaf
+        if (c.prev.label == nullptr)
+            return;
+
+        backTrackSub(n, c.prev.label, result);
+        auto inverse = *label ^ *c.prev.label;
+        backTrackSub(n, &inverse, result);
+    } else {
+        auto n2 = c.prev.node;
+        auto cn = instance_->getGraph()->nb[n][n2];
+        result->edges.emplace_back(n, n2, cn);
+        result->cost += cn;
+        backTrackSub(n2, label, result);
+    }
 }

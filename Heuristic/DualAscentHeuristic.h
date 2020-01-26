@@ -26,7 +26,7 @@ namespace steiner {
             }
         }
 
-        cost_id calculate(node_id n, dynamic_bitset<> *label);
+        cost_id calculate(node_id n, const dynamic_bitset<> *label);
 
     private:
         SteinerInstance* instance_;
@@ -36,7 +36,7 @@ namespace steiner {
         unordered_map<dynamic_bitset<>, cost_id*> cache_;
         unsigned int queryCount_ = 0;
 
-        cost_id *precalculate(dynamic_bitset<> *label);
+        cost_id *precalculate(const dynamic_bitset<> *label);
     };
 }
 

@@ -4,11 +4,11 @@
 
 #include "HashSetLabelStore.h"
 
-void steiner::HashSetLabelStore::addLabel(node_id node, dynamic_bitset<>* newLabel) {
+void steiner::HashSetLabelStore::addLabel(node_id node, const dynamic_bitset<>* newLabel) {
     this->labels_[node].insert(*newLabel);
 }
 
-HashSetLabelIterator* steiner::HashSetLabelStore::findLabels(node_id node, dynamic_bitset<>* target) {
+HashSetLabelIterator* steiner::HashSetLabelStore::findLabels(node_id node, const dynamic_bitset<>* target) {
     return new HashSetLabelIterator(labels_[node].begin(), labels_[node].end(), target);
 }
 

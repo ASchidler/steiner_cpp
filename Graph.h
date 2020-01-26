@@ -6,7 +6,7 @@
 #define STEINER_CPP_GRAPH_H
 #include <cstdint>
 #include <bits/stdc++.h>
-#include "steiner.h"
+#include "Steiner.h"
 
 using namespace std;
 
@@ -40,6 +40,17 @@ namespace steiner {
         cost_id cost;
     };
 
+    struct ContractedEdge {
+        ContractedEdge(node_id removed, node_id target, node_id n, cost_id c) :
+            removed(removed), target(target), n(n), c(c)
+        {
+        }
+        node_id removed;
+        node_id target;
+        node_id n;
+        cost_id c;
+    };
+
     class Graph {
     public:
         ~Graph() {
@@ -51,13 +62,13 @@ namespace steiner {
             }
         }
         node_id addNode(node_id u);
-        void addEdge(node_id u, node_id v, cost_id cost);
+        bool addEdge(node_id u, node_id v, cost_id cost);
 
         node_id getNumNodes() {
             return this->nodes_.size();
         }
 
-        vector<node_id>* getNodes(){
+        unordered_set<node_id>* getNodes(){
             return &nodes_;
         }
 
@@ -71,9 +82,14 @@ namespace steiner {
             return distances_;
         }
 
+        void removeNode(node_id u);
+        void removeEdge(node_id u, node_id v);
+        // TODO: This is really ugly (result)
+        void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+
         Graph* copy();
     private:
-        vector<node_id> nodes_;
+        unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;

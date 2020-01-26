@@ -7,7 +7,7 @@
 
 #include "../Graph.h"
 #include "../SteinerInstance.h"
-#include "../steiner.h"
+#include "../Steiner.h"
 
 namespace steiner {
     struct DualAscentResult {
