@@ -27,8 +27,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
     nTerminals_ = terminals_.size();
-    heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
-    //heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
+    //heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
+    heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
 }
 
 SteinerTree* steiner::HsvSolver::solve() {
@@ -91,7 +91,6 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
             }
         }
     }
-
 }
 void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label, cost_id cost) {
     auto other_set = store_->findLabels(n, label);

@@ -9,7 +9,7 @@ bool DualAscent::hasRun = false;
 cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
-// TODO: Implement the 2 other variants... at least 3
+// TODO: Implement the 2 other variants... at least number 3 -> More exact but slower
 
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unordered_set<node_id>* ts) {
     Graph *dg = g->copy();

@@ -95,7 +95,12 @@ steiner::Graph *steiner::Graph::copy() {
     auto* cp = new Graph();
     // Add nodes first, guarantees that the mapping stays the same
     for (auto n: nodes_) {
-        cp->addNode(n);
+        cp->nodes_.insert(n);
+        cp->nodeMap_.insert(pair<node_id, node_id>(n, n));
+        cp->nodeReverseMap_.insert(pair<node_id, node_id>(n, n));
+
+        while(cp->nb.size() <= n)
+            cp->nb.emplace_back();
     }
 
     for (auto n: nodes_) {

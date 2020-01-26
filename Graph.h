@@ -10,9 +10,6 @@
 
 using namespace std;
 
-//TODO: Make directed possible? Make a switch when creating the graph...
-//TODO: Use nNodes in constructor as upper bound, count nodes when added, and map them? Coordinate with instance type
-
 namespace steiner {
     struct NodeWithCost {
         NodeWithCost(node_id node, cost_id cost) : node(node), cost(cost) {
