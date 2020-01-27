@@ -36,14 +36,14 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unorder
 
         // This is not necessary for correctness, but this ensures that the estimated weight is about right
         // and leads got generally better bounds
-//        if (! q.empty()) {
-//            auto elem2 = q.top();
-//            if (edges.size() > 1.25 * elem2.cost) {
-//                elem.cost = edges.size();
-//                q.push(elem);
-//                continue;
-//            }
-//        }
+        if (! q.empty()) {
+            auto elem2 = q.top();
+            if (edges.size() > 1.25 * elem2.cost) {
+                elem.cost = edges.size();
+                q.push(elem);
+                continue;
+            }
+        }
 
         // Min Cost 0 means hit an active component
         if (minCost > 0) {

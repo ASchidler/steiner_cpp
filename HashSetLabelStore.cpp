@@ -5,7 +5,7 @@
 #include "HashSetLabelStore.h"
 
 void steiner::HashSetLabelStore::addLabel(node_id node, const dynamic_bitset<>* newLabel) {
-    this->labels_[node].insert(*newLabel);
+    this->labels_[node].emplace(*newLabel);
 }
 
 HashSetLabelIterator* steiner::HashSetLabelStore::findLabels(node_id node, const dynamic_bitset<>* target) {

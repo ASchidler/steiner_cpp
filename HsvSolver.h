@@ -69,15 +69,16 @@ namespace steiner {
         struct CostInfo {
             CostInfo(unsigned int cost, Predecessor prev, bool merge) : cost(cost), prev(prev), merge(merge) {
             }
-            cost_id cost;
-            Predecessor prev;
-            bool merge;
+            CostInfo() = default;
+            cost_id cost = 0;
+            Predecessor prev = Predecessor();
+            bool merge = false;
         };
 
         struct PruneBoundEntry {
             PruneBoundEntry(cost_id cost, dynamic_bitset<> label) : cost(cost), label(std::move(label)) {
             }
-            node_id cost;
+            node_id cost = 0;
             dynamic_bitset<> label;
         };
 

@@ -21,7 +21,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     int i = 0;
     for(auto t:*instance->getTerminals()) {
         if (t != root_) {
-            tmap_.insert(pair<node_id, node_id>(t, i));
+            tmap_.emplace(t, i);
             terminals_.insert(t);
             i++;
         }
@@ -44,7 +44,7 @@ SteinerTree* steiner::HsvSolver::solve() {
         auto entry = QueueEntry(0, elem, label);
         auto pred = Predecessor();
         pred.label = nullptr;
-        costs_[elem].insert(pair<dynamic_bitset<>, CostInfo>(label, CostInfo(0, pred, true)));
+        costs_[elem].emplace(label, CostInfo(0, pred, true));
         queue_.push(entry);
     }
 
@@ -52,7 +52,7 @@ SteinerTree* steiner::HsvSolver::solve() {
         auto entry = queue_.top();
         queue_.pop();
 
-        auto cost = costs_[entry.node].find(entry.label)->second.cost;
+        auto cost = costs_[entry.node][entry.label].cost;
         if (entry.node == root_ ) {
             if((~entry.label).none()) {
                 return backTrack();
@@ -70,9 +70,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
     // TODO: Are these getter calls expensive? Maybe retrieve graph once..
     for (auto nb: instance_->getGraph()->nb[n]) {
         auto newCost = cost + nb.second;
-        // TODO: Maybe do not copy label all the time? If labels are stored centrally once created, pointers could be
-        // used. That would also simplify hashing. But how to find labels in a central store?, use a central HashSet?
-        // Could be put into the central label store, as each label goes through there...
+        // TODO: Maybe do not copy label all the time?
 
         auto nbc = costs_[nb.first].find(*label);
         if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
@@ -80,7 +78,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
                 if (nbc == costs_[nb.first].end()) {
                     auto pred = Predecessor();
                     pred.node = n;
-                    costs_[nb.first].insert(pair<dynamic_bitset<>, CostInfo>(*label, CostInfo(newCost, pred, false)));
+                    costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(*label), std::forward_as_tuple(newCost, pred, false));
                 } else {
                     nbc->second.cost = newCost;
                     nbc->second.prev.node = n;
@@ -96,7 +94,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
     auto other_set = store_->findLabels(n, label);
     for (; other_set->hasNext(); ++(*other_set)) {
         auto combined = *label | **other_set;
-        auto newCost = cost + costs_[n].find(**other_set)->second.cost;
+        auto newCost = cost + costs_[n][**other_set].cost;
 
         auto nbc = costs_[n].find(combined);
         if (nbc == costs_[n].end() || nbc->second.cost > newCost) {
@@ -104,7 +102,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
                 if (nbc == costs_[n].end()) {
                     auto pred = Predecessor();
                     pred.label = &(**other_set);
-                    costs_[n].insert(pair<dynamic_bitset<>, CostInfo>(combined, CostInfo(newCost, pred, true)));
+                    costs_[n].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true));
                 } else {
                     nbc->second.merge = true;
                     nbc->second.cost = newCost;
@@ -203,7 +201,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
             }
         }
         // Cache value
-        pruneDistCache.insert(pair<dynamic_bitset<>, PruneDistEntry>(*label, entry));
+        pruneDistCache.emplace(*label, entry);
 
         // Check if better
         if (entry.cost < dist_c) {
@@ -215,9 +213,9 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     // Store in cache
     auto existing = pruneBoundCache.find(*label);
     if (existing == pruneBoundCache.end()) {
-        PruneBoundEntry newEntry(dist_c + cost, dynamic_bitset<>(nTerminals_));
-        newEntry.label.set(tmap_[dist_t]);
-        pruneBoundCache.insert(pair<dynamic_bitset<>, PruneBoundEntry>(*label, newEntry));
+        auto newBs = dynamic_bitset<>(nTerminals_);
+        newBs.set(tmap_[dist_t]);
+        pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*label), forward_as_tuple(dist_c + cost, newBs));
     } else {
         existing->second.cost = dist_c + cost;
         existing->second.label.reset();
@@ -237,11 +235,9 @@ unsigned int HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dyna
     if ((*label1 & result2->second.label).any() && (*label2 & result1->second.label).any())
         return MAXCOST;
 
-    // TODO: These many dynamic set creations are probably not very efficient
     auto cost = result1->second.cost + result2->second.cost;
     auto s = (result1->second.label | result2->second.label) & ~(*label1 | *label2);
-    PruneBoundEntry entry(cost, s);
-    pruneBoundCache.insert(pair<dynamic_bitset<>, PruneBoundEntry>(*combined, entry));
+    pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*combined), std::forward_as_tuple(cost, s));
 
     return cost;
 }

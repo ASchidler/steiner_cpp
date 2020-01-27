@@ -77,13 +77,13 @@ void steiner::Graph::findDistances(node_id u) {
         q.pop();
 
         // already visited...
-        if(visited.find(elem.node) != visited.end())
+        if(visited.count(elem.node) > 0)
             continue;
 
         visited.insert(elem.node);
 
         for (auto v: nb[elem.node]) {
-            if (visited.find(v.first) == visited.end() && distances_[u][v.first] > elem.cost + v.second) {
+            if (visited.count(v.first) == 0 && distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
                 q.emplace(v.first, elem.cost + v.second);
             }
