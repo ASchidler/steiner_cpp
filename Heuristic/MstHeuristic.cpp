@@ -23,7 +23,7 @@ cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
     // two closest distances between n and terminals outside the current sub-solution
     auto closest = (NodeWithCost*) instance_->getClosestTerminals(n);
     for(int j=0; j < 2 ;) {
-        if(closest->node == root_ || !label->test(tmap_->at(closest->node))) {
+        if(closest->node == root_ || !label->test(closest->node)) {
             cost += closest->cost;
             j++;
         }
@@ -37,8 +37,8 @@ cost_id MstHeuristic::calcMst(const dynamic_bitset<> *label) {
     // Find terminals outside sub-solution
     auto ts = std::vector<node_id>();
     ts.push_back(root_);
-    for (auto t: *terminals_) {
-        if(!label->test((*tmap_)[t])) {
+    for (node_id t=0; t < nTerminals_; t++) {
+        if(!label->test(t)) {
             ts.push_back(t);
         }
     }

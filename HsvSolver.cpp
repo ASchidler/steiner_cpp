@@ -18,33 +18,40 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         root_ = *instance_->getTerminals()->begin();
     }
 
-    int i = 0;
+    // Put terminals in front
+    nTerminals_ = 0;
     for(auto t:*instance->getTerminals()) {
         if (t != root_) {
-            tmap_.emplace(t, i);
-            terminals_.insert(t);
-            i++;
+            instance_->getGraph()->switchVertices(t, nTerminals_);
+            nTerminals_++;
         }
     }
-    nTerminals_ = terminals_.size();
-    //heuristic_ = new MstHeuristic(instance, &tmap_, &terminals_, root_);
-    heuristic_ = new DualAscentHeuristic(instance, &tmap_, &terminals_, root_);
+    instance->getGraph()->switchVertices(root_,  nTerminals_);
+    root_ = nTerminals_;
+    instance_->getTerminals()->clear();
+    instance_->getTerminals()->emplace(root_);
+    for(int t=0; t < nTerminals_; t++)
+        instance_->getTerminals()->emplace(t);
+    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_);
+    // Init distances
+    instance_->getClosestTerminals(0);
 }
 
 SteinerTree* steiner::HsvSolver::solve() {
     // Special case, only root
-    if (terminals_.empty()) {
+    if (nTerminals_ == 0) {
         auto result = new SteinerTree(root_);
         return result;
     }
 
-    for(const auto& elem: this->terminals_) {
+    for(int t=0; t < nTerminals_; t++) {
         auto label = dynamic_bitset<>(nTerminals_);
-        label.set(tmap_[elem]);
-        auto entry = QueueEntry(0, elem, label);
+        label.set(t);
+        auto entry = QueueEntry(0, t, label);
         auto pred = Predecessor();
         pred.label = nullptr;
-        costs_[elem].emplace(label, CostInfo(0, pred, true));
+        costs_[t].emplace(label, CostInfo(0, pred, true));
         queue_.push(entry);
     }
 
@@ -144,23 +151,21 @@ bool HsvSolver::prune(node_id n, cost_id cost, const dynamic_bitset<> *label1, c
 
 void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<> *label) {
     // find minimum distance between n and any terminal not in the label (including root)
-    auto dist_c = instance_->getGraph()->getDistances()[root_][n];
-    auto dist_t = root_;
+    auto dist_c = MAXCOST;
+    auto dist_t = 0;
 
     // distance to terminals outside the label
-    if (! label->all()) {
-        // Since we know there is at least one bit unset, this will terminate.
-        auto closest = instance_->getClosestTerminals(n);
-        while (true) {
-            if (!(label->test(tmap_[closest->node]))) {
-                if (dist_c > closest->cost) {
-                    dist_c = closest->cost;
-                    dist_t = closest->node;
-                }
-                break;
+    // Since we know there is at least the root outisde
+    auto closest = instance_->getClosestTerminals(n);
+    while (true) {
+        if (closest->node == root_ || !(label->test(closest->node))) {
+            if (dist_c > closest->cost) {
+                dist_c = closest->cost;
+                dist_t = closest->node;
             }
-            closest++;
+            break;
         }
+        closest++;
     }
 
     // Check if we have a cached entry
@@ -175,28 +180,19 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     } else {
         PruneDistEntry entry(MAXCOST, 0);
 
-        for (auto t: terminals_) {
+        for(int t=0; t < nTerminals_; t++){
             // Terminal is in the label
-            if (label->test(tmap_[t])) {
-                // Test t to root
-                auto dist = instance_->getGraph()->getDistances()[t][root_];
-                if (dist < entry.cost) {
-                    entry.cost = dist;
-                    entry.terminal = root_;
-                }
-
-                if (! label->all()) {
-                    auto closest = instance_->getClosestTerminals(t);
-                    while (true) {
-                        if (!(label->test(tmap_[closest->node]))) {
-                            if (entry.cost > closest->cost) {
-                                entry.cost = closest->cost;
-                                entry.terminal = closest->node;
-                            }
-                            break;
+            if (label->test(t)) {
+                auto closest2 = instance_->getClosestTerminals(t);
+                while (true) {
+                    if (closest2->node == root_ || !(label->test(closest2->node))) {
+                        if (entry.cost > closest2->cost) {
+                            entry.cost = closest2->cost;
+                            entry.terminal = closest2->node;
                         }
-                        closest++;
+                        break;
                     }
+                    closest2++;
                 }
             }
         }
@@ -213,13 +209,13 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     // Store in cache
     auto existing = pruneBoundCache.find(*label);
     if (existing == pruneBoundCache.end()) {
-        auto newBs = dynamic_bitset<>(nTerminals_);
-        newBs.set(tmap_[dist_t]);
+        auto newBs = dynamic_bitset<>(nTerminals_ + 1); // +1 as this may include the root
+        newBs.set(dist_t);
         pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*label), forward_as_tuple(dist_c + cost, newBs));
     } else {
         existing->second.cost = dist_c + cost;
         existing->second.label.reset();
-        existing->second.label.set(tmap_[dist_t]);
+        existing->second.label.set(dist_t);
     }
 }
 
@@ -231,12 +227,16 @@ unsigned int HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dyna
     if (result2 == pruneBoundCache.end())
         return MAXCOST;
 
+    auto l1 = *label1; // Add room for root
+    auto l2 = *label2; // Add room for root
+    l1.push_back(false);
+    l2.push_back(false);
     // At least one set must be disjoint...
-    if ((*label1 & result2->second.label).any() && (*label2 & result1->second.label).any())
+    if ((l1 & result2->second.label).any() && (l2 & result1->second.label).any())
         return MAXCOST;
 
     auto cost = result1->second.cost + result2->second.cost;
-    auto s = (result1->second.label | result2->second.label) & ~(*label1 | *label2);
+    auto s = (result1->second.label | result2->second.label) & ~(l1 | l2);
     pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*combined), std::forward_as_tuple(cost, s));
 
     return cost;
@@ -244,7 +244,7 @@ unsigned int HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dyna
 
 SteinerTree *HsvSolver::backTrack() {
     auto result = new SteinerTree(root_);
-    auto fullLabel = dynamic_bitset<>(terminals_.size());
+    auto fullLabel = dynamic_bitset<>(nTerminals_);
     fullLabel.flip();
     backTrackSub(root_, &fullLabel, result);
 

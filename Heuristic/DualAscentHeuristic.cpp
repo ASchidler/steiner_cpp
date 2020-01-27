@@ -29,8 +29,8 @@ cost_id* DualAscentHeuristic::precalculate(const dynamic_bitset<> *label) {
 
     unordered_set<node_id> ts;
     ts.insert(root_);
-    for (auto t: *terminals_) {
-        if (! label->test(tmap_->at(t))) {
+    for (node_id t=0; t < nTerminals_; t++) {
+        if (! label->test(t)) {
             ts.insert(t);
         }
     }

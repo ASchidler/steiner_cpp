@@ -37,8 +37,6 @@ namespace steiner {
         SteinerInstance *instance_;
         LabelStore* store_;
         node_id root_;
-        unordered_map<node_id, node_id> tmap_;
-        unordered_set<node_id> terminals_;
         node_id nTerminals_;
 
         struct QueueEntry {

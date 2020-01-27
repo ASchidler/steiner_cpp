@@ -24,10 +24,6 @@ namespace steiner {
             return &(this->terminals_);
         }
 
-        NodeWithCost* getClosestTerminals(node_id n) {
-            return closest_terminals_[n];
-        }
-
         ~SteinerInstance() {
             for(int n=0; n < g_->getNumNodes(); n++) {
                 delete[] closest_terminals_[n];
@@ -39,11 +35,11 @@ namespace steiner {
         void removeNode(node_id u);
         void removeEdge(node_id u, node_id v);
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
-
+        NodeWithCost* getClosestTerminals(node_id n);
     private:
         Graph *g_;
         unordered_set<node_id> terminals_;
-        NodeWithCost** closest_terminals_;
+        NodeWithCost** closest_terminals_ = nullptr;
 
 
     };

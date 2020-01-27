@@ -133,3 +133,39 @@ void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>*
 
     removeNode(remove);
 }
+
+void Graph::switchVertices(node_id n1, node_id n2) {
+    auto on1 = nodeReverseMap_[n1];
+    auto on2 = nodeReverseMap_[n2];
+    nodeMap_[on1] = n2;
+    nodeMap_[on2] = n1;
+    nodeReverseMap_[n1] = on2;
+    nodeReverseMap_[n2] = on1;
+
+    auto tmp = nb[n1];
+    nb[n1] = nb[n2];
+    nb[n2] = tmp;
+
+    for(auto v: nodes_) {
+        if (v != n1 && v != n2) {
+            cost_id n1c = 0;
+            cost_id n2c = 0;
+            for (auto cb : nb[v]) {
+                if (cb.first == n1) {
+                    n1c = cb.second;
+                }
+                else if (cb.first == n2) {
+                    n2c = cb.second;
+                }
+            }
+            if (n1c > 0) {
+                nb[v].erase(n1);
+                nb[v].emplace(n2, n1c);
+            }
+            if (n2c > 0) {
+                nb[v].erase(n2);
+                nb[v].emplace(n1, n2c);
+            }
+        }
+    }
+}

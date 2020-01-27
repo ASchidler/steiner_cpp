@@ -83,7 +83,7 @@ namespace steiner {
         void removeEdge(node_id u, node_id v);
         // TODO: This is really ugly (result)
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
-
+        void switchVertices(node_id n1, node_id n2);
         Graph* copy(bool copyMapping);
     private:
         unordered_set<node_id> nodes_;
