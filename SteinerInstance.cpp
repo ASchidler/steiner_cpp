@@ -6,9 +6,12 @@
 
 using namespace steiner;
 
-SteinerInstance::SteinerInstance(Graph *g, unordered_set<node_id> *terminals) : g_(g) {
-    for (auto t: *terminals) {
-        terminals_.insert(g->getNodeMapping(t));
+SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
+    // Move terminals to the front
+    nTerminals = 0;
+    for (auto cT : *terminals) {
+        g_->switchVertices(g_->getNodeMapping(cT), nTerminals);
+        nTerminals++;
     }
 }
 
@@ -31,22 +34,20 @@ bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     if (closest_terminals_ == nullptr) {
         // Find distances from terminals to other nodes.
-        for (auto t: terminals_) {
+        for(node_id t=0; t < nTerminals; t++)
             g_->findDistances(t);
-        }
+
         // Now calculate the closest terminals
         closest_terminals_ = new NodeWithCost *[g_->getNumNodes()];
 
         for (int n = 0; n < g_->getNumNodes(); n++) {
-            closest_terminals_[n] = new NodeWithCost[terminals_.size()];
+            closest_terminals_[n] = new NodeWithCost[nTerminals];
 
-            int i = 0;
-            for (auto t: terminals_) {
-                closest_terminals_[n][i].node = t;
-                closest_terminals_[n][i].cost = g_->getDistances()[t][n];
-                i++;
+            for(node_id t=0; t < nTerminals; t++) {
+                closest_terminals_[n][t].node = t;
+                closest_terminals_[n][t].cost = g_->getDistances()[t][n];
             }
-            std::sort(closest_terminals_[n], closest_terminals_[n] + terminals_.size(), greater<NodeWithCost>());
+            std::sort(closest_terminals_[n], closest_terminals_[n] + nTerminals, greater<NodeWithCost>());
         }
     }
     return closest_terminals_[v];

@@ -37,7 +37,8 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unorder
         for(node_id i=0; i < nNodes; i++)
             cut[i] = false;
 
-        vector<Edge> edges; // TODO: Reserve with the weight may improve here.
+        vector<Edge> edges;
+        edges.reserve(elem.cost * 1.5);
         auto minCost = findCut(dg, elem.node, active, &edges, cut, nTerminals);
 
         // This is not necessary for correctness, but this ensures that the estimated weight is about right

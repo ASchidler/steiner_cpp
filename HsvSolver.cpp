@@ -9,29 +9,20 @@ using namespace boost;
 
 steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getNumNodes()];
-    store_ = new HashSetLabelStore(instance_->getTerminals()->size() - 1, instance->getGraph()->getNumNodes());
+    store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getNumNodes());
 
     // TODO: Make this configurable?
     if (DualAscent::hasRun) {
         root_ = DualAscent::bestRoot;
     } else {
-        root_ = *instance_->getTerminals()->begin();
+        root_ = instance_->getNumTerminals() - 1;
     }
 
-    // Put terminals in front
-    nTerminals_ = 0;
-    for(auto t:*instance->getTerminals()) {
-        if (t != root_) {
-            instance_->getGraph()->switchVertices(t, nTerminals_);
-            nTerminals_++;
-        }
-    }
-    instance->getGraph()->switchVertices(root_,  nTerminals_);
+    // Move root to the back
+    nTerminals_ = instance_->getNumTerminals() - 1;
+    instance_->getGraph()->switchVertices(root_, nTerminals_);
     root_ = nTerminals_;
-    instance_->getTerminals()->clear();
-    instance_->getTerminals()->emplace(root_);
-    for(int t=0; t < nTerminals_; t++)
-        instance_->getTerminals()->emplace(t);
+
     //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
     heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getNumNodes());
     // Init distances
@@ -181,7 +172,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
         PruneDistEntry entry(MAXCOST, 0);
 
         for(int t=0; t < nTerminals_; t++){
-            // Terminal is in the label
+            // Terminal is in the label, root guaranteed to not be...
             if (label->test(t)) {
                 auto closest2 = instance_->getClosestTerminals(t);
                 while (true) {

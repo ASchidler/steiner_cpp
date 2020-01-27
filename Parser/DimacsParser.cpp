@@ -13,7 +13,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
 
     fl.open(file, ios::in);
     auto* g = new Graph();
-    auto ts = unordered_set<node_id>();
+    auto ts = vector<node_id>();
     cost_id lineResult[3];
 
     //TODO: Error Handling
@@ -50,7 +50,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                     }
                 }
                 if (is_terminal) {
-                    ts.insert((node_id)lineResult[0]);
+                    ts.emplace_back((node_id)lineResult[0]);
                 } else if (is_edge) {
                     g->addEdge((node_id)lineResult[0], (node_id)lineResult[1], lineResult[2]);
                 }

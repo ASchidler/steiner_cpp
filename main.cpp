@@ -26,25 +26,17 @@ int main(int argc, char* argv[]) {
 
     auto parser = DimacsParser();
     SteinerInstance* s = parser.parse(filename);
-    int nT = 0;
-    for (auto cT : *s->getTerminals()) {
-        s->getGraph()->switchVertices(cT, nT);
-        nT++;
-    }
-    s->getTerminals()->clear();
-    nT--;
-    for(; nT >= 0; nT--) {
-        s->getTerminals()->insert(nT);
+
+    auto ts = unordered_set<node_id>();
+    for (int i=0; i < s->getNumTerminals(); i++) {
+        ts.emplace(i);
     }
 
-    int i = 0;
-    for(auto t: *s->getTerminals()) {
-        auto result = DualAscent::calculate(s->getGraph(), t, s->getTerminals(), s->getTerminals()->size(), s->getGraph()->getNumNodes());
+    for (int i=0; i < s->getNumTerminals() && i < 2; i++) {
+        // Receive label for heuristics instead of list of terminals...
+        auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getNumNodes());
         cout << result->bound << endl;
         delete result;
-        i++;
-        if (i >= 0)
-            break;
     }
     cout << DualAscent::bestResult << endl;
 

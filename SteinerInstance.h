@@ -14,14 +14,10 @@ using namespace std;
 namespace steiner {
     class SteinerInstance {
     public:
-        SteinerInstance(Graph *g, unordered_set<node_id> *terminals);
+        SteinerInstance(Graph *g, vector<node_id> *terminals);
 
         Graph *getGraph() {
             return this->g_;
-        }
-
-        unordered_set<node_id> *getTerminals() {
-            return &(this->terminals_);
         }
 
         ~SteinerInstance() {
@@ -31,6 +27,10 @@ namespace steiner {
             delete[] closest_terminals_;
         }
 
+        node_id getNumTerminals() {
+            return nTerminals;
+        }
+
         bool addEdge(node_id u, node_id v, cost_id c);
         void removeNode(node_id u);
         void removeEdge(node_id u, node_id v);
@@ -38,9 +38,8 @@ namespace steiner {
         NodeWithCost* getClosestTerminals(node_id n);
     private:
         Graph *g_;
-        unordered_set<node_id> terminals_;
         NodeWithCost** closest_terminals_ = nullptr;
-
+        node_id nTerminals = 0;
 
     };
 

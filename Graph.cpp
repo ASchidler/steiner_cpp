@@ -136,6 +136,9 @@ void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>*
 }
 
 void Graph::switchVertices(node_id n1, node_id n2) {
+    if (n1 == n2)
+        return;
+
     auto on1 = nodeReverseMap_[n1];
     auto on2 = nodeReverseMap_[n2];
     nodeMap_[on1] = n2;
@@ -143,28 +146,33 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     nodeReverseMap_[n1] = on2;
     nodeReverseMap_[n2] = on1;
 
+    // Relabel edges
+    for(auto v: nb[n1]) {
+        auto n1c = nb[v.first][n1];
+        // Do not overwrite value
+        if (nb[v.first].count(n2) > 0) {
+            nb[v.first][n1] = nb[v.first][n2];
+            nb[v.first][n2] = n1c;
+        } else {
+            nb[v.first].erase(n1);
+            nb[v.first].emplace(n2, n1c);
+        }
+    }
+
+    for(auto v: nb[n2]) {
+        auto n2c = nb[v.first][n2];
+        // Do not overwrite value
+        if (nb[v.first].count(n1) > 0) {
+            nb[v.first][n2] = nb[v.first][n1];
+            nb[v.first][n1] = n2c;
+        } else {
+            nb[v.first].erase(n2);
+            nb[v.first].emplace(n1, n2c);
+        }
+    }
+
     auto tmp = nb[n1];
     nb[n1] = nb[n2];
     nb[n2] = tmp;
 
-    for(auto v: nodes_) {
-        cost_id n1c = 0;
-        cost_id n2c = 0;
-        for (auto cb : nb[v]) {
-            if (cb.first == n1) {
-                n1c = cb.second;
-            }
-            else if (cb.first == n2) {
-                n2c = cb.second;
-            }
-        }
-        if (n1c > 0) {
-            nb[v].erase(n1);
-            nb[v].emplace(n2, n1c);
-        }
-        if (n2c > 0) {
-            nb[v].erase(n2);
-            nb[v].emplace(n1, n2c);
-        }
-    }
 }
