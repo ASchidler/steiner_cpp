@@ -60,15 +60,17 @@ void steiner::Graph::findDistances(node_id u) {
     if (distances_[u] == nullptr) {
         distances_[u] = new cost_id[getNumNodes()];
     }
+    node_id visited[getNumNodes()];
     for(size_t i=0; i < getNumNodes(); i++) {
         distances_[u][i] = MAXCOST;
+        visited[i] = false;
     }
 
     // We could initialize with other known distances...
 
     // Dijkstra
     auto q = priority_queue<NodeWithCost>();
-    auto visited = unordered_set<node_id>();
+
     q.emplace(u, 0);
     distances_[u][u] = 0;
 
@@ -77,13 +79,13 @@ void steiner::Graph::findDistances(node_id u) {
         q.pop();
 
         // already visited...
-        if(visited.count(elem.node) > 0)
+        if(visited[elem.node])
             continue;
 
-        visited.insert(elem.node);
+        visited[elem.node] = true;
 
         for (auto v: nb[elem.node]) {
-            if (visited.count(v.first) == 0 && distances_[u][v.first] > elem.cost + v.second) {
+            if (!visited[v.first] && distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
                 q.emplace(v.first, elem.cost + v.second);
             }
@@ -106,7 +108,6 @@ steiner::Graph *steiner::Graph::copy(bool copyMapping) {
 
     return cp;
 }
-
 
 void steiner::Graph::removeNode(node_id u) {
     for(auto elem: nb[u]) {
@@ -147,25 +148,23 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     nb[n2] = tmp;
 
     for(auto v: nodes_) {
-        if (v != n1 && v != n2) {
-            cost_id n1c = 0;
-            cost_id n2c = 0;
-            for (auto cb : nb[v]) {
-                if (cb.first == n1) {
-                    n1c = cb.second;
-                }
-                else if (cb.first == n2) {
-                    n2c = cb.second;
-                }
+        cost_id n1c = 0;
+        cost_id n2c = 0;
+        for (auto cb : nb[v]) {
+            if (cb.first == n1) {
+                n1c = cb.second;
             }
-            if (n1c > 0) {
-                nb[v].erase(n1);
-                nb[v].emplace(n2, n1c);
+            else if (cb.first == n2) {
+                n2c = cb.second;
             }
-            if (n2c > 0) {
-                nb[v].erase(n2);
-                nb[v].emplace(n1, n2c);
-            }
+        }
+        if (n1c > 0) {
+            nb[v].erase(n1);
+            nb[v].emplace(n2, n1c);
+        }
+        if (n2c > 0) {
+            nb[v].erase(n2);
+            nb[v].emplace(n1, n2c);
         }
     }
 }

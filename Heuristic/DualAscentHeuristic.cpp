@@ -35,7 +35,7 @@ cost_id* DualAscentHeuristic::precalculate(const dynamic_bitset<> *label) {
         }
     }
 
-    auto result = DualAscent::calculate(instance_->getGraph(), root_, &ts);
+    auto result = DualAscent::calculate(instance_->getGraph(), root_, &ts, nTerminals_, nNodes_);
     result->g->findDistances(root_);
     auto nodeBounds = new cost_id[instance_->getGraph()->getNumNodes()];
     for(int i=0; i < instance_->getGraph()->getNumNodes(); i++) {

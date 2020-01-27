@@ -25,9 +25,8 @@ namespace steiner {
 
     class DualAscent {
     public:
-        static DualAscentResult* calculate(Graph* g, node_id root, unordered_set<node_id>* ts);
-        inline static cost_id findCut(Graph* dg, node_id n, unordered_set<node_id>* active, vector<Edge>* edges,
-                unordered_set<node_id>* cut);
+        static DualAscentResult* calculate(Graph* g, node_id root, unordered_set<node_id>* ts, node_id nTerminals, node_id nNodes);
+        inline static cost_id findCut(Graph *dg, node_id n, bool* active, vector<Edge> *edges, bool* cut, node_id nTerminals);
         static bool hasRun;
         static node_id bestRoot;
         static cost_id bestResult;

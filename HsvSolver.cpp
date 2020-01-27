@@ -33,7 +33,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     for(int t=0; t < nTerminals_; t++)
         instance_->getTerminals()->emplace(t);
     //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_);
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getNumNodes());
     // Init distances
     instance_->getClosestTerminals(0);
 }
@@ -61,7 +61,7 @@ SteinerTree* steiner::HsvSolver::solve() {
 
         auto cost = costs_[entry.node][entry.label].cost;
         if (entry.node == root_ ) {
-            if((~entry.label).none()) {
+            if(entry.label.all()) {
                 return backTrack();
             }
         }

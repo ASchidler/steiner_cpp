@@ -26,9 +26,20 @@ int main(int argc, char* argv[]) {
 
     auto parser = DimacsParser();
     SteinerInstance* s = parser.parse(filename);
+    int nT = 0;
+    for (auto cT : *s->getTerminals()) {
+        s->getGraph()->switchVertices(cT, nT);
+        nT++;
+    }
+    s->getTerminals()->clear();
+    nT--;
+    for(; nT >= 0; nT--) {
+        s->getTerminals()->insert(nT);
+    }
+
     int i = 0;
     for(auto t: *s->getTerminals()) {
-        auto result = DualAscent::calculate(s->getGraph(), t, s->getTerminals());
+        auto result = DualAscent::calculate(s->getGraph(), t, s->getTerminals(), s->getTerminals()->size(), s->getGraph()->getNumNodes());
         cout << result->bound << endl;
         delete result;
         i++;
