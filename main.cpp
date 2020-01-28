@@ -12,6 +12,8 @@
 #include "Reductions/DegreeReduction.h"
 #include "Algorithms/ShortestPath.h"
 #include "Reductions/LongEdgeReduction.h"
+#include "Reductions/SdcReduction.h"
+
 
 using namespace steiner;
 
@@ -52,6 +54,7 @@ int main(int argc, char* argv[]) {
     auto reductions = vector<Reduction*>();
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new LongEdgeReduction(s, true, 100));
+    reductions.push_back(new SdcReduction(s, 100));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
 
