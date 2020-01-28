@@ -52,7 +52,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                 if (is_terminal) {
                     ts.emplace_back((node_id)lineResult[0]);
                 } else if (is_edge) {
-                    g->addEdge((node_id)lineResult[0], (node_id)lineResult[1], lineResult[2]);
+                    g->addMappedEdge((node_id) lineResult[0], (node_id) lineResult[1], lineResult[2]);
                 }
             }
         }

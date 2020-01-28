@@ -225,7 +225,7 @@ bool Graph::isConnected() {
             if (! seen[v.first]) {
                 seen[v.first] = true;
                 cnt++;
-                q.push_back(v.first);
+                q.emplace_back(v.first);
             }
         }
     }

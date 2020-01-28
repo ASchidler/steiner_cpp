@@ -23,6 +23,13 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     instance_->getGraph()->switchVertices(root_, nTerminals_);
     root_ = nTerminals_;
 
+    for(auto u: *instance_->getGraph()->getNodes()) {
+        for(auto v: instance_->getGraph()-> nb[u]) {
+            if (instance_->getGraph()->nb[v.first][u] != v.second)
+                cout << "Error " << u << " " << v.first << endl;
+        }
+    }
+
     //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
     heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
     // Init distances
@@ -146,8 +153,8 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     auto dist_c = MAXCOST;
     auto dist_t = 0;
 
-    // distance to terminals outside the label
-    // Since we know there is at least the root outisde
+    // Distance to terminals outside the label
+    // Since we know there is at least the root outside
     auto closest = instance_->getClosestTerminals(n);
     while (true) {
         if (closest->node == root_ || !(label->test(closest->node))) {
@@ -257,8 +264,7 @@ void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTr
     } else {
         auto n2 = c.prev.node;
         auto cn = instance_->getGraph()->nb[n][n2];
-        result->edges.emplace_back(n, n2, cn);
-        result->cost += cn;
+        result->addEdge(n, n2, cn);
         backTrackSub(n2, label, result);
     }
 }

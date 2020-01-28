@@ -23,14 +23,27 @@ void SteinerInstance::removeEdge(node_id u, node_id v) {
     g_->removeEdge(u, v);
 }
 
-void SteinerInstance::removeNode(node_id u) {
+node_id SteinerInstance::removeNode_(node_id u) {
     if (u < nTerminals) {
         nTerminals--;
-        if (u < nTerminals)
+        if (u < nTerminals) { // Could be equal now...
             g_->switchVertices(u, nTerminals);
+            u = nTerminals;
+        }
     }
+    return u;
+}
 
-    g_->removeNode(u);
+unordered_set<node_id>::iterator SteinerInstance::removeNode(node_id u) {
+    u = removeNode_(u);
+    return g_->removeNode(g_->getNodes()->find(u));
+}
+unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_id>::iterator u) {
+    auto n = removeNode_(*u);
+    if (n == *u)
+        return g_->removeNode(u);
+    else
+        return g_->removeNode(g_->getNodes()->find(n));
 }
 
 bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
@@ -58,3 +71,5 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     }
     return closest_terminals_[v];
 }
+
+

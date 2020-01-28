@@ -27,10 +27,12 @@ namespace steiner {
         }
 
         bool addEdge(node_id u, node_id v, cost_id c);
-        void removeNode(node_id u);
+        unordered_set<node_id>::iterator removeNode(node_id u);
+        unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
+        enum ValueState { lower, exact, higher };
 
         Graph *getGraph() {
             return this->g_;
@@ -39,7 +41,7 @@ namespace steiner {
         Graph *g_;
         NodeWithCost** closest_terminals_ = nullptr;
         node_id nTerminals = 0;
-
+        inline node_id removeNode_(node_id u);
     };
 
     struct MergedEdges {

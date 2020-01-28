@@ -8,6 +8,8 @@
 #include <fstream>
 #include "Parser/DimacsParser.h"
 #include "Algorithms/DualAscent.h"
+#include "Reductions/Reducer.h"
+#include "Reductions/DegreeReduction.h"
 
 using namespace steiner;
 
@@ -32,17 +34,34 @@ int main(int argc, char* argv[]) {
         ts.emplace(i);
     }
 
-    for (int i=0; i < s->getNumTerminals() && i < 2; i++) {
-        // Receive label for heuristics instead of list of terminals...
-        auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getNumNodes());
-        cout << result->bound << endl;
+    for (int i=0; i < s->getNumTerminals() && i < 10; i++) {
+        //TODO: Receive label for heuristics instead of list of terminals...
+        auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
     }
     cout << DualAscent::bestResult << endl;
 
+    if (! s->getGraph()->isConnected())
+        cout << "Not Connected (start)" << endl;
+
+    auto reductions = vector<Reduction*>();
+    reductions.push_back(new DegreeReduction(s, false));
+    auto reducer = Reducer(reductions, s);
+    reducer.reduce();
+
+    if (! s->getGraph()->isConnected())
+        cout << "Not Connected (after reduction)" << endl;
+
+    cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
     auto solver = HsvSolver(s);
     auto tree = solver.solve();
-    cout << tree->cost << endl;
+    reducer.unreduce(tree);
+    cout << tree->getCost() << endl;
     delete s;
+
+
+    for(auto r: reductions)
+        delete r;
+
     return 0;
 }

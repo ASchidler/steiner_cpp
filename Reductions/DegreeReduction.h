@@ -9,13 +9,17 @@
 #include "../Graph.h"
 
 namespace steiner {
-    class DegreeReduction : Reduction {
+    class DegreeReduction : public Reduction {
     public:
-        node_id reduce(SteinerInstance *instance, node_id currCount, node_id prevCount) override;
-        void postProcess(Graph *solution) override;
+        explicit DegreeReduction(SteinerInstance* instance, bool contractFirst) : Reduction(instance), ran_(contractFirst) {
+
+        }
+        node_id reduce(node_id currCount, node_id prevCount) override;
+        string getName() override {
+            return "Degree Reduction";
+        }
     private:
-        bool ran_ = false;
-        vector<Edge> contracted;
+        bool ran_;
     };
 }
 
