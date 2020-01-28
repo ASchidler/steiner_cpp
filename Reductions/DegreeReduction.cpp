@@ -27,7 +27,7 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 else if (ran_) { // Terminal
                     auto nb = instance->getGraph()->nb[*n].begin();
                     preselect(*n, nb->first, nb->second);
-                    instance->getGraph()->switchVertices(*n, nb->first);
+                    instance->moveTerminal(*n, nb->first);
                     n = instance->removeNode(nb->first);
                     ts++;
                     track++;
@@ -73,6 +73,11 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 ++n;
             }
         }
+    }
+    if (ts > 0) {
+        instance->setDistanceState(SteinerInstance::higher);
+        instance->setSteinerDistanceState(SteinerInstance::higher);
+        instance->setApproximationState(SteinerInstance::higher);
     }
     ran_ = true;
     return track;

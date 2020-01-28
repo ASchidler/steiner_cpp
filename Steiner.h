@@ -45,5 +45,23 @@ namespace std {
     };
 };
 
-// TODO: Add typedefs for node identifier, costs, etc. to quickly change from int64 to 32 etc.
+namespace steiner {
+    struct DoubleCostEntry {
+        DoubleCostEntry(node_id node, cost_id totalCost, cost_id edgeCost) : node(node), totalCost(totalCost), edgeCost(edgeCost) {
+        }
+
+        node_id node;
+        cost_id totalCost;
+        cost_id edgeCost;
+
+        // TODO: These are actually the wrong way so that priority queues are min queues...
+        bool operator<(const DoubleCostEntry& p2) const {
+            return totalCost > p2.totalCost ||
+                   // Choosing shorter edges over longer ones often provides better results
+                   (totalCost == p2.totalCost && edgeCost < p2.edgeCost) ||
+                   // This is just a tie breaker
+                   (totalCost == p2.totalCost && edgeCost == p2.edgeCost && node < p2.node);
+        }
+    };
+}
 #endif //STEINER_STEINER_H

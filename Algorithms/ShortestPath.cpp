@@ -19,7 +19,7 @@ steiner::SteinerTree *steiner::ShortestPath::calculate(node_id root, Graph* g, n
     bool added[nNodes];
     node_id prev[nNodes];
 
-    priority_queue<SPHEntry> q;
+    priority_queue<DoubleCostEntry> q;
 
     for(int i=0; i < nTerminals; i++)
         remaining[i] = true;

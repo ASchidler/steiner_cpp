@@ -8,6 +8,7 @@ using namespace std;
 using namespace boost;
 
 steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
+    instance->requestDistanceState(SteinerInstance::exact);
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getMaxNode()];
     store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getMaxNode());
 
@@ -30,10 +31,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
 
-    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
-    // Init distances
-    instance_->getClosestTerminals(0);
+    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 }
 
 SteinerTree* steiner::HsvSolver::solve() {

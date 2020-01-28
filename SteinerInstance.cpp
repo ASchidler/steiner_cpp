@@ -13,9 +13,11 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
         g_->switchVertices(g_->getNodeMapping(cT), nTerminals);
         nTerminals++;
     }
+    maxTerminals = nTerminals;
 }
 
 unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+    remove = *removeNode(remove);
     return g_->contractEdge(target, remove, result);
 }
 
@@ -51,15 +53,25 @@ bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
 }
 
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
-    if (closest_terminals_ == nullptr) {
+    // TODO: Is this inefficient for just getting the closest terminals over and over in the solver?
+    if (closest_terminals_ == nullptr || distanceState_ == invalid) {
+        g_->discardDistances();
+        distanceState_ = exact;
+
+        if (closest_terminals_ == nullptr) {
+            closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
+
+            for(int n=0; n < g_->getMaxNode(); n++) {
+                closest_terminals_[n] = nullptr;
+            }
+        }
+
         // Find distances from terminals to other nodes.
         for(node_id t=0; t < nTerminals; t++)
             g_->findDistances(t);
 
         // Now calculate the closest terminals
-        closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
-
-        for (int n = 0; n < g_->getMaxNode(); n++) {
+        for (auto n: *g_->getNodes()) {
             closest_terminals_[n] = new NodeWithCost[nTerminals];
 
             for(node_id t=0; t < nTerminals; t++) {
@@ -70,6 +82,132 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
         }
     }
     return closest_terminals_[v];
+}
+
+/**
+ * Computing the exact steiner distances is very costly, so this is only a heuristic value.
+ */
+cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
+    if (terminalSteinerDistances_ == nullptr || steinerDistanceState_ == invalid)
+        calculateSteinerDistance();
+
+    cost_id sd = MAXCOST;
+    if (g_->nb[u].count(v) > 0)
+        sd = g_->nb[u][v];
+
+    // TODO: Make this configurable?
+    node_id nValues1 = 3;
+    node_id nValues2 = 3;
+    if (nTerminals < nValues1) {
+        nValues1 = nTerminals;
+        nValues2 = nTerminals;
+    }
+    if (u < nTerminals)
+        nValues1 = 1;
+    if (v < nTerminals)
+        nValues2 = 1;
+
+    for(node_id v1=0; v1 < nValues1; v1++) {
+        for(node_id v2=0; v2 < nValues2; v2++) {
+            auto cl1 = getClosestTerminals(u)[v1];
+            auto cl2 = getClosestTerminals(v)[v2];
+            auto val = cl1.cost;
+            if (cl2.cost > val)
+                val = cl2.cost;
+
+            if (cl1.node != cl2.cost) {
+                auto val2 = terminalSteinerDistances_[cl1.node][cl2.node];
+                if (val2 > val)
+                    val = val2;
+            }
+            if (val < sd)
+                sd = val;
+        }
+    }
+
+    return sd;
+}
+
+void SteinerInstance::calculateSteinerDistance() {
+    // Note that the number of terminals never goes up, so the array may be too large, but why care?
+    if (terminalSteinerDistances_ == nullptr) {
+        terminalSteinerDistances_ = new cost_id*[maxTerminals];
+        for(int i=0; i < maxTerminals; i++)
+            terminalSteinerDistances_[i] = new cost_id[maxTerminals];
+    }
+    steinerDistanceState_ = exact;
+
+    // Create distance network
+    Graph g = Graph(nTerminals);
+    for (node_id t1=0; t1 < nTerminals; t1++) {
+        for(node_id t2=t1+1; t2 < nTerminals; t2++) {
+            g.addEdge(t1, t2, getDistance(t1, t2));
+        }
+    }
+
+    // Find shortest path in mst
+    auto mst = g.mst();
+    bool found[nTerminals];
+    cost_id dist[nTerminals];
+    found[0] = true;
+    for (node_id t=0; t < nTerminals; t++) {
+        node_id goal = nTerminals - t - 1;
+        for(node_id tmp=0; tmp < nTerminals; tmp++) {
+            dist[tmp] = MAXCOST;
+            if (tmp > t)
+                found[tmp] = false;
+            found[tmp] = false;
+        }
+        dist[t] = 0;
+        terminalSteinerDistances_[t][t] = 0;
+
+        priority_queue<DoubleCostEntry> q;
+        q.emplace(t, 0, 0);
+
+        while (goal > 0) {
+            auto elem = q.top();
+            q.pop();
+            if (elem.totalCost > dist[elem.node])
+                continue;
+            if (! found[elem.node]) {
+                goal--;
+                found[elem.node] = true;
+            }
+
+            for (auto &v: mst->nb[elem.node]) {
+                cost_id total = v.second + elem.totalCost;
+                if (total < dist[v.first]) {
+                    dist[v.first] = total;
+                    cost_id maxVal = elem.edgeCost;
+                    if (v.second > maxVal)
+                        maxVal = v.second;
+
+                    terminalSteinerDistances_[t][elem.node] = maxVal;
+                    terminalSteinerDistances_[elem.node][t] = maxVal;
+
+                    q.emplace(v.first, total, maxVal);
+                }
+            }
+        }
+    }
+    delete mst;
+}
+
+cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
+    if (distanceState_ == invalid) {
+        // TODO: Is there a more efficient option?
+        g_->discardDistances();
+        distanceState_ = exact;
+    }
+
+    if (g_->getDistances() == nullptr || g_->getDistances()[n1] == nullptr)
+        g_->findDistances(n1);
+
+    return g_->getDistances()[n1][n2];
+}
+
+void SteinerInstance::moveTerminal(node_id t, node_id target) {
+    g_->switchVertices(t, target);
 }
 
 

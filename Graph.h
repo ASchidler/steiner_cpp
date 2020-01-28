@@ -51,13 +51,58 @@ namespace steiner {
     class Graph {
     public:
         ~Graph() {
-            if (distances_ != nullptr) {
-                for (size_t i = 0; i < sizeof(distances_); i++) {
-                    delete[] distances_[i];
-                }
-                delete[] distances_;
+            discardDistances();
+        }
+        Graph() = default;
+
+        explicit Graph(node_id nNodes) {
+            for(node_id i=0; i < nNodes; i++) {
+                nodes_.insert(i);
+                nb.emplace_back();
             }
         }
+
+        class EdgeIterator {
+        public:
+            explicit EdgeIterator(unordered_set<node_id>* nodes, vector<unordered_map<node_id, cost_id>>* nb) : nodes_(nodes), nb_(nb){
+                nodeState = nodes->begin();
+                nbState = (*nb)[*nodeState].begin();
+                findNext();
+            }
+
+            Edge operator*() {
+                return {*nodeState, nbState->first, nbState->second};
+            }
+
+            EdgeIterator &operator++() {
+                nbState++;
+                findNext();
+                return *this;
+            }
+
+            bool hasNext() {
+                return nodeState != nodes_->end();
+            }
+
+        private:
+            unordered_set<node_id>::iterator nodeState;
+            unordered_map<node_id, cost_id>::iterator nbState;
+            unordered_set<node_id>* nodes_;
+            vector<unordered_map<node_id, cost_id>>* nb_;
+            void findNext() {
+                while(nodeState != nodes_->end()) {
+                    while(nbState != (*nb_)[*nodeState].end()) {
+                        if (*nodeState < nbState->first)
+                            return;
+                        nbState++;
+                    }
+                    nodeState++;
+                    if (nodeState != nodes_->end())
+                        nbState = (*nb_)[*nodeState].begin();
+                }
+            }
+        }; //EdgeIterator
+
         node_id addNode(node_id u);
         bool addMappedEdge(node_id u, node_id v, cost_id cost);
         bool addEdge(node_id u, node_id v, cost_id cost);
@@ -83,15 +128,20 @@ namespace steiner {
         cost_id** getDistances() {
             return distances_;
         }
+        void discardDistances();
 
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
         // TODO: This is really ugly (result)
         unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        EdgeIterator findEdges() {
+            return EdgeIterator(&nodes_, &nb);
+        }
         void switchVertices(node_id n1, node_id n2);
         bool isConnected();
         Graph* copy(bool copyMapping);
+        Graph* mst();
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
@@ -99,6 +149,6 @@ namespace steiner {
         cost_id** distances_ = nullptr;
     };
 }
+
+
 #endif //STEINER_CPP_GRAPH_H
-
-

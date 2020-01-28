@@ -11,6 +11,7 @@
 #include "Reductions/Reducer.h"
 #include "Reductions/DegreeReduction.h"
 #include "Algorithms/ShortestPath.h"
+#include "Reductions/LongEdgeReduction.h"
 
 using namespace steiner;
 
@@ -35,7 +36,7 @@ int main(int argc, char* argv[]) {
         ts.emplace(i);
     }
 
-    for (int i=0; i < s->getNumTerminals() && i < 10; i++) {
+    for (int i=0; i < s->getNumTerminals() && i < 1; i++) {
         //TODO: Receive label for heuristics instead of list of terminals...
         auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]) {
 
     auto reductions = vector<Reduction*>();
     reductions.push_back(new DegreeReduction(s, false));
+    reductions.push_back(new LongEdgeReduction(s, true, 100));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
 
