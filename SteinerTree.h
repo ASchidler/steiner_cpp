@@ -16,12 +16,19 @@ namespace steiner {
         {}
         void addEdge(node_id u, node_id v, cost_id w) {
             assert(u != v);
-            if (u < v) {
-                edges[u][v] = w;
-            } else {
-                edges[v][u] = w;
+            if (v < u) {
+                auto tmp = v;
+                v = u;
+                u = tmp;
             }
-            cost_ += w;
+
+            auto n = edges[u].find(v);
+            if (n == edges[u].end() || n->second > w) {
+                if (n != edges[u].end())
+                    cost_ -= edges[u][v];
+                edges[u][v] = w;
+                cost_ += w;
+            }
         }
         bool removeEdge(node_id u, node_id v, cost_id w) {
             assert(u != v);

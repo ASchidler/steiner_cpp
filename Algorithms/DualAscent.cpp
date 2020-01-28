@@ -82,7 +82,8 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unorder
     DualAscent::hasRun = true;
     if (bound > DualAscent::bestResult) {
         DualAscent::bestResult = bound;
-        DualAscent::bestRoot = root;
+        if (root < nTerminals)
+            DualAscent::bestRoot = root;
     }
 
     return new DualAscentResult(bound, dg, root);

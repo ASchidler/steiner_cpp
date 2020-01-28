@@ -10,6 +10,7 @@
 #include "Algorithms/DualAscent.h"
 #include "Reductions/Reducer.h"
 #include "Reductions/DegreeReduction.h"
+#include "Algorithms/ShortestPath.h"
 
 using namespace steiner;
 
@@ -38,8 +39,11 @@ int main(int argc, char* argv[]) {
         //TODO: Receive label for heuristics instead of list of terminals...
         auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
+        auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
+        delete result2;
     }
-    cout << DualAscent::bestResult << endl;
+    cout <<"LB " << DualAscent::bestResult << endl;
+    cout <<"UB " << ShortestPath::bestResult << endl;
 
     if (! s->getGraph()->isConnected())
         cout << "Not Connected (start)" << endl;
