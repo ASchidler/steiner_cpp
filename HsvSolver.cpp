@@ -8,8 +8,8 @@ using namespace std;
 using namespace boost;
 
 steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
-    costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getNumNodes()];
-    store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getNumNodes());
+    costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getMaxNode()];
+    store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getMaxNode());
 
     // TODO: Make this configurable?
     if (DualAscent::hasRun) {
@@ -24,7 +24,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     root_ = nTerminals_;
 
     //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getNumNodes());
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
     // Init distances
     instance_->getClosestTerminals(0);
 }
@@ -53,6 +53,7 @@ SteinerTree* steiner::HsvSolver::solve() {
         auto cost = costs_[entry.node][entry.label].cost;
         if (entry.node == root_ ) {
             if(entry.label.all()) {
+                cout << cost << endl;
                 return backTrack();
             }
         }

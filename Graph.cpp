@@ -21,7 +21,7 @@ bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
 }
 
 node_id steiner::Graph::getNodeMapping(node_id externalId) {
-    return nodeMap_.find(externalId)->second;
+    return nodeMap_[externalId];
 }
 
 node_id steiner::Graph::addNode(node_id u) {
@@ -39,8 +39,8 @@ node_id steiner::Graph::addNode(node_id u) {
 }
 
 void steiner::Graph::findDistances() {
-    distances_ = new cost_id*[getNumNodes()];
-    for(size_t i=0; i < getNumNodes(); i++) {
+    distances_ = new cost_id*[getMaxNode()];
+    for(size_t i=0; i < getMaxNode(); i++) {
         distances_[i] = nullptr;
     }
 
@@ -52,16 +52,16 @@ void steiner::Graph::findDistances() {
 void steiner::Graph::findDistances(node_id u) {
     // Init distances
     if (distances_ == nullptr) {
-        distances_ = new cost_id*[getNumNodes()];
-        for(size_t i=0; i < getNumNodes(); i++) {
+        distances_ = new cost_id*[getMaxNode()];
+        for(size_t i=0; i < getMaxNode(); i++) {
             distances_[i] = nullptr;
         }
     }
     if (distances_[u] == nullptr) {
-        distances_[u] = new cost_id[getNumNodes()];
+        distances_[u] = new cost_id[getMaxNode()];
     }
-    node_id visited[getNumNodes()];
-    for(size_t i=0; i < getNumNodes(); i++) {
+    node_id visited[getMaxNode()];
+    for(size_t i=0; i < getMaxNode(); i++) {
         distances_[u][i] = MAXCOST;
         visited[i] = false;
     }
@@ -120,6 +120,11 @@ void steiner::Graph::removeNode(node_id u) {
 void Graph::removeEdge(node_id u, node_id v) {
     nb[u].erase(v);
     nb[v].erase(u);
+
+    if (nb[u].empty())
+        nodes_.erase(u);
+    if (nb[v].empty())
+        nodes_.erase(v);
 }
 
 void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
@@ -160,12 +165,9 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     }
 
     for(auto v: nb[n2]) {
-        auto n2c = nb[v.first][n2];
-        // Do not overwrite value
-        if (nb[v.first].count(n1) > 0) {
-            nb[v.first][n2] = nb[v.first][n1];
-            nb[v.first][n1] = n2c;
-        } else {
+        // Other case handled above
+        if (nb[v.first].count(n1) == 0) {
+            auto n2c = nb[v.first][n2];
             nb[v.first].erase(n2);
             nb[v.first].emplace(n1, n2c);
         }
@@ -175,4 +177,34 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     nb[n1] = nb[n2];
     nb[n2] = tmp;
 
+}
+
+node_id Graph::getReverseMapping(node_id internal) {
+    return nodeReverseMap_[internal];
+}
+
+bool Graph::isConnected() {
+    bool seen[getMaxNode()];
+    for (node_id i=0; i < getMaxNode(); i++)
+        seen[i] = false;
+    auto q = vector<node_id>();
+    auto first = *nodes_.begin();
+    node_id cnt = 1;
+    seen[first] = true;
+    q.emplace_back(first);
+
+    while(! q.empty()) {
+        auto u = q.back();
+        q.pop_back();
+
+        for(auto v : nb[u]) {
+            if (! seen[v.first]) {
+                seen[v.first] = true;
+                cnt++;
+                q.push_back(v.first);
+            }
+        }
+    }
+
+    return cnt == getNumNodes();
 }

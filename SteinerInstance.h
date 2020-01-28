@@ -15,13 +15,8 @@ namespace steiner {
     class SteinerInstance {
     public:
         SteinerInstance(Graph *g, vector<node_id> *terminals);
-
-        Graph *getGraph() {
-            return this->g_;
-        }
-
         ~SteinerInstance() {
-            for(int n=0; n < g_->getNumNodes(); n++) {
+            for(int n=0; n < g_->getMaxNode(); n++) {
                 delete[] closest_terminals_[n];
             }
             delete[] closest_terminals_;
@@ -36,6 +31,10 @@ namespace steiner {
         void removeEdge(node_id u, node_id v);
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
+
+        Graph *getGraph() {
+            return this->g_;
+        }
     private:
         Graph *g_;
         NodeWithCost** closest_terminals_ = nullptr;

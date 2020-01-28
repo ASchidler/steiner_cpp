@@ -24,6 +24,12 @@ void SteinerInstance::removeEdge(node_id u, node_id v) {
 }
 
 void SteinerInstance::removeNode(node_id u) {
+    if (u < nTerminals) {
+        nTerminals--;
+        if (u < nTerminals)
+            g_->switchVertices(u, nTerminals);
+    }
+
     g_->removeNode(u);
 }
 
@@ -38,9 +44,9 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
             g_->findDistances(t);
 
         // Now calculate the closest terminals
-        closest_terminals_ = new NodeWithCost *[g_->getNumNodes()];
+        closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
 
-        for (int n = 0; n < g_->getNumNodes(); n++) {
+        for (int n = 0; n < g_->getMaxNode(); n++) {
             closest_terminals_[n] = new NodeWithCost[nTerminals];
 
             for(node_id t=0; t < nTerminals; t++) {

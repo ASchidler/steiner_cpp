@@ -61,6 +61,10 @@ namespace steiner {
         node_id addNode(node_id u);
         bool addEdge(node_id u, node_id v, cost_id cost);
 
+        node_id getMaxNode() {
+            return this->nb.size();
+        }
+
         node_id getNumNodes() {
             return this->nodes_.size();
         }
@@ -72,6 +76,7 @@ namespace steiner {
         vector<unordered_map<node_id, cost_id>> nb;
 
         node_id getNodeMapping(node_id externalId);
+        node_id getReverseMapping(node_id internal);
 
         void findDistances();
         void findDistances(node_id u);
@@ -84,6 +89,7 @@ namespace steiner {
         // TODO: This is really ugly (result)
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         void switchVertices(node_id n1, node_id n2);
+        bool isConnected();
         Graph* copy(bool copyMapping);
     private:
         unordered_set<node_id> nodes_;
