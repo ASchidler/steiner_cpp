@@ -6,14 +6,37 @@
 using namespace steiner;
 
 //TODO: Create iterator over edges? Return only if u < v for undirected.
-bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
+bool steiner::Graph::addMappedEdge(node_id u, node_id v, cost_id cost) {
+    if (u == v) // Self loops cannot be optimal
+        return false;
+
     auto un = addNode(u);
     auto vn = addNode(v);
 
-    if (nb[un].count(vn) == 0 || nb[un][vn] > cost) {
-        this->nb[un].insert(pair<node_id, cost_id>(vn, cost));
-        this->nb[vn].insert(pair<node_id, cost_id>(un, cost));
+    if (nb[un].count(vn) == 0) {
+        this->nb[un].emplace(vn, cost);
+        this->nb[vn].emplace(un, cost);
+        return true;
+    } else if (nb[un][vn] > cost) {
+        this->nb[un][vn] = cost;
+        this->nb[vn][un] = cost;
+        return true;
+    }
 
+    return false;
+}
+
+bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
+    if (u == v) // Self loops cannot be optimal
+        return false;
+
+    if (nb[u].count(v) == 0) {
+        this->nb[u].emplace(v, cost);
+        this->nb[v].emplace(u, cost);
+        return true;
+    } else if (nb[u][v] > cost) {
+        this->nb[u][v] = cost;
+        this->nb[v][u] = cost;
         return true;
     }
 
@@ -36,17 +59,6 @@ node_id steiner::Graph::addNode(node_id u) {
     }
 
     return result->second;
-}
-
-void steiner::Graph::findDistances() {
-    distances_ = new cost_id*[getMaxNode()];
-    for(size_t i=0; i < getMaxNode(); i++) {
-        distances_[i] = nullptr;
-    }
-
-    for(auto u: nodes_) {
-        findDistances(u);
-    }
 }
 
 void steiner::Graph::findDistances(node_id u) {
@@ -117,6 +129,14 @@ void steiner::Graph::removeNode(node_id u) {
     nodes_.erase(u);
 }
 
+unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_id>::iterator u) {
+    for(auto elem: nb[*u]) {
+        nb[elem.first].erase(*u);
+    }
+    nb[*u].clear();
+    return nodes_.erase(u);
+}
+
 void Graph::removeEdge(node_id u, node_id v) {
     nb[u].erase(v);
     nb[v].erase(u);
@@ -131,7 +151,7 @@ void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>*
     vector<Edge> ret;
     for(auto n: nb[remove]) {
         if (n.first != target) {
-            if (addEdge(target, n.first, n.second) && result != nullptr) {
+            if (addMappedEdge(target, n.first, n.second) && result != nullptr) {
                 result->emplace_back(remove, target, n.first, n.second);
             }
         }
@@ -154,7 +174,7 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     // Relabel edges
     for(auto v: nb[n1]) {
         auto n1c = nb[v.first][n1];
-        // Do not overwrite value
+        // Has edges to both nodes, simply switch values
         if (nb[v.first].count(n2) > 0) {
             nb[v.first][n1] = nb[v.first][n2];
             nb[v.first][n2] = n1c;
@@ -165,8 +185,13 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     }
 
     for(auto v: nb[n2]) {
+        if (v.first == n2) { // In this case n1 was replaced by n2 above
+            auto n2c = nb[n1][n2];
+            nb[n1].erase(n2);
+            nb[n1].emplace(n1, n2c);
+        }
         // Other case handled above
-        if (nb[v.first].count(n1) == 0) {
+        else if (nb[v.first].count(n1) == 0) { // Other case handled above
             auto n2c = nb[v.first][n2];
             nb[v.first].erase(n2);
             nb[v.first].emplace(n1, n2c);
@@ -176,7 +201,6 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     auto tmp = nb[n1];
     nb[n1] = nb[n2];
     nb[n2] = tmp;
-
 }
 
 node_id Graph::getReverseMapping(node_id internal) {

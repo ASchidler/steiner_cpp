@@ -59,6 +59,7 @@ namespace steiner {
             }
         }
         node_id addNode(node_id u);
+        bool addMappedEdge(node_id u, node_id v, cost_id cost);
         bool addEdge(node_id u, node_id v, cost_id cost);
 
         node_id getMaxNode() {
@@ -78,13 +79,13 @@ namespace steiner {
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
 
-        void findDistances();
         void findDistances(node_id u);
         cost_id** getDistances() {
             return distances_;
         }
 
         void removeNode(node_id u);
+        unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
         // TODO: This is really ugly (result)
         void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
