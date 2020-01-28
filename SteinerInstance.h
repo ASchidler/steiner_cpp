@@ -30,7 +30,7 @@ namespace steiner {
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
-        void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
         enum ValueState { lower, exact, higher };
 

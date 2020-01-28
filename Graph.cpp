@@ -121,12 +121,12 @@ steiner::Graph *steiner::Graph::copy(bool copyMapping) {
     return cp;
 }
 
-void steiner::Graph::removeNode(node_id u) {
+unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
     for(auto elem: nb[u]) {
         nb[elem.first].erase(u);
     }
     nb[u].clear();
-    nodes_.erase(u);
+    return nodes_.erase(nodes_.find(u));
 }
 
 unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_id>::iterator u) {
@@ -147,17 +147,17 @@ void Graph::removeEdge(node_id u, node_id v) {
         nodes_.erase(v);
 }
 
-void Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
     vector<Edge> ret;
     for(auto n: nb[remove]) {
         if (n.first != target) {
-            if (addMappedEdge(target, n.first, n.second) && result != nullptr) {
+            if (addEdge(target, n.first, n.second) && result != nullptr) {
                 result->emplace_back(remove, target, n.first, n.second);
             }
         }
     }
 
-    removeNode(remove);
+    return removeNode(remove);
 }
 
 void Graph::switchVertices(node_id n1, node_id n2) {

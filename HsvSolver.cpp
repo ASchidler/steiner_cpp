@@ -251,7 +251,6 @@ SteinerTree *HsvSolver::backTrack() {
 }
 
 void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result) {
-    //auto c = costs_[n][(dynamic_bitset<>)*label];
     auto c = costs_[n].find(*label)->second;
     if (c.merge) {
         // Found a leaf
@@ -264,7 +263,7 @@ void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTr
     } else {
         auto n2 = c.prev.node;
         auto cn = instance_->getGraph()->nb[n][n2];
-        result->addEdge(n, n2, cn);
+        result->addEdge(instance_->getGraph()->getReverseMapping(n), instance_->getGraph()->getReverseMapping(n2), cn);
         backTrackSub(n2, label, result);
     }
 }

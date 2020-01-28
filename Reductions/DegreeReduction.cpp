@@ -37,6 +37,7 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                     ++n;
                 }
             }
+            // Non-Terminals of degree 2 can be merged away
             else if (dg == 2 and *n >= instance->getNumTerminals()) {
                 auto u = instance->getGraph()->nb[*n].begin();
                 auto v = instance->getGraph()->nb[*n].begin();
@@ -47,6 +48,25 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 n = instance->removeNode(n);
                 track++;
                 changed = true;
+            }
+            // If the closest neighbor of a terminal is a terminal, can be contracted
+            else if (ran_ && dg >= 2 and *n < instance->getNumTerminals()) {
+                cost_id min_cost = MAXCOST;
+                node_id min_nb = 0;
+                for (auto& n2 : instance->getGraph()->nb[*n]) {
+                    if (n2.second < min_cost || (n2.second == min_cost && n2.first < instance->getNumTerminals())) {
+                        min_cost = n2.second;
+                        min_nb = n2.first;
+                    }
+                }
+
+                if (min_nb < instance->getNumTerminals()) {
+                    preselect(*n, min_nb, min_cost);
+                    n = instance->contractEdge(min_nb, *n, &contracted);
+                    ts++;
+                } else {
+                    ++n;
+                }
             }
             else
             {

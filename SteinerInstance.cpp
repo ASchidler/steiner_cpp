@@ -15,8 +15,8 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
     }
 }
 
-void SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
-    g_->contractEdge(target, remove, result);
+unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+    return g_->contractEdge(target, remove, result);
 }
 
 void SteinerInstance::removeEdge(node_id u, node_id v) {
@@ -36,14 +36,14 @@ node_id SteinerInstance::removeNode_(node_id u) {
 
 unordered_set<node_id>::iterator SteinerInstance::removeNode(node_id u) {
     u = removeNode_(u);
-    return g_->removeNode(g_->getNodes()->find(u));
+    return g_->removeNode(u);
 }
 unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_id>::iterator u) {
     auto n = removeNode_(*u);
     if (n == *u)
         return g_->removeNode(u);
     else
-        return g_->removeNode(g_->getNodes()->find(n));
+        return g_->removeNode(n);
 }
 
 bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {

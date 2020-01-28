@@ -84,11 +84,11 @@ namespace steiner {
             return distances_;
         }
 
-        void removeNode(node_id u);
+        unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
         // TODO: This is really ugly (result)
-        void contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         void switchVertices(node_id n1, node_id n2);
         bool isConnected();
         Graph* copy(bool copyMapping);
