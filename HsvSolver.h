@@ -74,9 +74,9 @@ namespace steiner {
         };
 
         struct PruneBoundEntry {
-            PruneBoundEntry(cost_id cost, dynamic_bitset<> label) : cost(cost), label(std::move(label)) {
+            PruneBoundEntry(cost_id pcost, dynamic_bitset<> plabel) : cost(pcost), label(std::move(plabel)) {
             }
-            node_id cost = 0;
+            cost_id cost;
             dynamic_bitset<> label;
         };
 
@@ -99,7 +99,8 @@ namespace steiner {
         bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label);
         bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
         inline void prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<>* label);
-        inline unsigned int prune_combine(const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
+        inline unordered_map<dynamic_bitset<>, PruneDistEntry>::iterator prune_compute_dist(const dynamic_bitset<>* label);
+        inline cost_id prune_combine(const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
 
         SteinerTree* backTrack();
         void backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result);
