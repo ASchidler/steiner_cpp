@@ -23,14 +23,21 @@ unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, n
 
 void SteinerInstance::removeEdge(node_id u, node_id v) {
     g_->removeEdge(u, v);
+    // Terminal deletions must not happen
+    assert(u >= nTerminals || !g_->nb[u].empty());
+    assert(v >= nTerminals || !g_->nb[v].empty());
 }
 
 node_id SteinerInstance::removeNode_(node_id u) {
     if (u < nTerminals) {
         nTerminals--;
         if (u < nTerminals) { // Could be equal now...
-            g_->switchVertices(u, nTerminals);
+            // There should be a terminal and terminals must be connected
+            assert(!g_->nb[nTerminals].empty());
+            assert(g_->getNodes()->count(nTerminals) > 0);
+            moveTerminal(u, nTerminals);
             u = nTerminals;
+            setSteinerDistanceState(invalid);
         }
     }
     return u;
@@ -42,10 +49,18 @@ unordered_set<node_id>::iterator SteinerInstance::removeNode(node_id u) {
 }
 unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_id>::iterator u) {
     auto n = removeNode_(*u);
+    unordered_set<node_id>::iterator result;
     if (n == *u)
-        return g_->removeNode(u);
+        result = g_->removeNode(u);
     else
-        return g_->removeNode(n);
+        result =  g_->removeNode(n);
+    for (auto& v: g_->nb[*u]) {
+        if (v.first < getNumTerminals()) {
+            assert(!getGraph()->nb[v.first].empty());
+        }
+    }
+
+    return result;
 }
 
 bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {

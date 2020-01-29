@@ -76,7 +76,8 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
     }
     if (ts > 0) {
         instance->setDistanceState(SteinerInstance::higher);
-        instance->setSteinerDistanceState(SteinerInstance::higher);
+        // TODO: Higher should suffice...
+        instance->setSteinerDistanceState(SteinerInstance::invalid);
         instance->setApproximationState(SteinerInstance::higher);
     }
     ran_ = true;

@@ -20,13 +20,13 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
         if (scanned1[i] < MAXCOST && scanned2[i] < MAXCOST) {
             if (i < nTerminals) {
                 if (scanned1[i] >= scanned2[i] && scanned1[u] < sd) {
-                    sd = scanned1[u];
+                    //sd = scanned1[u];
                 } else if (scanned2[i] > scanned1[u] && scanned2[u] < sd) {
-                    sd = scanned2[u];
+                   // sd = scanned2[u];
                 }
             } else {
-                if (sd > scanned1[i] + scanned2[i])
-                    sd = scanned1[i] + scanned2[i];
+//                if (sd > scanned1[i] + scanned2[i])
+//                    sd = scanned1[i] + scanned2[i];
             }
         }
     }
@@ -43,11 +43,12 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
     for (node_id i=0; i < nNodes; i++) {
         scanned[i] = MAXCOST;
     }
+    scanned[u] = 0;
     node_id scannedEdges = 0;
     priority_queue<NodeWithCost> q;
 
     for(auto& n: g->nb[u]) {
-        if (n.first != v) {
+        if (n.first != v) { // Avoid the edge u,v
             q.emplace(n.first, n.second);
             scanned[n.first] = n.second;
         }
@@ -60,6 +61,8 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
         // Stop on u, v and terminals or exceed cutoff
         if (elem.cost > cut_off || elem.node < nTerminals || elem.node == u || elem.node == v)
             break;
+        if (scanned[elem.node] < elem.cost)
+            continue;
 
         for(auto& n: g->nb[elem.node]) {
             scannedEdges++;
