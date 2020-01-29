@@ -14,6 +14,8 @@
 #include "Reductions/LongEdgeReduction.h"
 #include "Reductions/SdcReduction.h"
 #include "Reductions/NtdkReduction.h"
+#include "Reductions/TerminalDistanceReduction.h"
+#include "Reductions/Degree3Reduction.h"
 
 using namespace steiner;
 
@@ -50,21 +52,25 @@ int main(int argc, char* argv[]) {
 
     if (! s->getGraph()->isConnected())
         cout << "Not Connected (start)" << endl;
-
+    // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
-    reductions.push_back(new NtdkReduction(s, 100, false, 4));
+    //reductions.push_back(new Degree3Reduction(s));
+//    reductions.push_back(new NtdkReduction(s, 100, true, 4));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new LongEdgeReduction(s, true, 100));
-    reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new LongEdgeReduction(s, false, 100));
+    reductions.push_back(new NtdkReduction(s, 100, false, 3));
+    //reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
 
     if (! s->getGraph()->isConnected())
         cout << "Not Connected (after reduction)" << endl;
-
+    s->checkGraphIntegrity();
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
     auto solver = HsvSolver(s);
     auto tree = solver.solve();
+    assert(tree != nullptr);
     reducer.unreduce(tree);
     cout << tree->getCost() << endl;
     delete s;

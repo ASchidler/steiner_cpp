@@ -23,5 +23,8 @@ node_id steiner::SdcReduction::reduce(node_id currCount, node_id prevCount) {
         track++;
     }
 
+    if (track > 0)
+        instance->setDistanceState(SteinerInstance::higher);
+
     return track;
 }

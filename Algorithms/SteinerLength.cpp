@@ -19,14 +19,9 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
     for(node_id i=0; i < nNodes; i++) {
         if (scanned1[i] < MAXCOST && scanned2[i] < MAXCOST) {
             if (i < nTerminals) {
-                if (scanned1[i] >= scanned2[i] && scanned1[u] < sd) {
-                    //sd = scanned1[u];
-                } else if (scanned2[i] > scanned1[u] && scanned2[u] < sd) {
-                   // sd = scanned2[u];
-                }
+                sd = min(sd, max(scanned1[i], scanned2[i]));
             } else {
-//                if (sd > scanned1[i] + scanned2[i])
-//                    sd = scanned1[i] + scanned2[i];
+                sd = min(sd, scanned1[i] + scanned2[i]);
             }
         }
     }

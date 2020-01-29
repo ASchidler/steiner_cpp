@@ -17,7 +17,7 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
 }
 
 unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
-    remove = *removeNode(remove);
+    remove = removeNode_(remove);
     return g_->contractEdge(target, remove, result);
 }
 
@@ -110,13 +110,10 @@ cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
     if (g_->nb[u].count(v) > 0)
         sd = g_->nb[u][v];
 
-    // TODO: Make this configurable?
-    node_id nValues1 = 3;
-    node_id nValues2 = 3;
-    if (nTerminals < nValues1) {
-        nValues1 = nTerminals;
-        nValues2 = nTerminals;
-    }
+    // TODO: Make this 3 configurable?
+    node_id nValues1 = min((node_id) 3, nTerminals);
+    node_id nValues2 = nValues1;
+
     if (u < nTerminals)
         nValues1 = 1;
     if (v < nTerminals)
@@ -166,12 +163,10 @@ void SteinerInstance::calculateSteinerDistance() {
     cost_id dist[nTerminals];
     found[0] = true;
     for (node_id t=0; t < nTerminals; t++) {
-        node_id goal = nTerminals - t - 1;
+        // Find maximum edge on shortest path to other terminals
+        //TODO: Optimize
         for(node_id tmp=0; tmp < nTerminals; tmp++) {
             dist[tmp] = MAXCOST;
-            if (tmp > t)
-                found[tmp] = false;
-            found[tmp] = false;
         }
         dist[t] = 0;
         terminalSteinerDistances_[t][t] = 0;
@@ -179,31 +174,59 @@ void SteinerInstance::calculateSteinerDistance() {
         priority_queue<DoubleCostEntry> q;
         q.emplace(t, 0, 0);
 
-        while (goal > 0) {
+        while (! q.empty()) {
             auto elem = q.top();
             q.pop();
-            if (elem.totalCost > dist[elem.node])
+
+            if (dist[elem.node] < elem.totalCost)
                 continue;
-            if (! found[elem.node]) {
-                goal--;
-                found[elem.node] = true;
-            }
+
+            terminalSteinerDistances_[t][elem.node] = elem.edgeCost;
 
             for (auto &v: mst->nb[elem.node]) {
                 cost_id total = v.second + elem.totalCost;
                 if (total < dist[v.first]) {
                     dist[v.first] = total;
-                    cost_id maxVal = elem.edgeCost;
-                    if (v.second > maxVal)
-                        maxVal = v.second;
-
-                    terminalSteinerDistances_[t][elem.node] = maxVal;
-                    terminalSteinerDistances_[elem.node][t] = maxVal;
-
+                    cost_id maxVal = max(elem.edgeCost, v.second);
                     q.emplace(v.first, total, maxVal);
                 }
             }
         }
+//        node_id goal = nTerminals - t - 1;
+//        for(node_id tmp=0; tmp < nTerminals; tmp++) {
+//            dist[tmp] = MAXCOST;
+//            if (tmp > t)
+//                found[tmp] = false;
+//        }
+//        dist[t] = 0;
+//        terminalSteinerDistances_[t][t] = 0;
+//
+//        priority_queue<DoubleCostEntry> q;
+//        q.emplace(t, 0, 0);
+//
+//        while (goal > 0) {
+//            auto elem = q.top();
+//            q.pop();
+//            if (elem.totalCost > dist[elem.node])
+//                continue;
+//            if (! found[elem.node]) {
+//                goal--;
+//                found[elem.node] = true;
+//            }
+//
+//            for (auto &v: mst->nb[elem.node]) {
+//                cost_id total = v.second + elem.totalCost;
+//                if (total < dist[v.first]) {
+//                    dist[v.first] = total;
+//                    cost_id maxVal = max(elem.edgeCost, v.second);
+//
+//                    terminalSteinerDistances_[t][elem.node] = maxVal;
+//                    terminalSteinerDistances_[elem.node][t] = maxVal;
+//
+//                    q.emplace(v.first, total, maxVal);
+//                }
+//            }
+//        }
     }
     delete mst;
 }

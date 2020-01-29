@@ -5,6 +5,7 @@
 #include "NtdkReduction.h"
 // Generally this would also be possible with dg > 4, experimentally the results where not that good
 node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
+    instance->requestDistanceState(SteinerInstance::higher);
     node_id track = 0;
 
     auto n = instance->getGraph()->getNodes()->begin();
@@ -18,24 +19,23 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
             vector<Edge> edges;
             node_id ids[nb.size()];
 
-            for (auto& v: nb)
-                edgeSum += v.second;
-
-            // Compute distances between neighbors
             int nbIdx=0;
             for (auto& v: nb) {
                 ids[nbIdx++] = v.first;
-                for (auto& w: nb) {
-                    if (v.first < w.first) {
-                        cost_id c = 0;
-                        if (restricted_) {
-                            c = instance->getSteinerDistance(v.first, w.first);
-                        } else {
-                            c = SteinerLength::calculateSteinerLength(v.first, w.first, instance->getGraph(),
-                                    edgeSum, depthLimit_, false, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
-                        }
-                        edges.emplace_back(v.first, w.first, c);
+                edgeSum += v.second;
+            }
+            sort(ids, ids+nbIdx);
+
+            // Compute distances between neighbors
+            for(int i=0; i < nbIdx; i++) {
+                for (int j=i+1; j < nbIdx; j++) {
+                    cost_id c = 0;
+                    if (restricted_) {
+                        c = instance->getSteinerDistance(ids[i], ids[j]);
+                    } else {
+                        c = SteinerLength::calculateSteinerLength(ids[i], ids[j], instance->getGraph(), edgeSum, depthLimit_, false, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
                     }
+                    edges.emplace_back(ids[i],ids[j], c);
                 }
             }
 
@@ -70,17 +70,17 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
             // Remove node, introduce edges
             if (trueForAll) {
                 node_id edgeIdx = 0;
-                for (auto& v: nb) {
-                    for (auto& w: nb) {
-                        if (v.first < w.first) {
-                            // Verify that the edge would not be removed by long edge reduction in the next step
-                            if (v.second + w.second <= edges[edgeIdx].cost) {
-                                if (instance->addEdge(v.first, w.first, w.second + v.second)) {
-                                    merge(*n, v.first, w.first, v.second, w.second);
-                                }
+                for(int i=0; i < nbIdx; i++) {
+                    for (int j = i + 1; j < nbIdx; j++) {
+                        auto uc = nb[ids[i]];
+                        auto vc = nb[ids[j]];
+                        // Verify that the edge would not be removed by long edge reduction in the next step
+                        if (uc + vc <= edges[edgeIdx].cost) {
+                            if (instance->addEdge(ids[i], ids[j], uc + vc)) {
+                                merge(*n, ids[i], ids[j], uc, vc);
                             }
-                            edgeIdx++;
                         }
+                        edgeIdx++;
                     }
                 }
 
