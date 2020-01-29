@@ -41,7 +41,7 @@ cost_id* DualAscentHeuristic::precalculate(const dynamic_bitset<> *label) {
     for(auto i : *(instance_->getGraph()->getNodes())) {
         nodeBounds[i] = result->bound + result->g->getDistances()[root_][i];
     }
-    cache_.insert(pair<dynamic_bitset<>, cost_id*>(*label, nodeBounds));
+    cache_.emplace(*label, nodeBounds);
     delete result;
 
     return nodeBounds;

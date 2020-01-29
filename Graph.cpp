@@ -280,6 +280,52 @@ Graph *Graph::mst() {
     return result;
 }
 
+cost_id Graph::mst_sum() {
+    cost_id result = 0;
+
+    // Calculate mst of distance graph
+    cost_id minEdgeVal[getMaxNode()];
+    bool taken[getMaxNode()];
+
+    cost_id val;
+    int idx = -1;
+
+    for(size_t i=0; i < getMaxNode(); i++) {
+        minEdgeVal[i] = MAXCOST;
+        taken[i] = false;
+    }
+
+    // Init
+    minEdgeVal[0] = 0;
+
+    for(int i=0; i < getMaxNode(); i++) {
+        val = MAXCOST;
+        for(auto k: nodes_) {
+            if (minEdgeVal[k] < val) {
+                val = minEdgeVal[k];
+                idx = k;
+            }
+        }
+
+        taken[idx] = true;
+        result += minEdgeVal[idx];
+        minEdgeVal[idx] = MAXCOST;
+
+        for(auto k: nodes_) {
+            if (! taken[k]) {
+                auto dist = nb[idx][k];
+                if (dist < minEdgeVal[k]) {
+                    minEdgeVal[k] = dist;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+
+
 void Graph::discardDistances() {
     if (distances_ != nullptr) {
         for (size_t i = 0; i < sizeof(distances_) / sizeof(cost_id); i++) {

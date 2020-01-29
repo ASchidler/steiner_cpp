@@ -142,6 +142,7 @@ namespace steiner {
         bool isConnected();
         Graph* copy(bool copyMapping);
         Graph* mst();
+        cost_id mst_sum();
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
