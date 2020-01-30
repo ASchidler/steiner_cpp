@@ -16,6 +16,7 @@ void steiner::Reducer::reduce() {
             for (node_id t=0; t < instance_->getNumTerminals(); t++) {
                 assert(instance_->getGraph()->getNodes()->count(t) > 0);
             }
+            assert(instance_->getGraph()->isConnected());
         }
 
         changed = cnt > 0;

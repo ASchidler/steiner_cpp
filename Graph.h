@@ -32,6 +32,9 @@ namespace steiner {
         Edge(node_id u, node_id v, cost_id cost) : u(u), v(v), cost(cost) {
         }
 
+        Edge():u(0), v(0), cost(MAXCOST) {
+        }
+
         node_id u;
         node_id v;
         cost_id cost;

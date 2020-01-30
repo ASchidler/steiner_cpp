@@ -43,10 +43,11 @@ namespace steiner {
         void removeEdge(node_id u, node_id v);
         Graph::EdgeIterator removeEdge(Graph::EdgeIterator);
         unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        unordered_set<node_id>::iterator contractEdge(unordered_set<node_id>::iterator target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
         cost_id getDistance(node_id n1, node_id n2);
         void moveTerminal(node_id t, node_id target);
-        void contractTerminal(node_id source, node_id target);
+        void invalidateTerminals();
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
 

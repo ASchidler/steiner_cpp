@@ -20,6 +20,9 @@
 #include "Reductions/HeavyEdgeReduction.h"
 #include "Reductions/ZeroEdgePreselection.h"
 #include "Reductions/MstPreselection.h"
+#include "Reductions/ShortLinksPreselection.h"
+#include "Reductions/NearestVertexPreselection.h"
+#include "Reductions/QuickCollection.h"
 
 using namespace steiner;
 
@@ -59,6 +62,8 @@ int main(int argc, char* argv[]) {
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
     //reductions.push_back(new ZeroEdgePreselection(s));
+    reductions.push_back(new steiner::QuickCollection(s));
+    reductions.push_back(new NearestVertexPreselection(s));
     reductions.push_back(new MstPreselection(s));
     reductions.push_back(new HeavyEdgeReduction(s, 100));
     reductions.push_back(new DualAscentReduction(s));
@@ -66,7 +71,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new NtdkReduction(s, 100, true, 4));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new NtdkReduction(s, 100, false, 3));
+    reductions.push_back(new NtdkReduction(s, 100, false, 4));
     reductions.push_back(new SdcReduction(s, 100));
     reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);

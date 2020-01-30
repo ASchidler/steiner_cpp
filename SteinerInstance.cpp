@@ -17,8 +17,35 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
 }
 
 unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+    node_id oldRemove = remove;
     remove = removeNode_(remove);
+    if (remove < nTerminals)
+        invalidateTerminals();
+
+    if (target == remove)
+        target = oldRemove;
+
+    // target was the pivot element has been swapped so remove can be deleted...
     return g_->contractEdge(target, remove, result);
+}
+
+unordered_set<node_id>::iterator
+SteinerInstance::contractEdge(unordered_set<node_id>::iterator target, node_id remove, vector<ContractedEdge> *result) {
+    node_id oldRemove = remove;
+    remove = removeNode_(remove);
+    if (remove < nTerminals)
+        invalidateTerminals();
+
+    auto t = *target;
+    if (*target == remove)
+        t = oldRemove;
+
+    // target was the pivot element has been swapped so remove can be deleted...
+    auto it = g_->contractEdge(t, remove, result);
+    if (remove == *target)
+        return it;
+
+    return target;
 }
 
 void SteinerInstance::removeEdge(node_id u, node_id v) {
@@ -41,7 +68,7 @@ node_id SteinerInstance::removeNode_(node_id u) {
             assert(g_->getNodes()->count(nTerminals) > 0);
             moveTerminal(u, nTerminals);
             u = nTerminals;
-            setSteinerDistanceState(invalid);
+            invalidateTerminals();
         }
     }
     return u;
@@ -236,10 +263,12 @@ cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
 
 void SteinerInstance::moveTerminal(node_id t, node_id target) {
     g_->switchVertices(t, target);
-    contractTerminal(t, target);
 }
 
-void SteinerInstance::contractTerminal(node_id source, node_id target) {
+void SteinerInstance::invalidateTerminals() {
     clearClosest_();
+    setSteinerDistanceState(invalid);
 }
+
+
 

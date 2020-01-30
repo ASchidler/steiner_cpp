@@ -40,19 +40,19 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
 //    }
 
     // Compute the restricted SL. As this is more expensive, do only upon "request"
-    if (handleEql_) {
-        for(auto& e: eql) {
-            if (instance->getGraph()->nb[e.u].count(e.v) > 0) {
-                auto sd = SteinerLength::calculateSteinerLength(e.u, e.v, instance->getGraph(),
-                                                                e.cost + 1, depthLimit_, true, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
-                assert(e.cost == instance->getGraph()->nb[e.u][e.v]);
-                if (e.cost >= sd) {
-                    instance->removeEdge(e.u, e.v);
-                    track++;
-                }
-            }
-        }
-    }
+//    if (handleEql_) {
+//        for(auto& e: eql) {
+//            if (instance->getGraph()->nb[e.u].count(e.v) > 0) {
+//                auto sd = SteinerLength::calculateSteinerLength(e.u, e.v, instance->getGraph(),
+//                                                                e.cost + 1, depthLimit_, true, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
+//                assert(e.cost == instance->getGraph()->nb[e.u][e.v]);
+//                if (e.cost >= sd) {
+//                    instance->removeEdge(e.u, e.v);
+//                    track++;
+//                }
+//            }
+//        }
+//    }
 
     if (track > 0)
         // TODO: How could this happen? Removing edges cannot lead to shorter distances...

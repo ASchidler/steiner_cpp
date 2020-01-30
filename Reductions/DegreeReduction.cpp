@@ -16,6 +16,7 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
 
         auto n = instance->getGraph()->getNodes()->begin();
         while(n != instance->getGraph()->getNodes()->end()) {
+            bool skip = false;
             auto dg = instance->getGraph()->nb[*n].size();
             // Degree 1, Terminals can be contracted, steiner-vertices deleted
             if (dg == 1) {
@@ -23,19 +24,17 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                     n = instance->removeNode(n);
                     track++;
                     changed = true;
+                    skip = true;
                 }
                 else if (ran_) { // Terminal
                     auto nb = instance->getGraph()->nb[*n].begin();
                     auto v = nb->first; // We change nb afterwards, store v as the iterator becomes invalid
                     preselect(*n, nb->first, nb->second);
-                    instance->moveTerminal(*n, v);
-                    n = instance->removeNode(v);
+                    n = instance->contractEdge(n, v, &contracted);
+                    skip = true;
                     ts++;
                     track++;
                     changed = true;
-                }
-                else{
-                    ++n;
                 }
             }
             // Non-Terminals of degree 2 can be merged away
@@ -50,6 +49,7 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 n = instance->removeNode(n);
                 track++;
                 changed = true;
+                skip = true;
             }
             // If the closest neighbor of a terminal is a terminal, can be contracted
             else if (ran_ && dg >= 2 and *n < instance->getNumTerminals()) {
@@ -64,20 +64,16 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
 
                 if (min_nb < instance->getNumTerminals()) {
                     preselect(*n, min_nb, min_cost);
-                    n = instance->contractEdge(min_nb, *n, &contracted);
+                    n = instance->contractEdge(n, min_nb, &contracted);
                     ts++;
-                    // TODO: Move this inside steinerinstance
-                    instance->contractTerminal(min_nb, *n);
+                    skip = true;
                     track++;
                     changed=true;
-                } else {
-                    ++n;
                 }
             }
-            else
-            {
+
+            if (! skip)
                 ++n;
-            }
         }
     }
     if (ts > 0) {

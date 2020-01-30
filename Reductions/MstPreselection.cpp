@@ -33,7 +33,6 @@ node_id steiner::MstPreselection::reduce(node_id currCount, node_id prevCount) {
             if (e.u < instance->getNumTerminals() && e.v < instance->getNumTerminals()) {
                 if (components.find(e.u) != components.find(e.v)) {
                     preselect(e.u, e.v, e.cost);
-                    instance->contractTerminal(e.u, e.v);
                     instance->contractEdge(e.u, e.v, &contracted);
 
                     // This messes up the structures so much, quit here
