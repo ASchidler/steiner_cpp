@@ -26,9 +26,10 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 }
                 else if (ran_) { // Terminal
                     auto nb = instance->getGraph()->nb[*n].begin();
+                    auto v = nb->first; // We change nb afterwards, store v as the iterator becomes invalid
                     preselect(*n, nb->first, nb->second);
-                    instance->moveTerminal(*n, nb->first);
-                    n = instance->removeNode(nb->first);
+                    instance->moveTerminal(*n, v);
+                    n = instance->removeNode(v);
                     ts++;
                     track++;
                     changed = true;

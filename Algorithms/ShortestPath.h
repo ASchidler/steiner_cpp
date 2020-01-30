@@ -5,7 +5,6 @@
 #ifndef STEINER_SHORTESTPATH_H
 #define STEINER_SHORTESTPATH_H
 
-#include "../SteinerInstance.h"
 #include "../SteinerTree.h"
 
 namespace steiner {

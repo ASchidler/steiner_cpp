@@ -123,7 +123,10 @@ unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
         nb[elem.first].erase(u);
     }
     nb[u].clear();
-    return nodes_.erase(nodes_.find(u));
+    auto it = nodes_.find(u);
+    if (it != nodes_.end())
+        return nodes_.erase(it);
+    return it;
 }
 
 unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_id>::iterator u) {
@@ -230,6 +233,7 @@ bool Graph::isConnected() {
     bool seen[getMaxNode()];
     for (node_id i=0; i < getMaxNode(); i++)
         seen[i] = false;
+
     auto q = vector<node_id>();
     auto first = *nodes_.begin();
     node_id cnt = 1;

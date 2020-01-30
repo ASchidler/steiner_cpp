@@ -10,7 +10,7 @@ cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
 // TODO: Implement the 2 other variants... at least number 3 -> More exact but slower
-// TODO: Shrink graph before solving to get rid of exccessive data structures...
+// TODO: Shrink graph before solving to get rid of excessive data structures...
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
     Graph *dg = g->copy(false);
     unsigned int bound = 0;
@@ -63,12 +63,12 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             cost_id newWeight = 0;
-            for (auto ce: edges) { // update weight loop
+            for (auto& ce: edges) { // update weight loop
                 dg->nb[ce.u][ce.v] -= minCost;
 
                 // Is now zero, i.e. is part of the component
                 if (ce.cost == minCost) {
-                    if (ce.u <= nTerminals && active[ce.u])
+                    if (ce.u < nTerminals && active[ce.u])
                         active[elem.node] = false; // Found active component
                     newWeight += g->nb[ce.u].size() - 1; // Estimate incoming edges gained from this node
                 }
@@ -111,7 +111,7 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<Edge> *ed
                 // 0 means traversable edge
                 if (cost == 0) {
                     // Found active vertex? Stop, component is connected
-                    if (u.first <= nTerminals && active[u.first]) {
+                    if (u.first < nTerminals && active[u.first]) {
                         active[n] = false;
                         return 0;
                     }

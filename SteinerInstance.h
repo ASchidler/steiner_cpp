@@ -6,8 +6,9 @@
 #define STEINER_STEINERINSTANCE_H
 #include "Graph.h"
 #include <bits/stdc++.h>
-
+#include "Algorithms/ShortestPath.h"
 #include <utility>
+#include "SteinerTree.h"
 
 using namespace std;
 
@@ -28,6 +29,8 @@ namespace steiner {
                 }
                 delete[] terminalSteinerDistances_;
             }
+
+            delete approximation_;
         }
 
         node_id getNumTerminals() {
@@ -47,10 +50,21 @@ namespace steiner {
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
 
+        SteinerTree* getApproximation() {
+            if (approximationState_ != exact) {
+                delete approximation_;
+
+                approximation_ = steiner::ShortestPath::calculate((node_id)0, g_, nTerminals, g_->getMaxNode());
+                approximationState_ = exact;
+            }
+
+            return approximation_;
+        }
+
         void setDistanceState(ValueState s) {
             if (distanceState_ == exact)
                 distanceState_ = s;
-            if ((distanceState_ == lower && s == higher) || (distanceState_ == higher && s == lower))
+            else if ((distanceState_ == lower && s == higher) || (distanceState_ == higher && s == lower))
                 distanceState_ = invalid;
             else
                 distanceState_ = s;
@@ -67,7 +81,7 @@ namespace steiner {
         void setSteinerDistanceState(ValueState s) {
             if (steinerDistanceState_ == exact)
                 steinerDistanceState_ = s;
-            if ((steinerDistanceState_ == lower && s == higher) || (steinerDistanceState_ == higher && s == lower))
+            else if ((steinerDistanceState_ == lower && s == higher) || (steinerDistanceState_ == higher && s == lower))
                 steinerDistanceState_ = invalid;
             else
                 steinerDistanceState_ = s;
@@ -127,8 +141,20 @@ namespace steiner {
         ValueState distanceState_ = invalid;
         ValueState steinerDistanceState_ = invalid;
         ValueState approximationState_ = invalid;
+        SteinerTree* approximation_ = nullptr;
 
-
+        void clearDistance() {
+            g_->discardDistances();
+            if (closest_terminals_ != nullptr) {
+                for (int n = 0; n < g_->getMaxNode(); n++) {
+                    if (closest_terminals_[n] != nullptr)
+                        delete[] closest_terminals_[n];
+                }
+                delete[] closest_terminals_;
+                closest_terminals_ = nullptr;
+            }
+            distanceState_ = exact;
+        }
     };
 
     struct MergedEdges {

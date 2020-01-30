@@ -63,5 +63,22 @@ namespace steiner {
                    (totalCost == p2.totalCost && edgeCost == p2.edgeCost && node < p2.node);
         }
     };
+    struct DoubleNodeEntry {
+        DoubleNodeEntry(node_id n1, node_id n2, cost_id cost) :n1(n1), n2(n2), cost(cost) {
+        }
+
+        node_id n1;
+        node_id n2;
+        cost_id cost;
+
+        // TODO: These are actually the wrong way so that priority queues are min queues...
+        bool operator<(const DoubleNodeEntry& p2) const {
+            return cost > p2.cost ||
+                   // Choosing shorter edges over longer ones often provides better results
+                   (cost == p2.cost && n1 < p2.n1) ||
+                   // This is just a tie breaker
+                   (cost == p2.cost && n1 == p2.n2 && n1 < p2.n2);
+        }
+    };
 }
 #endif //STEINER_STEINER_H

@@ -13,6 +13,9 @@ void steiner::Reducer::reduce() {
             auto result = reduction->reduce(cnt, prevCnt);
             cnt += result;
             cout << reduction->getName() << " " << result << endl;
+            for (node_id t=0; t < instance_->getNumTerminals(); t++) {
+                assert(instance_->getGraph()->getNodes()->count(t) > 0);
+            }
         }
 
         changed = cnt > 0;

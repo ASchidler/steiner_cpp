@@ -34,10 +34,10 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
         }
 
     }
-    for(auto& e: del) {
-        instance->removeEdge(e.u, e.v);
-        track++;
-    }
+//    for(auto& e: del) {
+//        instance->removeEdge(e.u, e.v);
+//        track++;
+//    }
 
     // Compute the restricted SL. As this is more expensive, do only upon "request"
     if (handleEql_) {

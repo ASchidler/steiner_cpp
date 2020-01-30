@@ -58,11 +58,6 @@ unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_
         result = g_->removeNode(u);
     else
         result =  g_->removeNode(n);
-    for (auto& v: g_->nb[*u]) {
-        if (v.first < getNumTerminals()) {
-            assert(!getGraph()->nb[v.first].empty());
-        }
-    }
 
     return result;
 }
@@ -74,8 +69,7 @@ bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     // TODO: Is this inefficient for just getting the closest terminals over and over in the solver?
     if (closest_terminals_ == nullptr || distanceState_ == invalid) {
-        g_->discardDistances();
-        distanceState_ = exact;
+        clearDistance();
 
         if (closest_terminals_ == nullptr) {
             closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
@@ -85,17 +79,13 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
             }
         }
 
-        // Find distances from terminals to other nodes.
-        for(node_id t=0; t < nTerminals; t++)
-            g_->findDistances(t);
-
         // Now calculate the closest terminals
         for (auto n: *g_->getNodes()) {
             closest_terminals_[n] = new NodeWithCost[nTerminals];
 
             for(node_id t=0; t < nTerminals; t++) {
                 closest_terminals_[n][t].node = t;
-                closest_terminals_[n][t].cost = g_->getDistances()[t][n];
+                closest_terminals_[n][t].cost = getDistance(t, n);
             }
             std::sort(closest_terminals_[n], closest_terminals_[n] + nTerminals, greater<NodeWithCost>());
         }
@@ -108,7 +98,7 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
  */
 cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
     if (terminalSteinerDistances_ == nullptr || steinerDistanceState_ == invalid) {
-        g_->discardDistances();
+        clearDistance();
         calculateSteinerDistance();
     }
 
@@ -235,9 +225,7 @@ void SteinerInstance::calculateSteinerDistance() {
 
 cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
     if (distanceState_ == invalid) {
-        // TODO: Is there a more efficient option?
-        g_->discardDistances();
-        distanceState_ = exact;
+        clearDistance();
     }
 
     if (g_->getDistances() == nullptr || g_->getDistances()[n1] == nullptr)

@@ -29,23 +29,18 @@ LabelIterator& steiner::HashSetLabelIterator::operator++() {
     findNext();
     return *this;
 }
-
+// TODO: Change everything possible to references and use const where possible
+// TODO: Store a pointer to the costs, so we can immediately deliver the costs?
 void HashSetLabelIterator::findNext() {
     while(pos != end) {
         bool disjoint = true;
-
-        auto cbit = target->find_first();
-        while (cbit < target->size()) {
+        for(auto cbit = target->find_first(); disjoint && cbit < target->size(); cbit = target->find_next(cbit)) {
             if (pos->test(cbit)) {
                 disjoint = false;
-                break;
             }
-            cbit = target->find_next(cbit);
         }
-
-        if (disjoint) {
+        if (disjoint)
             break;
-        }
         pos++;
     }
 }

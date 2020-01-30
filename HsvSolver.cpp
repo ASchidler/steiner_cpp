@@ -62,7 +62,6 @@ SteinerTree* steiner::HsvSolver::solve() {
         auto cost = costs_[entry.node][entry.label].cost;
         if (entry.node == root_ ) {
             if(entry.label.all()) {
-                instance_->checkGraphIntegrity();
                 cout << cost << endl;
                 return backTrack();
             }
