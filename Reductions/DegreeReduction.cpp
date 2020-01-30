@@ -66,6 +66,8 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                     preselect(*n, min_nb, min_cost);
                     n = instance->contractEdge(min_nb, *n, &contracted);
                     ts++;
+                    // TODO: Move this inside steinerinstance
+                    instance->contractTerminal(min_nb, *n);
                     track++;
                     changed=true;
                 } else {
@@ -80,8 +82,7 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
     }
     if (ts > 0) {
         instance->setDistanceState(SteinerInstance::higher);
-        // TODO: Higher should suffice...
-        instance->setSteinerDistanceState(SteinerInstance::invalid);
+        instance->setSteinerDistanceState(SteinerInstance::higher);
         instance->setApproximationState(SteinerInstance::higher);
     }
     ran_ = true;

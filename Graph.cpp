@@ -220,9 +220,7 @@ void Graph::switchVertices(node_id n1, node_id n2) {
         }
     }
 
-    auto tmp = nb[n1];
-    nb[n1] = nb[n2];
-    nb[n2] = tmp;
+    swap(nb[n1], nb[n2]);
 }
 
 node_id Graph::getReverseMapping(node_id internal) {

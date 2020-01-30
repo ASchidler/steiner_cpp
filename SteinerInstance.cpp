@@ -236,6 +236,10 @@ cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
 
 void SteinerInstance::moveTerminal(node_id t, node_id target) {
     g_->switchVertices(t, target);
+    contractTerminal(t, target);
 }
 
+void SteinerInstance::contractTerminal(node_id source, node_id target) {
+    clearClosest_();
+}
 

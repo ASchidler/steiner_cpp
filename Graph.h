@@ -35,6 +35,14 @@ namespace steiner {
         node_id u;
         node_id v;
         cost_id cost;
+
+        bool operator<(const Edge& p2) const {
+            return cost < p2.cost;
+        }
+
+        bool operator>(const Edge& p2) const {
+            return cost > p2.cost;
+        }
     };
 
     struct ContractedEdge {

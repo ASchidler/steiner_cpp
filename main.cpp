@@ -18,6 +18,8 @@
 #include "Reductions/Degree3Reduction.h"
 #include "Reductions/DualAscentReduction.h"
 #include "Reductions/HeavyEdgeReduction.h"
+#include "Reductions/ZeroEdgePreselection.h"
+#include "Reductions/MstPreselection.h"
 
 using namespace steiner;
 
@@ -56,6 +58,8 @@ int main(int argc, char* argv[]) {
         cout << "Not Connected (start)" << endl;
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
+    //reductions.push_back(new ZeroEdgePreselection(s));
+    reductions.push_back(new MstPreselection(s));
     reductions.push_back(new HeavyEdgeReduction(s, 100));
     reductions.push_back(new DualAscentReduction(s));
     reductions.push_back(new LongEdgeReduction(s, true, 100));

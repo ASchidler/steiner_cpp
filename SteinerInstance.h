@@ -46,7 +46,7 @@ namespace steiner {
         NodeWithCost* getClosestTerminals(node_id n);
         cost_id getDistance(node_id n1, node_id n2);
         void moveTerminal(node_id t, node_id target);
-
+        void contractTerminal(node_id source, node_id target);
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
 
@@ -143,8 +143,7 @@ namespace steiner {
         ValueState approximationState_ = invalid;
         SteinerTree* approximation_ = nullptr;
 
-        void clearDistance() {
-            g_->discardDistances();
+        void clearClosest_() {
             if (closest_terminals_ != nullptr) {
                 for (int n = 0; n < g_->getMaxNode(); n++) {
                     if (closest_terminals_[n] != nullptr)
@@ -153,6 +152,10 @@ namespace steiner {
                 delete[] closest_terminals_;
                 closest_terminals_ = nullptr;
             }
+        }
+        void clearDistance() {
+            g_->discardDistances();
+            clearClosest_();
             distanceState_ = exact;
         }
     };
