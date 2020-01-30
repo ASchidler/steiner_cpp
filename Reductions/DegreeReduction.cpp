@@ -38,10 +38,11 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                 }
             }
             // Non-Terminals of degree 2 can be merged away
-            else if (dg == 2 and *n >= instance->getNumTerminals()) {
+            else if (dg == 2 && *n >= instance->getNumTerminals()) {
                 auto u = instance->getGraph()->nb[*n].begin();
                 auto v = instance->getGraph()->nb[*n].begin();
                 v++;
+
                 if (instance->addEdge(u->first, v->first, u->second + v->second))
                     merge(*n, u->first, v->first, u->second, v->second);
 
@@ -64,6 +65,8 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
                     preselect(*n, min_nb, min_cost);
                     n = instance->contractEdge(min_nb, *n, &contracted);
                     ts++;
+                    track++;
+                    changed=true;
                 } else {
                     ++n;
                 }

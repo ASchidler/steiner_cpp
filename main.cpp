@@ -54,12 +54,12 @@ int main(int argc, char* argv[]) {
         cout << "Not Connected (start)" << endl;
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
-    //reductions.push_back(new Degree3Reduction(s));
-//    reductions.push_back(new NtdkReduction(s, 100, true, 4));
+    reductions.push_back(new Degree3Reduction(s));
+    reductions.push_back(new NtdkReduction(s, 100, true, 4));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new LongEdgeReduction(s, false, 100));
+    reductions.push_back(new LongEdgeReduction(s, true, 100));
     reductions.push_back(new NtdkReduction(s, 100, false, 3));
-    //reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new SdcReduction(s, 100));
     reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();

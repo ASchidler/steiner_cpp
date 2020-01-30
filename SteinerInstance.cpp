@@ -103,12 +103,15 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
  * Computing the exact steiner distances is very costly, so this is only a heuristic value.
  */
 cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
-    if (terminalSteinerDistances_ == nullptr || steinerDistanceState_ == invalid)
+    if (terminalSteinerDistances_ == nullptr || steinerDistanceState_ == invalid) {
+        g_->discardDistances();
         calculateSteinerDistance();
+    }
 
     cost_id sd = MAXCOST;
-    if (g_->nb[u].count(v) > 0)
-        sd = g_->nb[u][v];
+    auto edgeCost = g_->nb[u].find(v);
+    if (edgeCost != g_->nb[u].end())
+        sd = edgeCost->second;
 
     // TODO: Make this 3 configurable?
     node_id nValues1 = min((node_id) 3, nTerminals);
@@ -123,17 +126,12 @@ cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
         for(node_id v2=0; v2 < nValues2; v2++) {
             auto cl1 = getClosestTerminals(u)[v1];
             auto cl2 = getClosestTerminals(v)[v2];
-            auto val = cl1.cost;
-            if (cl2.cost > val)
-                val = cl2.cost;
+            auto val = max(cl1.cost, cl2.cost);
 
-            if (cl1.node != cl2.cost) {
-                auto val2 = terminalSteinerDistances_[cl1.node][cl2.node];
-                if (val2 > val)
-                    val = val2;
-            }
-            if (val < sd)
-                sd = val;
+            if (cl1.node != cl2.node)
+                val = max(val, terminalSteinerDistances_[cl1.node][cl2.node]);
+
+            sd = min(sd, val);
         }
     }
 

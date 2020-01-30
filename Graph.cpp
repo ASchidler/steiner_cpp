@@ -72,10 +72,9 @@ void steiner::Graph::findDistances(node_id u) {
     if (distances_[u] == nullptr) {
         distances_[u] = new cost_id[getMaxNode()];
     }
-    node_id visited[getMaxNode()];
+
     for(size_t i=0; i < getMaxNode(); i++) {
         distances_[u][i] = MAXCOST;
-        visited[i] = false;
     }
 
     // We could initialize with other known distances...
@@ -91,13 +90,11 @@ void steiner::Graph::findDistances(node_id u) {
         q.pop();
 
         // already visited...
-        if(visited[elem.node])
+        if(elem.cost > distances_[u][elem.node])
             continue;
 
-        visited[elem.node] = true;
-
         for (auto v: nb[elem.node]) {
-            if (!visited[v.first] && distances_[u][v.first] > elem.cost + v.second) {
+            if (distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
                 q.emplace(v.first, elem.cost + v.second);
             }

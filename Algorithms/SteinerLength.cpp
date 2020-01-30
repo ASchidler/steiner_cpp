@@ -12,16 +12,14 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
     calculateSteinerLengthSub(v, u, g, cut_off, depth_limit, nTerminals, nNodes, scanned2);
 
     // If we found the other node use this dist. Scanned != Visited, therefore values may differ!
-    cost_id sd = scanned1[v];
-    if (scanned2[u] < sd)
-        sd = scanned2[u];
+    cost_id sd = min(scanned1[v], scanned2[u]);
 
     for(node_id i=0; i < nNodes; i++) {
         if (scanned1[i] < MAXCOST && scanned2[i] < MAXCOST) {
             if (i < nTerminals) {
-                sd = min(sd, max(scanned1[i], scanned2[i]));
+                //sd = min(sd, max(scanned1[i], scanned2[i]));
             } else {
-                sd = min(sd, scanned1[i] + scanned2[i]);
+                //sd = min(sd, scanned1[i] + scanned2[i]);
             }
         }
     }
@@ -52,16 +50,15 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
     while (! q.empty() && scannedEdges < depth_limit) {
         auto elem = q.top();
         q.pop();
-
+        assert(elem.node != u);
         // Stop on u, v and terminals or exceed cutoff
-        if (elem.cost > cut_off || elem.node < nTerminals || elem.node == u || elem.node == v)
+        if (elem.node < nTerminals || elem.node == u || elem.node == v)
             break;
-        if (scanned[elem.node] < elem.cost)
+        if (elem.cost > scanned[elem.node])
             continue;
 
         for(auto& n: g->nb[elem.node]) {
-            scannedEdges++;
-            if (scannedEdges > depth_limit)
+            if (scannedEdges++ > depth_limit)
                 break;
 
             auto total = elem.cost + n.second;

@@ -93,7 +93,7 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                     }  // while true
 
                     if (del) {
-                        instance->removeEdge(*n, nb[i]);
+                        instance->removeEdge(*n, nbs[i]);
                         track++;
                         break;
                     }
