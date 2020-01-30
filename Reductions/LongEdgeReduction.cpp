@@ -7,19 +7,15 @@
 node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount) {
     instance->requestSteinerDistanceState(SteinerInstance::higher);
     node_id track = 0;
-
-    auto it = instance->getGraph()->findEdges();
-    vector<Edge> del; // Do not delete immediately as this would change nb while iterating over it
     vector<Edge> eql;
 
     // Test using SL approximation
+    auto it = instance->getGraph()->findEdges();
     while(it.hasNext()) {
         auto e = *it;
         auto sl = instance->getSteinerDistance(e.u, e.v);
         if (e.cost > sl) {
             it = instance->removeEdge(it);
-            //del.push_back(e);
-            //++it;
         }
         else {
             // SL is unrestricted, so we do not know if it holds for equality
@@ -30,8 +26,9 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
     }
 
     // Look here as well. For neighbors of terminals, the steiner distance is exact and may be more accurate than above
+    vector<Edge> del; // Do not delete immediately as this would change nb while iterating over it
     for(int t=0; t < instance->getNumTerminals(); t++) {
-        for (auto v: instance->getGraph()->nb[t]) {
+        for (auto& v: instance->getGraph()->nb[t]) {
             if (v.second > instance->getSteinerDistance(t, v.first))
                 del.emplace_back(t, v.first, v.second);
         }

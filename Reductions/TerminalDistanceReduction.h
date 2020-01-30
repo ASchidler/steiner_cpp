@@ -10,7 +10,7 @@
 namespace  steiner {
     class TerminalDistanceReduction : public Reduction {
     public:
-        TerminalDistanceReduction(SteinerInstance *s) : Reduction(s) {
+        explicit TerminalDistanceReduction(SteinerInstance *s) : Reduction(s) {
         }
 
         node_id reduce(node_id currCount, node_id prevCount) override;

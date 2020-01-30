@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
     for (int i=0; i < s->getNumTerminals() && i < 1; i++) {
         //TODO: Receive label for heuristics instead of list of terminals...
-        auto result = DualAscent::calculate(s->getGraph(), i, &ts, s->getNumTerminals(), s->getGraph()->getMaxNode());
+        auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
         auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
         delete result2;
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new SdcReduction(s, 100));
     reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
-    reducer.reduce();
+    //reducer.reduce();
 
     if (! s->getGraph()->isConnected())
         cout << "Not Connected (after reduction)" << endl;
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     auto solver = HsvSolver(s);
     auto tree = solver.solve();
     assert(tree != nullptr);
-    reducer.unreduce(tree);
+    //reducer.unreduce(tree);
     cout << tree->getCost() << endl;
     delete s;
 

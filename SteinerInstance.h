@@ -47,13 +47,6 @@ namespace steiner {
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
 
-        void requestDistanceState(ValueState s) {
-            if (distanceState_ != exact && s == exact)
-                distanceState_ = invalid;
-            if ((distanceState_ == lower && s == higher) || (distanceState_ == higher && s == lower))
-                distanceState_ = invalid;
-        }
-
         void setDistanceState(ValueState s) {
             if (distanceState_ == exact)
                 distanceState_ = s;
@@ -61,6 +54,14 @@ namespace steiner {
                 distanceState_ = invalid;
             else
                 distanceState_ = s;
+        }
+
+        void requestDistanceState(ValueState s) {
+            if (s == invalid ||
+                (s == exact && distanceState_ != exact) ||
+                (distanceState_ == lower && s == higher) ||
+                (distanceState_ == higher && s == lower))
+                distanceState_ = invalid;
         }
 
         void setSteinerDistanceState(ValueState s) {
@@ -72,6 +73,14 @@ namespace steiner {
                 steinerDistanceState_ = s;
         }
 
+        void requestSteinerDistanceState(ValueState s) {
+            if (s == invalid ||
+                (s == exact && steinerDistanceState_ != exact) ||
+                (steinerDistanceState_ == lower && s == higher) ||
+                (steinerDistanceState_ == higher && s == lower))
+                steinerDistanceState_ = invalid;
+        }
+
         void setApproximationState(ValueState s) {
             if (approximationState_ == exact)
                 approximationState_ = s;
@@ -81,12 +90,14 @@ namespace steiner {
                 approximationState_ = s;
         }
 
-        void requestSteinerDistanceState(ValueState s) {
-            if (s == exact && steinerDistanceState_ != exact)
-                steinerDistanceState_ = invalid;
-            if ((steinerDistanceState_ == lower && s == higher) || (steinerDistanceState_ == higher && s == lower))
-                steinerDistanceState_ = invalid;
+        void requestApproximationState(ValueState s) {
+            if (s == invalid ||
+            (s == exact && approximationState_ != exact) ||
+            (approximationState_ == lower && s == higher) ||
+            (approximationState_ == higher && s == lower))
+                approximationState_ = invalid;
         }
+
 
         Graph *getGraph() {
             return this->g_;

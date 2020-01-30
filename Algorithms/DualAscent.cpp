@@ -10,22 +10,26 @@ cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
 // TODO: Implement the 2 other variants... at least number 3 -> More exact but slower
-
-DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, unordered_set<node_id>* ts, node_id nTerminals, node_id nNodes) {
+// TODO: Shrink graph before solving to get rid of exccessive data structures...
+DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
     Graph *dg = g->copy(false);
     unsigned int bound = 0;
+    if (root >= nTerminals) // In case root is not counted, as when used in a guiding heuristic
+        nTerminals = root + 1;
+
     auto q = priority_queue<NodeWithCost>();
-    bool active[nTerminals + 1];
-    for(node_id i=0; i < nTerminals; i++)
-        active[i] = false;
+    bool active[nTerminals];
     bool cut[nNodes];
 
-
     // Initialize active components and queue
-    for (auto t: *ts) {
-        active[t] = true;
-        if (t != root)
-            q.emplace(t, 0);
+    for(node_id t=0; t < nTerminals; t++) {
+        if (ts == nullptr || t == root || !ts->test(t)) {
+            active[t] = true;
+            if (t != root)
+                q.emplace(t, 0);
+        } else {
+            active[t] = false;
+        }
     }
 
     // run until not active components
