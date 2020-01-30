@@ -13,20 +13,16 @@ node_id steiner::TerminalDistanceReduction::reduce(node_id currCount, node_id pr
             cMax = cCost;
     }
 
-    vector<Edge> del;
     node_id track = 0;
     auto it = instance->getGraph()->findEdges();
     while(it.hasNext()) {
         auto e = *it;
-        if (e.cost > cMax)
-            del.push_back(e);
-
-        ++it;
-    }
-
-    for(auto& e: del) {
-        instance->removeEdge(e.u, e.v);
-        track++;
+        if (e.cost > cMax) {
+            it = instance->removeEdge(it);
+            track++;
+        }
+        else
+            ++it;
     }
 
     return track;

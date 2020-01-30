@@ -6,22 +6,18 @@
 
 node_id steiner::SdcReduction::reduce(node_id currCount, node_id prevCount) {
     auto it = instance->getGraph()->findEdges();
-    vector<Edge> del;
     node_id track = 0;
 
-    // TODO: First storing the edges to delete and then deleting them may cause problems...
     while(it.hasNext()) {
         auto e = *it;
         auto sl = SteinerLength::calculateSteinerLength(e.u, e.v, instance->getGraph(),
                                                         e.cost + 1, depthLimit_, true, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
-        if (e.cost >= sl)
-            del.push_back(e);
-        ++it;
-    }
-
-    for(auto& e: del) {
-        instance->removeEdge(e.u, e.v);
-        track++;
+        if (e.cost >= sl) {
+            it = instance->removeEdge(it);
+            track++;
+        }
+        else
+            ++it;
     }
 
     if (track > 0)

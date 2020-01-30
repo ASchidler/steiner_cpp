@@ -38,6 +38,7 @@ namespace steiner {
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
+        Graph::EdgeIterator removeEdge(Graph::EdgeIterator);
         unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
         cost_id getDistance(node_id n1, node_id n2);

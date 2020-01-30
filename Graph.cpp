@@ -144,6 +144,28 @@ void Graph::removeEdge(node_id u, node_id v) {
         nodes_.erase(v);
 }
 
+
+Graph::EdgeIterator Graph::removeEdge(Graph::EdgeIterator it) {
+    auto u = *it.nodeState;
+    auto v = it.nbState->first;
+    assert(u != v);
+    // Remove v first as the iterator points to u, these changes do not influence it.
+    nb[v].erase(u);
+    if (nb[v].empty())
+        nodes_.erase(v);
+
+    // Now remove the same for u, but take care of the iterators!
+    it.nbState = nb[u].erase(it.nbState);
+    if (nb[u].empty()) {
+        it.nodeState = nodes_.erase(it.nodeState);
+        if (it.nodeState != nodes_.end())
+            it.nbState = nb[*it.nodeState].begin();
+    }
+    it.findNext();
+    return it;
+}
+
+
 unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
     vector<Edge> ret;
     for(auto n: nb[remove]) {

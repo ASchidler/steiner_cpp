@@ -9,20 +9,27 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
     node_id track = 0;
 
     auto it = instance->getGraph()->findEdges();
-    vector<Edge> del;
+    vector<Edge> del; // Do not delete immediately as this would change nb while iterating over it
     vector<Edge> eql;
 
+    // Test using SL approximation
     while(it.hasNext()) {
         auto e = *it;
         auto sl = instance->getSteinerDistance(e.u, e.v);
-        if (e.cost > sl)
-            del.push_back(e);
-        else if (e.cost == sl)
-            eql.push_back(e);
-        ++it;
+        if (e.cost > sl) {
+            it = instance->removeEdge(it);
+            //del.push_back(e);
+            //++it;
+        }
+        else {
+            // SL is unrestricted, so we do not know if it holds for equality
+            if (e.cost == sl)
+                eql.push_back(e);
+            ++it;
+        }
     }
 
-    // TODO: Can the iterator be modified to allow for deletion?
+    // Look here as well. For neighbors of terminals, the steiner distance is exact and may be more accurate than above
     for(int t=0; t < instance->getNumTerminals(); t++) {
         for (auto v: instance->getGraph()->nb[t]) {
             if (v.second > instance->getSteinerDistance(t, v.first))
@@ -30,12 +37,12 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
         }
 
     }
-
     for(auto& e: del) {
         instance->removeEdge(e.u, e.v);
         track++;
     }
 
+    // Compute the restricted SL. As this is more expensive, do only upon "request"
     if (handleEql_) {
         for(auto& e: eql) {
             if (instance->getGraph()->nb[e.u].count(e.v) > 0) {

@@ -85,6 +85,7 @@ namespace steiner {
             }
 
         private:
+            friend class Graph;
             unordered_set<node_id>::iterator nodeState;
             unordered_map<node_id, cost_id>::iterator nbState;
             unordered_set<node_id>* nodes_;
@@ -133,6 +134,7 @@ namespace steiner {
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
+        EdgeIterator removeEdge(EdgeIterator);
         // TODO: This is really ugly (result)
         unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         EdgeIterator findEdges() {

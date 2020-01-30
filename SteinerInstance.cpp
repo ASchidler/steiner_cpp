@@ -28,6 +28,10 @@ void SteinerInstance::removeEdge(node_id u, node_id v) {
     assert(v >= nTerminals || !g_->nb[v].empty());
 }
 
+Graph::EdgeIterator SteinerInstance::removeEdge(Graph::EdgeIterator it) {
+    return g_->removeEdge(it);
+}
+
 node_id SteinerInstance::removeNode_(node_id u) {
     if (u < nTerminals) {
         nTerminals--;
