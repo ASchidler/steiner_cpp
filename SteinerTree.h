@@ -46,6 +46,18 @@ namespace steiner {
             return false;
         }
 
+        bool adaptWeight(node_id up, node_id vp, cost_id original, cost_id modified) {
+            auto u = min(up, vp);
+            auto v = max(up, vp);
+
+            auto n = edges[u].find(v);
+            if (n != edges[u].end() && n->second == modified) {
+                n->second = original;
+                cost_ += original - modified;
+            }
+
+        }
+
         node_id getRoot() {
             return root_;
         }
