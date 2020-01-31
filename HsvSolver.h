@@ -40,19 +40,20 @@ namespace steiner {
         node_id nTerminals_;
 
         struct QueueEntry {
-            QueueEntry(cost_id cost, node_id node, dynamic_bitset<> label) : cost(cost), node(node),
-                                                                                       label(std::move(label)) {
+            QueueEntry(cost_id cost, cost_id originalCost, node_id node, dynamic_bitset<> label) : cost(cost), node(node),
+                                                                                       label(std::move(label)), originalCost(originalCost) {
 
             }
 
             cost_id cost;
+            cost_id originalCost;
             node_id node;
             dynamic_bitset<> label;
             bool operator<(const QueueEntry& p2) const
             {
                 return cost > p2.cost || (cost == p2.cost &&
-                                             ((node > p2.node) ||
-                                              (node == p2.node && label < p2.label))
+                                             ((originalCost > p2.originalCost) ||
+                                              (originalCost == p2.originalCost && node > p2.node))
                 );
             }
         };

@@ -30,8 +30,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
 
-    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
@@ -48,13 +48,13 @@ SteinerTree* steiner::HsvSolver::solve() {
     for(int t=0; t < nTerminals_; t++) {
         auto label = dynamic_bitset<>(nTerminals_);
         label.set(t);
-        auto entry = QueueEntry(0, t, label);
+        auto entry = QueueEntry(0, 0, t, label);
         auto pred = Predecessor();
         pred.label = nullptr;
         costs_[t].emplace(label, CostInfo(0, pred, true));
         queue_.push(entry);
     }
-
+    // TODO: Add pointer to costs to queue entry to ease initial lookup?
     while (not queue_.empty()) {
         auto entry = queue_.top();
         queue_.pop();
@@ -66,6 +66,13 @@ SteinerTree* steiner::HsvSolver::solve() {
                 return backTrack();
             }
         }
+
+        if (cost < entry.originalCost) {
+            cout << "Original" << endl;
+            continue;
+        }
+        // Checking pruning again does not really eliminate cases
+
         store_->addLabel(entry.node, &entry.label);
         process_neighbors(entry.node, &entry.label, cost);
         process_labels(entry.node, &entry.label, cost);
@@ -93,7 +100,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
                     nbc->second.merge = false;
                 }
 
-                queue_.emplace(newCost + heuristic_->calculate( nb.first, label), nb.first, *label);
+                queue_.emplace(newCost + heuristic_->calculate( nb.first, label), newCost, nb.first, *label);
             }
         }
     }
@@ -117,7 +124,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
                     nbc->second.prev.label = &(**other_set);
                 }
 
-                queue_.emplace(newCost + heuristic_->calculate(n, &combined), n, combined);
+                queue_.emplace(newCost + heuristic_->calculate(n, &combined), newCost, n, combined);
             }
         }
     }
@@ -154,7 +161,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     // find minimum distance between n and any terminal not in the label (including root)
     auto dist_c = MAXCOST;
     auto dist_t = 0;
-
+    // TODO: We could actually compute this for all nodes at once
     // Distance to terminals outside the label
     // Since we know there is at least the root outside
     auto closest = instance_->getClosestTerminals(n);
@@ -186,7 +193,6 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     if (existing == pruneBoundCache.end()) {
         auto newBs = dynamic_bitset<>(nTerminals_ + 1); // +1 as this may include the root
         newBs.set(dist_t);
-        auto x = PruneBoundEntry(dist_c + cost, newBs);
         pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*label), forward_as_tuple(dist_c + cost, newBs));
     } else {
         if (dist_c + cost < existing->second.cost) {
