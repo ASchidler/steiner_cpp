@@ -18,21 +18,27 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 
     // TODO: Root selection
     // TODO: Allow for non-terminal roots?
-    node_id numRoots = min((node_id)2, instance->getNumTerminals());
+    node_id numRoots = min((node_id)10, instance->getNumTerminals());
     node_id roots[numRoots];
+    chooseRoots(roots, numRoots);
     DualAscentResult* results[numRoots];
     for(node_id t=0; t < numRoots; t++)
-        results[t] = DualAscent::calculate(instance->getGraph(), t, nullptr, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
+        results[t] = DualAscent::calculate(instance->getGraph(), roots[t], nullptr, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
 
-    for(node_id t=0; t < numRoots; t++)
-        track += reduceGraph(results[t]);
+    node_id tracks[numRoots];
+    for(node_id t=0; t < numRoots; t++) {
+        tracks[t] = reduceGraph(results[t]);
+        track += tracks[t];
+    }
 
+    selectRoots(results, numRoots, tracks);
     for(node_id t=0; t < numRoots; t++)
         delete results[t];
 
     if (track > 0) {
         instance->setSteinerDistanceState(SteinerInstance::invalid);
         instance->setDistanceState(SteinerInstance::invalid);
+        instance->setSteinerDistanceState(SteinerInstance::invalid);
     }
 
     return track;
@@ -66,7 +72,6 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
                     if (edgeCost > limit)
                         candidates.emplace_back(min(n.node, n2.first), max(n.node, n2.first));
                 }
-
                 // TODO: NTDK
             }
         }
@@ -90,4 +95,55 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
 
     delete [] vor;
     return track;
+}
+
+void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots) {
+    node_id rootsSelected = 0;
+    node_id selectBest = min(4, numRoots/2);
+    for(auto i=0; i < selectBest && rootsSelected < numRoots; i++) {
+        roots[rootsSelected] = bestRoots[i];
+        rootsSelected++;
+    }
+
+    // Now select terminals
+    for(; rootsSelected < numRoots; rootsSelected++) {
+        node_id t = random() % instance->getNumTerminals();
+        // Select next t that has not been selected yet
+        for(auto j=0; j < rootsSelected; j++) {
+            if (roots[j] == t) {
+                t++;
+                if (t >= instance->getNumTerminals())
+                    t = 0;
+                j=0;
+            }
+        }
+
+        roots[rootsSelected] = t;
+    }
+}
+
+void steiner::DualAscentReduction::selectRoots(steiner::DualAscentResult** results, node_id numSolutions, const node_id *track) {
+    // Okay so the idea is that we choose the two best roots in terms of bounds and the two best roots in terms of elimination
+    cost_id boundBest[2] = {0, 0};
+    node_id eliminationBest[2] = {0, 0};
+
+    for(node_id i=0; i < numSolutions; i++) {
+        if(results[i]->bound > boundBest[0]) {
+            boundBest[1] = boundBest[0];
+            boundBest[0] = results[i]->bound;
+            bestRoots[2] = bestRoots[0];
+            bestRoots[0] = results[i]->root;
+        } else if (results[i]->bound > boundBest[1]) {
+            boundBest[1] = results[i]->bound;
+            bestRoots[2] = results[i]->root;
+        } else if (track[i] > eliminationBest[0]) {
+            eliminationBest[1] = eliminationBest[0];
+            eliminationBest[0] = track[i];
+            bestRoots[3] = bestRoots[1];
+            bestRoots[1] = results[i]->root;
+        } else if (track[i] > eliminationBest[1]) {
+            eliminationBest[1] = track[i];
+            bestRoots[3] = results[i]->root;
+        }
+    }
 }

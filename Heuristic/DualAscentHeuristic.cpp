@@ -27,7 +27,7 @@ cost_id DualAscentHeuristic::calculate(node_id n, const dynamic_bitset<> *label)
 cost_id* DualAscentHeuristic::precalculate(const dynamic_bitset<> *label) {
     //TODO: The test and choice for method is missing, i.e. implement multiple methods...
 
-    auto result = DualAscent::calculate(instance_->getGraph(), root_, label, nTerminals_, nNodes_);
+    auto result = DualAscent::calculate(instance_->getGraph(), root_, label, nTerminals_+1, nNodes_);
     result->g->findDistances(root_);
     auto nodeBounds = new cost_id[instance_->getGraph()->getMaxNode()];
     for(auto i : *(instance_->getGraph()->getNodes())) {

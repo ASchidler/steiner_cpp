@@ -7,6 +7,7 @@
 #include "Reduction.h"
 #include "../Algorithms/SteinerLength.h"
 #include "../Algorithms/DualAscent.h"
+#include <random>
 
 namespace  steiner {
     class DualAscentReduction : public Reduction {
@@ -21,6 +22,10 @@ namespace  steiner {
         }
     private:
         node_id reduceGraph(DualAscentResult* r);
+        node_id bestRoots[2] = {0, 1};
+
+        void chooseRoots(node_id* roots, node_id numRoots);
+        void selectRoots(DualAscentResult** results, node_id numSolutions, const node_id* track);
 
         static inline vector<NodeWithCost>* voronoi(Graph* g, node_id nTerminals) {
             auto vor = new vector<NodeWithCost>[nTerminals];

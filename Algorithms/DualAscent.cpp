@@ -14,8 +14,6 @@ node_id DualAscent::bestRoot = 0;
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
     Graph *dg = g->copy(false);
     unsigned int bound = 0;
-    if (root >= nTerminals) // In case root is not counted, as when used in a guiding heuristic
-        nTerminals = root + 1;
 
     auto q = priority_queue<NodeWithCost>();
     bool active[nTerminals];

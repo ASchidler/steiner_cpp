@@ -68,7 +68,6 @@ SteinerTree* steiner::HsvSolver::solve() {
         }
 
         if (cost < entry.originalCost) {
-            cout << "Original" << endl;
             continue;
         }
         // Checking pruning again does not really eliminate cases
