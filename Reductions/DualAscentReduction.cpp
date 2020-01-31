@@ -99,7 +99,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
 
 void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots) {
     node_id rootsSelected = 0;
-    node_id selectBest = min(4, numRoots/2);
+    node_id selectBest = min(2, numRoots/2);
     for(auto i=0; i < selectBest && rootsSelected < numRoots; i++) {
         roots[rootsSelected] = bestRoots[i];
         rootsSelected++;
@@ -124,26 +124,16 @@ void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots)
 
 void steiner::DualAscentReduction::selectRoots(steiner::DualAscentResult** results, node_id numSolutions, const node_id *track) {
     // Okay so the idea is that we choose the two best roots in terms of bounds and the two best roots in terms of elimination
-    cost_id boundBest[2] = {0, 0};
-    node_id eliminationBest[2] = {0, 0};
+    cost_id bestBound = 0;
+    node_id bestTrack = 0;
 
     for(node_id i=0; i < numSolutions; i++) {
-        if(results[i]->bound > boundBest[0]) {
-            boundBest[1] = boundBest[0];
-            boundBest[0] = results[i]->bound;
-            bestRoots[2] = bestRoots[0];
+        if(results[i]->bound > bestBound) {
             bestRoots[0] = results[i]->root;
-        } else if (results[i]->bound > boundBest[1]) {
-            boundBest[1] = results[i]->bound;
-            bestRoots[2] = results[i]->root;
-        } else if (track[i] > eliminationBest[0]) {
-            eliminationBest[1] = eliminationBest[0];
-            eliminationBest[0] = track[i];
-            bestRoots[3] = bestRoots[1];
+            bestBound = results[i]->bound;
+        } else if (track[i] > bestTrack) {
             bestRoots[1] = results[i]->root;
-        } else if (track[i] > eliminationBest[1]) {
-            eliminationBest[1] = track[i];
-            bestRoots[3] = results[i]->root;
+            bestTrack = track[i];
         }
     }
 }
