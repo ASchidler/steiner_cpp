@@ -18,7 +18,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 
     // TODO: Root selection
     // TODO: Allow for non-terminal roots?
-    node_id numRoots = min((node_id)10, instance->getNumTerminals());
+    node_id numRoots = min((node_id)20, instance->getNumTerminals());
     node_id roots[numRoots];
     chooseRoots(roots, numRoots);
     DualAscentResult* results[numRoots];
@@ -68,6 +68,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
             else { // Identify deletable edges
                 auto nb = r->g->nb[n.node];
                 for(auto& n2: nb) {
+                    // n.cost is the cost to reach the terminal. We seek root -> edge(n2, n) -> t
                     auto edgeCost = dist[n2.first] + r->g->nb[n2.first][n.node] + n.cost;
                     if (edgeCost > limit)
                         candidates.emplace_back(min(n.node, n2.first), max(n.node, n2.first));
@@ -98,11 +99,14 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
 }
 
 void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots) {
+    assert(numRoots < instance->getNumTerminals());
     node_id rootsSelected = 0;
     node_id selectBest = min(2, numRoots/2);
     for(auto i=0; i < selectBest && rootsSelected < numRoots; i++) {
-        roots[rootsSelected] = bestRoots[i];
-        rootsSelected++;
+        if (bestRoots[i] < instance->getNumTerminals()) {
+            roots[rootsSelected] = bestRoots[i];
+            rootsSelected++;
+        }
     }
 
     // Now select terminals

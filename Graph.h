@@ -152,10 +152,20 @@ namespace steiner {
             return EdgeIterator(&nodes_, &nb);
         }
         void switchVertices(node_id n1, node_id n2);
-        bool isConnected();
+        bool isConnected(node_id nodeLimit);
         Graph* copy(bool copyMapping);
         Graph* mst();
         cost_id mst_sum();
+        cost_id getCost() {
+            cost_id sum = 0;
+            for(auto n: nodes_) {
+                for(auto& b: nb[n]){
+                    if (n < b.first)
+                        sum += b.second;
+                }
+            }
+            return sum;
+        }
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;

@@ -8,7 +8,7 @@
 #include "SteinerHeuristic.h"
 #include "../Graph.h"
 #include "../SteinerInstance.h"
-// TODO: Put the hashing for bitsets somewhere else...
+// TODO: Maybe implement the STP heuristic computing STP for 2-3 terminals?
 #include "../HashSetLabelStore.h"
 namespace steiner {
     class MstHeuristic : public SteinerHeuristic {

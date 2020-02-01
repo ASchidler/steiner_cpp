@@ -134,6 +134,17 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<Edge> *ed
             minCost = min(minCost, cEdge.cost);
         }
     }
+//
+//    auto cEdge = edges->begin();
+//    while (cEdge != edges->end()) {
+//        if (cut[cEdge->u]) {
+//            edges->erase(cEdge);
+//        } else {
+//            if (cEdge->cost < minCost)
+//                minCost = cEdge->cost;
+//            ++cEdge;
+//        }
+//    }
 
     return minCost;
 }

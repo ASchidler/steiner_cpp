@@ -227,7 +227,7 @@ node_id Graph::getReverseMapping(node_id internal) {
     return nodeReverseMap_[internal];
 }
 
-bool Graph::isConnected() {
+bool Graph::isConnected(node_id nodeLimit) {
     bool seen[getMaxNode()];
     for (node_id i=0; i < getMaxNode(); i++)
         seen[i] = false;
@@ -249,6 +249,14 @@ bool Graph::isConnected() {
                 q.emplace_back(v.first);
             }
         }
+    }
+
+    if (nodeLimit > 0) {
+        for(node_id i=0; i < nodeLimit; i++) {
+            if (! seen[i])
+                return false;
+        }
+        return true;
     }
 
     return cnt == getNumNodes();

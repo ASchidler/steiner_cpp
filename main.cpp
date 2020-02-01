@@ -23,8 +23,10 @@
 #include "Reductions/ShortLinksPreselection.h"
 #include "Reductions/NearestVertexPreselection.h"
 #include "Reductions/QuickCollection.h"
+#include <chrono>
 
 using namespace steiner;
+using namespace chrono;
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -47,37 +49,40 @@ int main(int argc, char* argv[]) {
         ts.emplace(i);
     }
 
-    for (int i=0; i < s->getNumTerminals() && i < 1; i++) {
-        //TODO: Receive label for heuristics instead of list of terminals...
-        auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
-        delete result;
-        auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
-        delete result2;
-    }
-    cout <<"LB " << DualAscent::bestResult << endl;
-    cout <<"UB " << ShortestPath::bestResult << endl;
+//    for (int i=0; i < s->getNumTerminals() && i < 1; i++) {
+//        auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
+//        delete result;
+//        auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
+//        delete result2;
+//    }
+//    cout <<"LB " << DualAscent::bestResult << endl;
+//    cout <<"UB " << ShortestPath::bestResult << endl;
 
-    if (! s->getGraph()->isConnected())
+    auto start = high_resolution_clock::now();
+    if (! s->getGraph()->isConnected(s->getNumTerminals()))
         cout << "Not Connected (start)" << endl;
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
     //reductions.push_back(new ZeroEdgePreselection(s));
-    reductions.push_back(new steiner::QuickCollection(s));
-    reductions.push_back(new NearestVertexPreselection(s));
-    reductions.push_back(new MstPreselection(s));
-    reductions.push_back(new HeavyEdgeReduction(s, 100));
+//    reductions.push_back(new steiner::QuickCollection(s));
+//    reductions.push_back(new NearestVertexPreselection(s));
+//    reductions.push_back(new MstPreselection(s));
+//    reductions.push_back(new HeavyEdgeReduction(s, 100));
     reductions.push_back(new DualAscentReduction(s));
-    reductions.push_back(new LongEdgeReduction(s, true, 100));
-    reductions.push_back(new Degree3Reduction(s));
-    reductions.push_back(new NtdkReduction(s, 100, true, 4));
-    reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new NtdkReduction(s, 100, false, 4));
-    reductions.push_back(new SdcReduction(s, 100));
-    reductions.push_back(new TerminalDistanceReduction(s));
+//    reductions.push_back(new LongEdgeReduction(s, true, 100));
+//    reductions.push_back(new Degree3Reduction(s));
+//    reductions.push_back(new NtdkReduction(s, 100, true, 4));
+//    reductions.push_back(new DegreeReduction(s, false));
+//    reductions.push_back(new NtdkReduction(s, 100, false, 4));
+//    reductions.push_back(new SdcReduction(s, 100));
+//    reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    cout << duration.count() << endl;
 
-    if (! s->getGraph()->isConnected())
+    if (! s->getGraph()->isConnected(s->getNumTerminals()))
         cout << "Not Connected (after reduction)" << endl;
     s->checkGraphIntegrity();
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;

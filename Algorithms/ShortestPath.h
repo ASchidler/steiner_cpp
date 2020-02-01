@@ -16,6 +16,12 @@ namespace steiner {
         static node_id bestRoot;
         static cost_id bestResult;
     };
+
+    class VoronoiPartition {
+    public:
+        void reset();
+        
+    };
 }
 
 /*
