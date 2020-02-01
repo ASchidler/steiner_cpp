@@ -124,15 +124,14 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<Edge> *ed
 
     // Find minimum cost and remove edges that are inside the cut
     cost_id minCost = MAXCOST;
-    auto cEdge = edges->begin();
-
-    while (cEdge != edges->end()) {
-        if (cut[cEdge->u]) {
-            edges->erase(cEdge);
+    for(size_t i=0; i < edges->size(); i++) {
+        auto& cEdge = edges->at(i);
+        if (cut[cEdge.u]) {
+            swap((*edges)[i], edges->back());
+            edges->pop_back();
+            i--;
         } else {
-            if (cEdge->cost < minCost)
-                minCost = cEdge->cost;
-            ++cEdge;
+            minCost = min(minCost, cEdge.cost);
         }
     }
 
