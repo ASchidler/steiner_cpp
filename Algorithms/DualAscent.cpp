@@ -9,8 +9,6 @@ bool DualAscent::hasRun = false;
 cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
-// TODO: Implement the 2 other variants... at least number 3 -> More exact but slower
-// TODO: Shrink graph before solving to get rid of excessive data structures...
 DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
     Graph *dg = g->copy(false);
     unsigned int bound = 0;
@@ -26,7 +24,7 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
         if (ts == nullptr || t == root || !ts->test(t)) {
             active[t] = true;
             if (t != root) {
-                q.emplace(t, 0);
+                q.emplace(t, dg->nb[t].size());
                 cut[t] = new bool[nNodes];
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
@@ -46,31 +44,26 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
         q.pop();
 
         // Find cut, i.e. vertices in the weakly connected component of t and edges leading in
-        auto minCost = findCut(dg, elem.node, active, &(edges[elem.node]), cut[elem.node], nTerminals);
-
-        // This is not necessary for correctness, but this ensures that the estimated weight is about right
-        // and leads got generally better bounds
-        if (! q.empty()) {
-            auto elem2 = q.top();
-            if (edges[elem.node].size() > elem2.cost) {
-                elem.cost = edges[elem.node].size();
-                q.push(elem);
-                continue;
-            }
-        }
+        auto minCost = findCut(*dg, elem.node, active, edges[elem.node], cut[elem.node], nTerminals);
 
         // Min Cost 0 means hit an active component
         if (minCost > 0) {
+            // This is not necessary for correctness, but this ensures that the estimated weight is about right
+            // and leads got generally better bounds
+            if (!q.empty()) {
+                auto& elem2 = q.top();
+                if (edges[elem.node].size() > elem2.cost) {
+                    elem.cost = edges[elem.node].size();
+                    q.push(elem);
+                    continue;
+                }
+            }
             // Increment bound
             bound += minCost;
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             for(auto& ce: edges[elem.node]) {
                 *ce.c -= minCost;
-                if (*ce.c == 0 && ce.u < nTerminals && active[ce.u]) {
-                    active[elem.node] = false;
-                }
-
             }
 
             // Add back to queue
@@ -96,19 +89,19 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
     return new DualAscentResult(bound, dg, root);
 }
 
-cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscentEdge> *edges, bool* cut, node_id nTerminals) {
+cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals) {
     vector<node_id> bfs_queue;
 
-    // Find new nodes for the cut and than trace them
-    for(auto& e: *edges) {
+    // Find new nodes for the cut and then trace them
+    for(auto& e: edges) {
         if (!cut[e.u] && *e.c == 0) {
             bfs_queue.push_back(e.u);
+            cut[e.u] = true;
             if (e.u < nTerminals && active[e.u]) {
                 active[n] = false;
                 return 0;
             }
-
-            cut[e.u] = true;
+            // The vector will be cleaned of unnecessary edges below
         }
     }
 
@@ -116,11 +109,10 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
         auto v = bfs_queue.back();
         bfs_queue.pop_back();
 
-        for (auto u: dg->nb[v]) {
+        for (auto u: dg.nb[v]) {
             if (!cut[u.first]) {
-                // Strictly speaking a pred relation is not necessary, as we always have symmetric directed graphs, but this causes cache misses (I guess)
-                // The question is, if the stuff below would cause them anyways...
-                auto cost = &(dg->nb[u.first][v]);
+                // get the pred distance
+                auto cost = &(dg.nb[u.first][v]);
 
                 // 0 means traversable edge
                 if (*cost == 0) {
@@ -132,7 +124,7 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
                     bfs_queue.push_back(u.first);
                     cut[u.first] = true;
                 } else {
-                    edges->emplace_back(u.first, v, cost);
+                    edges.emplace_back(u.first, v, cost);
                 }
             }
         }
@@ -140,14 +132,14 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
 
     // Find minimum cost and remove edges that are inside the cut
     cost_id minCost = MAXCOST;
-    for(size_t i=0; i < edges->size(); i++) {
-        auto& cEdge = edges->at(i);
-        if (cut[cEdge.u]) {
-            swap((*edges)[i], edges->back()); // Popping from the back is a lot more efficient
-            edges->pop_back();
+    for(size_t i=0; i < edges.size(); i++) {
+        auto& cEdge = edges[i];
+        if (cut[cEdge.u]) { // This automatically includes zero cost edges
+            swap(edges[i], edges.back()); // Popping from the back is a lot more efficient
+            edges.pop_back();
             i--;
         } else {
-            minCost = min(minCost, *cEdge.c);
+            minCost = min(minCost, *(cEdge.c));
         }
     }
 

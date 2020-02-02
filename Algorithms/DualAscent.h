@@ -33,7 +33,7 @@ namespace steiner {
     class DualAscent {
     public:
         static DualAscentResult* calculate(Graph* g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes);
-        inline static cost_id findCut(Graph *dg, node_id n, bool* active, vector<DualAscentEdge> *edges, bool* cut, node_id nTerminals);
+        inline static cost_id findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals);
         static bool hasRun;
         static node_id bestRoot;
         static cost_id bestResult;
