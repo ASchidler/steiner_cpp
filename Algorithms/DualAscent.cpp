@@ -28,8 +28,10 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
                 cut[t] = new bool[nNodes];
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
-                for(auto& nb: dg->nb[t])
+                for(auto& nb: dg->nb[t]) {
+                    assert(dg->nb[nb.first].count(t) > 0);
                     edges[t].emplace_back(nb.first, t, &(dg->nb[nb.first][t]));
+                }
 
                 cut[t][t] = true;
             }
@@ -60,15 +62,21 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
             }
             // Increment bound
             bound += minCost;
+            cost_id cost = 0;
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             for(auto& ce: edges[elem.node]) {
-                *ce.c -= minCost;
+                if ((*ce.c -= minCost) == 0) { // subtract and check if traversable
+                    cost++;
+                    if (ce.u < nTerminals && active[ce.u]) {
+                        active[elem.node] = false;
+                    }
+                }
             }
 
             // Add back to queue
             if (active[elem.node]) {
-                elem.cost = edges[elem.node].size();
+                elem.cost = edges[elem.node].size() + cost;
                 q.push(elem);
             }
         }
@@ -112,6 +120,7 @@ cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscen
         for (auto u: dg.nb[v]) {
             if (!cut[u.first]) {
                 // get the pred distance
+                assert(dg.nb[u.first].count(v) > 0);
                 auto cost = &(dg.nb[u.first][v]);
 
                 // 0 means traversable edge

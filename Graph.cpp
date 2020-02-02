@@ -78,13 +78,12 @@ void steiner::Graph::findDistances(node_id u) {
     }
 
     // We could initialize with other known distances...
-
     // Dijkstra
     auto q = priority_queue<NodeWithCost>();
 
     q.emplace(u, 0);
     distances_[u][u] = 0;
-
+//TODO: Implement bucket queue
     while(not q.empty()) {
         auto elem = q.top();
         q.pop();

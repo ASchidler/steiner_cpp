@@ -21,7 +21,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, Graph* tr) {
                 auto cp = tr->copy(false);
                 for(auto& b: dg->nb[n]) {
                     if (tr->getNodes()->count(n) > 0) {
-
+                        auto path = dg->findPath(n, b.first);
                     }
                 }
             }

@@ -21,10 +21,10 @@ namespace steiner {
 
         // TODO: These are actually the wrong way so that priority queues are min queues...
         bool operator<(const NodeWithCost& p2) const {
-            return cost > p2.cost || (cost == p2.cost && node > p2.node);
+            return cost > p2.cost;
         }
         bool operator>(const NodeWithCost& p2) const {
-            return cost < p2.cost || (cost == p2.cost && node > p2.node);
+            return cost < p2.cost;
         }
     };
 
