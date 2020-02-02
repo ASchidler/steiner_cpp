@@ -370,9 +370,8 @@ cost_id Graph::mst_sum() {
 void Graph::discardDistances() {
     if (distances_ != nullptr) {
         for (size_t i = 0; i < sizeof(distances_) / sizeof(cost_id); i++) {
-            if (distances_ != nullptr) {
-                delete[] distances_[i];
-            }
+            delete[] distances_[i];
+            distances_[i] = nullptr;
         }
         delete[] distances_;
         distances_ = nullptr;
@@ -420,6 +419,32 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
     return path;
 }
 
-void Graph::shrink() {
+bool Graph::shrink() {
+    if (nodes_.size() == nb.size())
+        return false;
 
+    node_id last_idx = 0;
+    // Goal shrink to nodes_.size()
+    auto n = nodes_.begin();
+    while(n != nodes_.end()) {
+        if (*n >= nodes_.size()) {
+            for(; last_idx < nodes_.size() && !nb[last_idx].empty(); last_idx++);
+            if (last_idx != *n) { // This can happen if we fully reduced the graph
+                switchVertices(*n, last_idx);
+                n = nodes_.erase(n);
+                nodes_.insert(last_idx);
+                last_idx++;
+                assert(checkConnectedness(0, false));
+            }
+        } else {
+            ++n;
+        }
+    }
+    // Remove unnecessary vectors, decreases maxnode
+    while(nb.size() > nodes_.size()) {
+        assert(nb.back().empty());
+        nb.pop_back();
+    }
+
+    return true;
 }

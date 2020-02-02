@@ -6,9 +6,7 @@
 
 node_id steiner::HeavyEdgeReduction::reduce(node_id currCount, node_id prevCount) {
     // Run only once!
-    if (! ran_)
-        return 0;
-    ran_ = true;
+    enabled = false;
 
     node_id track = 0;
     for(node_id t=0; t < instance->getNumTerminals(); t++) {

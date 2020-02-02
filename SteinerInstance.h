@@ -50,6 +50,7 @@ namespace steiner {
         void invalidateTerminals();
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
+        void shrink();
 //TODO: Always keep the lowest known upper bound
         SteinerTree* getApproximation() {
             if (approximationState_ != exact) {

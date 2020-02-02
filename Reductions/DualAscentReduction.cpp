@@ -5,7 +5,6 @@
 #include "DualAscentReduction.h"
 
 node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCount) {
-
     if (instance->getNumTerminals() < 3)
         return 0;
 
@@ -16,8 +15,6 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 
     // TODO: Define control parameters according to instance size
 
-    // TODO: Root selection
-    // TODO: Allow for non-terminal roots?
     node_id numRoots = min((node_id)50, instance->getNumTerminals());
     node_id roots[numRoots];
     chooseRoots(roots, numRoots);
@@ -40,7 +37,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         instance->setDistanceState(SteinerInstance::invalid);
         instance->setSteinerDistanceState(SteinerInstance::invalid);
     }
-
+    enabled = track > 0;
     return track;
 }
 

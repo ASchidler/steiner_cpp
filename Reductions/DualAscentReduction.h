@@ -38,7 +38,7 @@ namespace  steiner {
             for(node_id n=0; n < g->getMaxNode(); n++)
                 visited[n] = false;
 
-            while(nVisited < g->getNumNodes()) {
+            while(!q.empty()) {
                 auto elem = q.top();
                 q.pop();
 

@@ -24,6 +24,7 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
                 ids[nbIdx++] = v.first;
                 edgeSum += v.second;
             }
+            // Sort ids so that the edges have a specific order.
             sort(ids, ids+nbIdx);
 
             // Compute distances between neighbors
@@ -97,6 +98,6 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
 
     if (track > 0)
         instance->setApproximationState(SteinerInstance::invalid);
-
+    enabled = track > 0;
     return track;
 }

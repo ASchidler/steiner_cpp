@@ -270,5 +270,15 @@ void SteinerInstance::invalidateTerminals() {
     setSteinerDistanceState(invalid);
 }
 
+void SteinerInstance::shrink() {
+    g_->checkConnectedness(nTerminals, true);
+    if (g_->shrink()) {
+        approximationState_ = invalid;
+        distanceState_ = invalid;
+        steinerDistanceState_ = invalid;
+        clearDistance();
+    }
+}
+
 
 

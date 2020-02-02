@@ -5,8 +5,7 @@
 #include "ZeroEdgePreselection.h"
 
 node_id steiner::ZeroEdgePreselection::reduce(node_id currCount, node_id prevCount) {
-    if (ran_)
-        return 0;
+    enabled = false;
 
     ran_ = true;
     node_id track = 0;

@@ -35,7 +35,6 @@ namespace  steiner {
             cost_id oldCost;
             cost_id newCost;
         };
-        bool ran_ = false;
         vector<Adaption> adaptions_;
     };
 }

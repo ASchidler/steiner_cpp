@@ -143,7 +143,7 @@ namespace steiner {
         void discardDistances();
         vector<node_id> findPath(node_id u, node_id v);
 
-        void shrink();
+        bool shrink();
 
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);

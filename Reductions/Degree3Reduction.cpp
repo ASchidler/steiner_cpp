@@ -102,7 +102,7 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
         } // Degree == 3
         ++n;
     }
-
+    enabled = track > 0;
     return track;
 }
 

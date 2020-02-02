@@ -44,8 +44,8 @@ namespace steiner {
             return change;
         }
         virtual string getName() = 0;
+        bool enabled = true;
     protected:
-
         vector<Edge> preselected;
         vector<ContractedEdge> contracted;
         vector<MergedEdges> merged;

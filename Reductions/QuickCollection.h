@@ -52,9 +52,4 @@ namespace  steiner {
     ;
 }
 
-class QuickCollection {
-
-};
-
-
 #endif //STEINER_QUICKCOLLECTION_H
