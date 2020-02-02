@@ -22,6 +22,7 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
 
     // Initialize active components and queue
     for(node_id t=0; t < nTerminals; t++) {
+        cut[t] = nullptr;
         if (ts == nullptr || t == root || !ts->test(t)) {
             active[t] = true;
             if (t != root) {
@@ -64,30 +65,12 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
             bound += minCost;
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
-            node_id oldCount = edges[elem.node].size();
-            for(size_t i=0; i < oldCount; i++) {
-                auto& ce = edges[elem.node][i];
+            for(auto& ce: edges[elem.node]) {
                 *ce.c -= minCost;
+                if (*ce.c == 0 && ce.u < nTerminals && active[ce.u]) {
+                    active[elem.node] = false;
+                }
 
-                // Is now zero, i.e. is part of the component
-//                if (*ce.c == 0) {
-//                    if (ce.u < nTerminals && active[ce.u]) {
-//                        // TODO: delete cut...
-//                        active[elem.node] = false; // Found active component
-//                    } else if(active[elem.node] && !cut[elem.node][ce.u]) {
-//                        cut[elem.node][ce.u] = true;
-//                        node_id u =ce.u;
-//                        for(auto& nb: dg->nb[ce.u]) {
-//                            if (! cut[elem.node][nb.first]) {
-//                                edges[elem.node].emplace_back(nb.first, u, &(dg->nb[nb.first][u]));
-//                            }
-//                        }
-//                        // This will decrement newly added edges...
-////                        swap(edges[elem.node][i], edges[elem.node].back());
-////                        edges[elem.node].pop_back();
-////                        i--;
-//                    }
-//                }
             }
 
             // Add back to queue
@@ -97,6 +80,10 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
             }
         }
     } // end main loop
+
+    for(node_id t=0; t < nTerminals; t++) {
+        delete[] cut[t];
+    }
 
     // Store best result and especially best root
     DualAscent::hasRun = true;
@@ -112,7 +99,7 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
 cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscentEdge> *edges, bool* cut, node_id nTerminals) {
     vector<node_id> bfs_queue;
 
-    // Find "unexpected" new nodes for cut
+    // Find new nodes for the cut and than trace them
     for(auto& e: *edges) {
         if (!cut[e.u] && *e.c == 0) {
             bfs_queue.push_back(e.u);
@@ -125,7 +112,6 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
         }
     }
 
-// TODO: Read all edges and than use references to the edge, to avoid costly hashtable lookup?
     while (!bfs_queue.empty()) { // cut loop
         auto v = bfs_queue.back();
         bfs_queue.pop_back();
@@ -141,7 +127,6 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
                     // Found active vertex? Stop, component is connected
                     if (u.first < nTerminals && active[u.first]) {
                         active[n] = false;
-                        // TODO: delete cut...
                         return 0;
                     }
                     bfs_queue.push_back(u.first);
@@ -157,8 +142,8 @@ cost_id DualAscent::findCut(Graph *dg, node_id n, bool* active, vector<DualAscen
     cost_id minCost = MAXCOST;
     for(size_t i=0; i < edges->size(); i++) {
         auto& cEdge = edges->at(i);
-        if (*cEdge.c == 0 || cut[cEdge.u]) {
-            swap((*edges)[i], edges->back());
+        if (cut[cEdge.u]) {
+            swap((*edges)[i], edges->back()); // Popping from the back is a lot more efficient
             edges->pop_back();
             i--;
         } else {

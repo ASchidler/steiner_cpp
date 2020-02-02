@@ -57,9 +57,15 @@ namespace steiner {
 
                 approximation_ = steiner::ShortestPath::calculate((node_id)0, g_, nTerminals, g_->getMaxNode());
                 approximationState_ = exact;
+                if (approximation_->getCost() < upperBound_)
+                    upperBound_ = approximation_->getCost();
             }
 
             return approximation_;
+        }
+
+        cost_id getUpperBound() {
+            return upperBound_;
         }
 
         void setDistanceState(ValueState s) {
@@ -135,6 +141,7 @@ namespace steiner {
         cost_id** terminalSteinerDistances_ = nullptr;
         node_id nTerminals = 0;
         node_id maxTerminals = 0;
+        cost_id upperBound_ = MAXCOST;
 
         inline node_id removeNode_(node_id u);
         void calculateSteinerDistance();

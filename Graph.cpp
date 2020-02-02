@@ -93,7 +93,7 @@ void steiner::Graph::findDistances(node_id u) {
         if(elem.cost > distances_[u][elem.node])
             continue;
 
-        for (auto v: nb[elem.node]) {
+        for (const auto& v: nb[elem.node]) {
             if (distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
                 q.emplace(v.first, elem.cost + v.second);
@@ -130,7 +130,7 @@ unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
 }
 
 unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_id>::iterator u) {
-    for(auto elem: nb[*u]) {
+    for(const auto& elem: nb[*u]) {
         nb[elem.first].erase(*u);
     }
     nb[*u].clear();
@@ -171,7 +171,7 @@ Graph::EdgeIterator Graph::removeEdge(Graph::EdgeIterator it) {
 
 unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
     vector<Edge> ret;
-    for(auto n: nb[remove]) {
+    for(const auto& n: nb[remove]) {
         if (n.first != target) {
             if (addEdge(target, n.first, n.second) && result != nullptr) {
                 result->emplace_back(remove, target, n.first, n.second);
@@ -194,7 +194,7 @@ void Graph::switchVertices(node_id n1, node_id n2) {
     nodeReverseMap_[n2] = on1;
 
     // Relabel edges
-    for(auto v: nb[n1]) {
+    for(const auto& v: nb[n1]) {
         auto n1c = nb[v.first][n1];
         // Has edges to both nodes, simply switch values
         if (nb[v.first].count(n2) > 0) {
@@ -206,7 +206,7 @@ void Graph::switchVertices(node_id n1, node_id n2) {
         }
     }
 
-    for(auto v: nb[n2]) {
+    for(const auto& v: nb[n2]) {
         if (v.first == n2) { // In this case n1 was replaced by n2 above
             auto n2c = nb[n1][n2];
             nb[n1].erase(n2);
@@ -227,7 +227,7 @@ node_id Graph::getReverseMapping(node_id internal) {
     return nodeReverseMap_[internal];
 }
 
-bool Graph::isConnected(node_id nodeLimit) {
+bool Graph::checkConnectedness(node_id nodeLimit, bool clean) {
     bool seen[getMaxNode()];
     for (node_id i=0; i < getMaxNode(); i++)
         seen[i] = false;
@@ -242,7 +242,7 @@ bool Graph::isConnected(node_id nodeLimit) {
         auto u = q.back();
         q.pop_back();
 
-        for(auto v : nb[u]) {
+        for(const auto& v : nb[u]) {
             if (! seen[v.first]) {
                 seen[v.first] = true;
                 cnt++;
@@ -251,15 +251,27 @@ bool Graph::isConnected(node_id nodeLimit) {
         }
     }
 
+    bool connected = (cnt == getNumNodes());
+
     if (nodeLimit > 0) {
-        for(node_id i=0; i < nodeLimit; i++) {
-            if (! seen[i])
-                return false;
+        node_id i=0;
+        for(; i < nodeLimit && seen[i]; i++) {
         }
-        return true;
+        connected = (i == nodeLimit);
+
+        if (connected && clean) {
+            auto it = nodes_.begin();
+            while(it != nodes_.end()) {
+                if (! seen[*it]) {
+                    it = removeNode(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
     }
 
-    return cnt == getNumNodes();
+    return connected;
 }
 
 Graph *Graph::mst() {
@@ -283,7 +295,7 @@ Graph *Graph::mst() {
 
     for(int i=0; i < getMaxNode(); i++) {
         val = MAXCOST;
-        for(auto k: nodes_) {
+        for(const auto& k: nodes_) {
             if (minEdgeVal[k] < val) {
                 val = minEdgeVal[k];
                 idx = k;
@@ -295,7 +307,7 @@ Graph *Graph::mst() {
             result->addEdge(idx, minEdgeNode[idx], minEdgeVal[idx]);
         minEdgeVal[idx] = MAXCOST;
 
-        for(auto k: nodes_) {
+        for(const auto& k: nodes_) {
             if (! taken[k]) {
                 auto dist = nb[idx][k];
                 if (dist < minEdgeVal[k]) {
@@ -329,7 +341,7 @@ cost_id Graph::mst_sum() {
 
     for(int i=0; i < getMaxNode(); i++) {
         val = MAXCOST;
-        for(auto k: nodes_) {
+        for(const auto& k: nodes_) {
             if (minEdgeVal[k] < val) {
                 val = minEdgeVal[k];
                 idx = k;
@@ -340,7 +352,7 @@ cost_id Graph::mst_sum() {
         result += minEdgeVal[idx];
         minEdgeVal[idx] = MAXCOST;
 
-        for(auto k: nodes_) {
+        for(const auto& k: nodes_) {
             if (! taken[k]) {
                 auto dist = nb[idx][k];
                 if (dist < minEdgeVal[k]) {
@@ -365,4 +377,49 @@ void Graph::discardDistances() {
         delete[] distances_;
         distances_ = nullptr;
     }
+}
+
+vector<node_id> Graph::findPath(node_id u, node_id v) {
+    cost_id dist[getMaxNode()];
+    node_id p[getMaxNode()];
+    for(size_t i=0; i < getMaxNode(); i++) {
+        dist[i] = MAXCOST;
+    }
+
+    // Dijkstra
+    auto q = priority_queue<NodeWithCost>();
+
+    q.emplace(u, 0);
+    dist[u] = 0;
+
+    while(not q.empty()) {
+        auto elem = q.top();
+        q.pop();
+
+        if (elem.node == v)
+            break;
+
+        // already visited...
+        if(elem.cost > dist[elem.node])
+            continue;
+
+        for (auto& n: nb[elem.node]) {
+            if (dist[n.first] > elem.cost + n.second) {
+                dist[n.first] = elem.cost + n.second;
+                p[n.first] = n.first;
+                q.emplace(n.first, elem.cost + n.second);
+            }
+        }
+    }
+
+    vector<node_id> path;
+    path.push_back(v);
+    while(path.back() != u) {
+        path.push_back(p[path.back()]);
+    }
+    return path;
+}
+
+void Graph::shrink() {
+
 }

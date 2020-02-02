@@ -7,8 +7,6 @@
 
 #include "Steiner.h"
 #include "LabelStore.h"
-#include <boost/dynamic_bitset.hpp>
-#include <boost/functional/hash.hpp>
 #include <bits/stdc++.h>
 
 using namespace boost;

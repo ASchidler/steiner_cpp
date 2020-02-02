@@ -5,7 +5,7 @@
 #ifndef STEINER_LABELITERATOR_H
 #define STEINER_LABELITERATOR_H
 
-#include "boost/dynamic_bitset.hpp"
+#include "Steiner.h"
 
 using namespace boost;
 

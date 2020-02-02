@@ -59,37 +59,39 @@ int main(int argc, char* argv[]) {
 //    cout <<"UB " << ShortestPath::bestResult << endl;
 
     auto start = high_resolution_clock::now();
-    if (! s->getGraph()->isConnected(s->getNumTerminals()))
+    if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
         cout << "Not Connected (start)" << endl;
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
-//    reductions.push_back(new ZeroEdgePreselection(s));
-//    reductions.push_back(new steiner::QuickCollection(s));
-//    reductions.push_back(new NearestVertexPreselection(s));
-//    reductions.push_back(new MstPreselection(s));
-//    reductions.push_back(new HeavyEdgeReduction(s, 100));
+    reductions.push_back(new ZeroEdgePreselection(s));
+    reductions.push_back(new steiner::QuickCollection(s));
+    reductions.push_back(new NearestVertexPreselection(s));
+    reductions.push_back(new MstPreselection(s));
+    reductions.push_back(new HeavyEdgeReduction(s, 100));
     reductions.push_back(new DualAscentReduction(s));
-//    reductions.push_back(new LongEdgeReduction(s, true, 100));
-//    reductions.push_back(new Degree3Reduction(s));
-//    reductions.push_back(new NtdkReduction(s, 100, true, 4));
-//    reductions.push_back(new DegreeReduction(s, false));
-//    reductions.push_back(new NtdkReduction(s, 100, false, 4));
-//    reductions.push_back(new SdcReduction(s, 100));
-//    reductions.push_back(new TerminalDistanceReduction(s));
+    reductions.push_back(new LongEdgeReduction(s, true, 100));
+    reductions.push_back(new Degree3Reduction(s));
+    reductions.push_back(new NtdkReduction(s, 100, true, 4));
+    reductions.push_back(new DegreeReduction(s, false));
+    reductions.push_back(new NtdkReduction(s, 100, false, 4));
+    reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
 
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    cout << duration.count() << endl;
-
-    if (! s->getGraph()->isConnected(s->getNumTerminals()))
+    if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
         cout << "Not Connected (after reduction)" << endl;
     s->checkGraphIntegrity();
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
     auto solver = HsvSolver(s);
     auto tree = solver.solve();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>((stop - start));
+    cout << duration.count() / 1000000.0 << endl;
+
     assert(tree != nullptr);
+
+
     reducer.unreduce(tree);
     cout << tree->getCost() << endl;
     delete s;

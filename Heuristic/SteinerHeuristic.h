@@ -4,7 +4,6 @@
 
 #ifndef STEINER_STEINERHEURISTIC_H
 #define STEINER_STEINERHEURISTIC_H
-#include "boost/dynamic_bitset.hpp"
 #include "../Steiner.h"
 using namespace boost;
 

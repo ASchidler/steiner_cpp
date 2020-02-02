@@ -34,11 +34,13 @@ LabelIterator& steiner::HashSetLabelIterator::operator++() {
 void HashSetLabelIterator::findNext() {
     while(pos != end) {
         bool disjoint = true;
-        for(auto cbit = target->find_first(); disjoint && cbit < target->size(); cbit = target->find_next(cbit)) {
-            if (pos->test(cbit)) {
+        for (size_t i = 0; i < target->num_blocks(); ++i) {
+            if ((target->m_bits[i] & pos->m_bits[i]) > 0) {
                 disjoint = false;
+                break;
             }
         }
+
         if (disjoint)
             break;
         pos++;

@@ -141,6 +141,9 @@ namespace steiner {
             return distances_;
         }
         void discardDistances();
+        vector<node_id> findPath(node_id u, node_id v);
+
+        void shrink();
 
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
@@ -152,7 +155,7 @@ namespace steiner {
             return EdgeIterator(&nodes_, &nb);
         }
         void switchVertices(node_id n1, node_id n2);
-        bool isConnected(node_id nodeLimit);
+        bool checkConnectedness(node_id nodeLimit, bool clean);
         Graph* copy(bool copyMapping);
         Graph* mst();
         cost_id mst_sum();
