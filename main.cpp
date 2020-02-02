@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
         cout << "Not Connected (start)" << endl;
     // TODO: Voronoi bound reductions could be used for large instances...
     auto reductions = vector<Reduction*>();
-    //reductions.push_back(new ZeroEdgePreselection(s));
+//    reductions.push_back(new ZeroEdgePreselection(s));
 //    reductions.push_back(new steiner::QuickCollection(s));
 //    reductions.push_back(new NearestVertexPreselection(s));
 //    reductions.push_back(new MstPreselection(s));
@@ -78,6 +78,7 @@ int main(int argc, char* argv[]) {
 //    reductions.push_back(new TerminalDistanceReduction(s));
     auto reducer = Reducer(reductions, s);
     reducer.reduce();
+
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
     cout << duration.count() << endl;

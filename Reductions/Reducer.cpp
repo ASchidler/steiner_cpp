@@ -22,7 +22,6 @@ void steiner::Reducer::reduce() {
         changed = cnt > 0;
         prevCnt = cnt;
         cnt = 0;
-        return;
     }
 }
 

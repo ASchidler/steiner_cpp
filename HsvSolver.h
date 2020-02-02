@@ -13,6 +13,7 @@
 #include "LabelIterator.h"
 #include "Heuristic/MstHeuristic.h"
 #include "Algorithms/DualAscent.h"
+#include "Algorithms/ShortestPath.h"
 #include "Heuristic/DualAscentHeuristic.h"
 #include "Steiner.h"
 #include "SteinerTree.h"

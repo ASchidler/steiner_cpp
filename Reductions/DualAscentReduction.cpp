@@ -18,7 +18,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 
     // TODO: Root selection
     // TODO: Allow for non-terminal roots?
-    node_id numRoots = min((node_id)20, instance->getNumTerminals());
+    node_id numRoots = min((node_id)50, instance->getNumTerminals());
     node_id roots[numRoots];
     chooseRoots(roots, numRoots);
     DualAscentResult* results[numRoots];
@@ -99,7 +99,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::DualAscentResult* r) 
 }
 
 void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots) {
-    assert(numRoots < instance->getNumTerminals());
+    assert(numRoots <= instance->getNumTerminals());
     node_id rootsSelected = 0;
     node_id selectBest = min(2, numRoots/2);
     for(auto i=0; i < selectBest && rootsSelected < numRoots; i++) {

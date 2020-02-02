@@ -12,11 +12,14 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getMaxNode());
 
     // TODO: Make this configurable?
+    root_ = instance->getNumTerminals();
     if (DualAscent::hasRun) {
         root_ = DualAscent::bestRoot;
-    } else {
-        root_ = instance_->getNumTerminals() - 1;
     }
+    if (root_ >= instance->getNumTerminals() && ShortestPath::hasRun)
+        root_ = ShortestPath::bestRoot;
+    if (root_ >= instance->getNumTerminals())
+        root_ = instance_->getNumTerminals() - 1;
 
     // Move root to the back
     nTerminals_ = instance_->getNumTerminals() - 1;
@@ -30,8 +33,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
 
-    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
