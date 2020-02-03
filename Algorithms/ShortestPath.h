@@ -11,7 +11,7 @@ namespace steiner {
     // TODO: Add local improvement
     class ShortestPath {
     public:
-        static SteinerTree *calculate(node_id root, Graph* g, node_id nTerminals, node_id nNodes);
+        static steiner::HeuristicResult* calculate(node_id root, Graph* g, node_id nTerminals, node_id nNodes);
         static bool hasRun;
         static node_id bestRoot;
         static cost_id bestResult;

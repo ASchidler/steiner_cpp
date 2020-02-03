@@ -26,7 +26,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     instance_->getGraph()->switchVertices(root_, nTerminals_);
     root_ = nTerminals_;
 
-    for(auto u: *instance_->getGraph()->getNodes()) {
+    for(auto u: instance_->getGraph()->getNodes()) {
         for(auto v: instance_->getGraph()-> nb[u]) {
             if (instance_->getGraph()->nb[v.first][u] != v.second)
                 cout << "Error " << u << " " << v.first << endl;

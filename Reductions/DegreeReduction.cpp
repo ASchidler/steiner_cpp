@@ -14,8 +14,8 @@ node_id DegreeReduction::reduce(node_id currCount, node_id prevCount) {
     while (changed) {
         changed = false;
 
-        auto n = instance->getGraph()->getNodes()->begin();
-        while(n != instance->getGraph()->getNodes()->end()) {
+        auto n = instance->getGraph()->getNodes().begin();
+        while(n != instance->getGraph()->getNodes().end()) {
             bool skip = false;
             auto dg = instance->getGraph()->nb[*n].size();
             // Degree 1, Terminals can be contracted, steiner-vertices deleted

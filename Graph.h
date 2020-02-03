@@ -136,8 +136,8 @@ namespace steiner {
         }
 
         // TODO: Return reference!
-        unordered_set<node_id>* getNodes(){
-            return &nodes_;
+        unordered_set<node_id>& getNodes(){
+            return nodes_;
         }
 
         vector<unordered_map<node_id, cost_id>> nb;

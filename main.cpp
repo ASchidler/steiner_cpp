@@ -24,10 +24,11 @@
 #include "Reductions/NearestVertexPreselection.h"
 #include "Reductions/QuickCollection.h"
 #include <chrono>
+#include "Algorithms/LocalOptimization.h"
 
 using namespace steiner;
 using namespace chrono;
-
+// TODO: Voronoi bound reductions could be used for large instances...
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         cerr << "steiner expects only the filename as the first parameter." << endl;
@@ -53,6 +54,10 @@ int main(int argc, char* argv[]) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
         auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
+        cout << "Original" << result2->bound << endl;
+        LocalOptimization::vertexInsertion(s->getGraph(), *result2);
+        cout << result2->bound << endl;
+        LocalOptimization::pathExchange(*s->getGraph(), *result2, s->getNumTerminals());
         delete result2;
     }
     cout <<"LB " << DualAscent::bestResult << endl;
@@ -61,15 +66,17 @@ int main(int argc, char* argv[]) {
     auto start = high_resolution_clock::now();
     if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
         cout << "Not Connected (start)" << endl;
-    // TODO: Voronoi bound reductions could be used for large instances...
+
     auto reductions = vector<Reduction*>();
     reductions.push_back(new ZeroEdgePreselection(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new TerminalDistanceReduction(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new LongEdgeReduction(s, true, 100));
+    reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new NtdkReduction(s, 100, true, 4));
     reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new NtdkReduction(s, 100, false, 4));

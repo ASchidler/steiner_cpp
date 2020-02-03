@@ -11,8 +11,8 @@ bool steiner::ShortestPath::hasRun = false;
 node_id steiner::ShortestPath::bestRoot = 0;
 cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
-steiner::SteinerTree *steiner::ShortestPath::calculate(node_id root, Graph* g, node_id nTerminals, node_id nNodes) {
-    auto result = new SteinerTree(root);
+steiner::HeuristicResult* steiner::ShortestPath::calculate(node_id root, Graph* g, node_id nTerminals, node_id nNodes) {
+    auto* tr = new Graph(g->getMaxNode());
     node_id nRemaining = nTerminals;
     bool remaining[nTerminals];
     cost_id costs[nNodes];
@@ -50,7 +50,7 @@ steiner::SteinerTree *steiner::ShortestPath::calculate(node_id root, Graph* g, n
             vector<node_id> cache;
             while (!added[cNode]) {
                 assert(g->nb[cNode].count(cPred) > 0);
-                result->addEdge(cNode, cPred, g->nb[cNode][cPred]);
+                tr->addEdge(cNode, cPred, g->nb[cNode][cPred]);
                 added[cNode] = true;
                 cache.push_back(cNode);
 
@@ -81,9 +81,11 @@ steiner::SteinerTree *steiner::ShortestPath::calculate(node_id root, Graph* g, n
         }
     }
 
+    auto* result = new HeuristicResult(g->getCost(), g, root);
+
     ShortestPath::hasRun = true;
-    if (ShortestPath::bestResult > result->getCost()) {
-        ShortestPath::bestResult = result->getCost();
+    if (ShortestPath::bestResult > result->bound) {
+        ShortestPath::bestResult = result->bound;
         if (root < nTerminals)
             ShortestPath::bestRoot = root;
     }

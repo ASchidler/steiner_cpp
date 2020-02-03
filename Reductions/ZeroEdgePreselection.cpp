@@ -9,8 +9,8 @@ node_id steiner::ZeroEdgePreselection::reduce(node_id currCount, node_id prevCou
 
     ran_ = true;
     node_id track = 0;
-    auto it = instance->getGraph()->getNodes()->begin();
-    while(it != instance->getGraph()->getNodes()->end()) {
+    auto it = instance->getGraph()->getNodes().begin();
+    while(it != instance->getGraph()->getNodes().end()) {
         bool changed = false;
         for(auto& n: instance->getGraph()->nb[*it]) {
             if (n.second == 0) {

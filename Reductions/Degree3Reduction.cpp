@@ -7,8 +7,8 @@
 node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) {
     node_id track = 0;
 
-    auto n = instance->getGraph()->getNodes()->begin();
-    while (n != instance->getGraph()->getNodes()->end()) {
+    auto n = instance->getGraph()->getNodes().begin();
+    while (n != instance->getGraph()->getNodes().end()) {
         auto nb = instance->getGraph()->nb[*n];
 
         if (*n >= instance->getNumTerminals() && nb.size() == 3) { // Degree == 3

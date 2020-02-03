@@ -52,14 +52,14 @@ namespace steiner {
         enum ValueState { lower, exact, higher, invalid};
         void shrink();
 //TODO: Always keep the lowest known upper bound
-        SteinerTree* getApproximation() {
+        HeuristicResult* getApproximation() {
             if (approximationState_ != exact) {
                 delete approximation_;
 
                 approximation_ = steiner::ShortestPath::calculate((node_id)0, g_, nTerminals, g_->getMaxNode());
                 approximationState_ = exact;
-                if (approximation_->getCost() < upperBound_)
-                    upperBound_ = approximation_->getCost();
+                if (approximation_->bound < upperBound_)
+                    upperBound_ = approximation_->bound;
             }
 
             return approximation_;
@@ -125,7 +125,7 @@ namespace steiner {
             return this->g_;
         }
         void checkGraphIntegrity() {
-            for (auto n: *g_->getNodes()) {
+            for (auto n: g_->getNodes()) {
                 for(auto v: g_->nb[n]) {
                     if (g_->nb[v.first].count(n) == 0)
                         cout << "ERROR, one sided" << endl;
@@ -150,7 +150,7 @@ namespace steiner {
         ValueState distanceState_ = invalid;
         ValueState steinerDistanceState_ = invalid;
         ValueState approximationState_ = invalid;
-        SteinerTree* approximation_ = nullptr;
+        HeuristicResult* approximation_ = nullptr;
 
         void clearClosest_() {
             if (closest_terminals_ != nullptr) {

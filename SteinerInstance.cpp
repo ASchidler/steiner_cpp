@@ -66,7 +66,7 @@ node_id SteinerInstance::removeNode_(node_id u) {
         if (u < nTerminals) { // Could be equal now...
             // There should be a terminal and terminals must be connected
             assert(!g_->nb[nTerminals].empty());
-            assert(g_->getNodes()->count(nTerminals) > 0);
+            assert(g_->getNodes().count(nTerminals) > 0);
             moveTerminal(u, nTerminals);
             u = nTerminals;
             invalidateTerminals();
@@ -108,7 +108,7 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
         }
 
         // Now calculate the closest terminals
-        for (auto n: *g_->getNodes()) {
+        for (auto n: g_->getNodes()) {
             closest_terminals_[n] = new NodeWithCost[nTerminals];
 
             for(node_id t=0; t < nTerminals; t++) {
