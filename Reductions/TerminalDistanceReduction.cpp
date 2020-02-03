@@ -15,7 +15,7 @@ node_id steiner::TerminalDistanceReduction::reduce(node_id currCount, node_id pr
 
     node_id track = 0;
     auto it = instance->getGraph()->findEdges();
-    while(it.hasNext()) {
+    while(it.hasElement()) {
         auto e = *it;
         if (e.cost > cMax) {
             it = instance->removeEdge(it);

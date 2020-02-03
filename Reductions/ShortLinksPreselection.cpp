@@ -16,7 +16,7 @@ node_id steiner::ShortLinksPreselection::reduce(node_id currCount, node_id prevC
 
     auto it = instance->getGraph()->findEdges();
 
-    while(it.hasNext()) {
+    while(it.hasElement()) {
         auto e = *it;
         auto t1 = instance->getClosestTerminals(e.u)[0].node;
         auto t2 = instance->getClosestTerminals(e.v)[0].node;

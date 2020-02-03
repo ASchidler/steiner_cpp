@@ -13,6 +13,7 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
         g_->switchVertices(g_->getNodeMapping(cT), nTerminals);
         nTerminals++;
     }
+    closest_terminals_ = nullptr;
     maxTerminals = nTerminals;
 }
 

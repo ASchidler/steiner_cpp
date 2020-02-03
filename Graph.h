@@ -59,6 +59,7 @@ namespace steiner {
         cost_id c;
     };
 
+
     class Graph {
     public:
         ~Graph() {
@@ -91,7 +92,7 @@ namespace steiner {
                 return *this;
             }
 
-            bool hasNext() {
+            bool hasElement() {
                 return nodeState != nodes_->end();
             }
 
@@ -127,6 +128,7 @@ namespace steiner {
             return this->nodes_.size();
         }
 
+        // TODO: Return reference!
         unordered_set<node_id>* getNodes(){
             return &nodes_;
         }
@@ -174,6 +176,19 @@ namespace steiner {
         unordered_map<node_id, node_id> nodeMap_;
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;
+    };
+
+    struct HeuristicResult {
+        HeuristicResult(cost_id bound, Graph* g, node_id root) :
+                bound(bound), g(g), root(root)
+        {}
+        ~HeuristicResult() {
+            delete g;
+        }
+
+        cost_id bound;
+        Graph* g;
+        node_id root;
     };
 }
 

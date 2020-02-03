@@ -14,7 +14,7 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
 
     // Test using SL approximation
     auto it = instance->getGraph()->findEdges();
-    while(it.hasNext()) {
+    while(it.hasElement()) {
         auto e = *it;
         auto sl = instance->getSteinerDistance(e.u, e.v);
         if (e.cost > sl) {

@@ -16,7 +16,7 @@ node_id steiner::MstPreselection::reduce(node_id currCount, node_id prevCount) {
 
     // Find all edges and sort them
     auto edgeIt = instance->getGraph()->findEdges();
-    while(edgeIt.hasNext()) {
+    while(edgeIt.hasElement()) {
         edges.push_back(*edgeIt);
         ++edgeIt;
     }
@@ -50,6 +50,6 @@ node_id steiner::MstPreselection::reduce(node_id currCount, node_id prevCount) {
             components.unionize(e.u, e.v);
         }
     }
-
+    enabled = false;
     return 0;
 }
