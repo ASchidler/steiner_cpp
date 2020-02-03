@@ -9,8 +9,8 @@ bool DualAscent::hasRun = false;
 cost_id DualAscent::bestResult = 0;
 node_id DualAscent::bestRoot = 0;
 
-DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
-    Graph *dg = g->copy(false);
+HeuristicResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes) {
+    auto dg = new Graph(*g, false);
     unsigned int bound = 0;
 
     auto q = priority_queue<NodeWithCost>();
@@ -94,7 +94,7 @@ DualAscentResult* steiner::DualAscent::calculate(Graph *g, node_id root, const d
             DualAscent::bestRoot = root;
     }
 
-    return new DualAscentResult(bound, dg, root);
+    return new HeuristicResult(bound, dg, root);
 }
 
 cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals) {

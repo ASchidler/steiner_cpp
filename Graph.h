@@ -74,6 +74,13 @@ namespace steiner {
             }
         }
 
+        Graph(Graph& g, bool copyMapping) : nb(vector<unordered_map<node_id, cost_id>>(g.nb)), nodes_(g.nodes_) {
+            if (copyMapping) {
+                nodeMap_ = g.nodeMap_;
+                nodeReverseMap_ = g.nodeReverseMap_;
+            }
+        }
+
         class EdgeIterator {
         public:
             explicit EdgeIterator(unordered_set<node_id>* nodes, vector<unordered_map<node_id, cost_id>>* nb) : nodes_(nodes), nb_(nb){
@@ -158,7 +165,6 @@ namespace steiner {
         }
         void switchVertices(node_id n1, node_id n2);
         bool checkConnectedness(node_id nodeLimit, bool clean);
-        Graph* copy(bool copyMapping);
         Graph* mst();
         cost_id mst_sum();
         cost_id getCost() {

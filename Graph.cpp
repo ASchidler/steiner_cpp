@@ -101,22 +101,6 @@ void steiner::Graph::findDistances(node_id u) {
     }
 }
 
-steiner::Graph *steiner::Graph::copy(bool copyMapping) {
-    auto* cp = new Graph();
-    // Add nodes first, guarantees that the mapping stays the same
-    cp->nodes_ = nodes_;
-    for(const auto& n: nb) {
-        cp->nb.push_back(n);
-    }
-
-    if (copyMapping) {
-        cp->nodeMap_ = nodeMap_;
-        cp->nodeReverseMap_ = nodeReverseMap_;
-    }
-
-    return cp;
-}
-
 unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
     for(auto elem: nb[u]) {
         nb[elem.first].erase(u);
