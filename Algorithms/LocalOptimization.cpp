@@ -240,7 +240,64 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
     tr.bound = tr.g->getCost();
 }
 
-void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr) {
+void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals) {
+    // Find predecessors for common ancestor finding.
+    NodeWithCost p[g.getMaxNode()];
+    p[tr.root] = NodeWithCost(tr.root, 0);
+
+    vector<node_id> q;
+    q.push_back(tr.root);
+
+    while(! q.empty()) {
+        auto n = q.back();
+        auto& pr = p[n];
+        q.pop_back();
+
+        for(auto nb: tr.g->nb[n]) {
+            if (nb.first != pr.node) {
+                p[nb.first] = NodeWithCost(n, pr.cost + 1);
+                q.push_back(nb.first);
+            }
+        }
+    }
+
+    vector<Bridge> bridges[tr.g->getMaxNode()];
+    vector<Edge> horizontal[tr.g->getMaxNode()];
+    auto vor = VoronoiPartition(g, tr);
+    bool isKey[tr.g->getMaxNode()];
+    for(node_id n=0; n < tr.g->getMaxNode(); n++) {
+        isKey[n] = (n < nTerminals || tr.g->nb[n].size() > 2);
+    }
+
+    auto it = g.findEdges();
+    while(it.hasElement()) {
+        auto e = *it;
+        auto t1 =  vor.getClosest(e.u);
+        auto t2 = vor.getClosest(e.v);
+
+        if (t1.t != t2.t) {
+            auto cost = t1.costEntry.cost + t2.costEntry.cost + e.cost;
+            bridges[t1.t].emplace_back(cost, e.u, e.v, e.cost);
+            bridges[t2.t].emplace_back(cost, e.u, e.v, e.cost);
+
+            // Find common ancestor
+            auto pred1 = NodeWithCost(t1.t, p[t1.t].cost + 1);
+            auto pred2 = NodeWithCost(t2.t, p[t2.t].cost + 1);
+            while(pred1.node != pred2.node) {
+                if (pred1.cost > pred2.cost)
+                    pred1 = p[pred1.node];
+                else
+                    pred2 = p[pred2.node];
+            }
+
+            // If common ancestor is higher up -> horizontal edge
+            if (pred1.node != t1.t && pred1.node != t2.t)
+                horizontal->push_back(e);
+        }
+    }
+    
+
+
 
 }
 
