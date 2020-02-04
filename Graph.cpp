@@ -389,7 +389,7 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
         for (auto& n: nb[elem.node]) {
             if (dist[n.first] > elem.cost + n.second) {
                 dist[n.first] = elem.cost + n.second;
-                p[n.first] = n.first;
+                p[n.first] = elem.node;
                 q.emplace(n.first, elem.cost + n.second);
             }
         }

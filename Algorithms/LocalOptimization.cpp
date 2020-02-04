@@ -9,37 +9,40 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
     for(auto n: dg->getNodes()) {
         if (tr.g->getNodes().count(n) == 0) {
             // Find neighbors that are in the solution
-            bool exists = false;
+            vector<NodeWithCost> shared;
             for(auto& b: dg->nb[n]) {
                 if (tr.g->getNodes().count(b.first) > 0) {
-                    exists = true;
-                    break;
+                    shared.emplace_back(b.first, b.second);
                 }
             }
-            // There exists at least one such neighbor
-            if (exists) {
+            // There exist at least two neighbors (1 would not have a chance to succeed)
+            if (shared.size() > 1) {
                 auto cp = new Graph(*tr.g, false);
-                // Check paths to neighbors
+                // Add first edge and try to improve
+                cp->addEdge(n, shared.back().node, shared.back().cost);
+                shared.pop_back();
 
-                for(auto& b : dg->nb[n]) {
-                    if (tr.g->getNodes().count(n) > 0) {
-                        auto path = dg->findPath(n, b.first);
-                        auto maxEdge = Edge(path[0], path[1], dg->nb[path[0]][path[1]]);
-                        for (size_t cNode = 2; cNode < path.size(); cNode++) {
-                            auto c = tr.g->nb[path[cNode - 1]][path[cNode]];
-                            if (c > maxEdge.cost) {
-                                maxEdge.cost = c;
-                                maxEdge.u = path[cNode - 1];
-                                maxEdge.v = path[cNode];
-                            }
-                        }
-                        // If the path cost is higher, using the found edge is cheaper
-                        if (maxEdge.cost > b.second) {
-                            // Iterator is on dg, not tr, so it stays valid
-                            cp->addEdge(n, b.first, b.second);
-                            cp->removeEdge(maxEdge.u, maxEdge.v);
+                // Check all other shared neighbors for improvement
+                for(auto b: shared) {
+                    // Find shortest path from
+                    auto path = cp->findPath(n, b.node);
+                    auto maxEdge = Edge(path[0], path[1], dg->nb[path[0]][path[1]]);
+
+                    for (size_t cNode = 2; cNode < path.size(); cNode++) {
+                        auto c = cp->nb[path[cNode - 1]][path[cNode]];
+                        if (c > maxEdge.cost) {
+                            maxEdge.cost = c;
+                            maxEdge.u = path[cNode - 1];
+                            maxEdge.v = path[cNode];
                         }
                     }
+                    // If the path cost is higher, using the found edge is cheaper
+                    if (maxEdge.cost > b.cost) {
+                        // Iterator is on dg, not tr, so it stays valid
+                        cp->addEdge(n, b.node, b.cost);
+                        cp->removeEdge(maxEdge.u, maxEdge.v);
+                    }
+
                 }
 
                 // Check if we made progress:
