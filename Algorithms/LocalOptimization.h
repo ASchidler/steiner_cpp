@@ -14,13 +14,25 @@ namespace steiner {
         node_id t;
         NodeWithCost& costEntry;
     };
+    struct Bridge {
+        Bridge(cost_id total, node_id u, node_id v, cost_id c) : total(total), e(Edge(u, v, c))  {
+
+        }
+        Edge e;
+        cost_id total;
+        bool operator<(const Bridge& p2) const {
+            return total > p2.total;
+        }
+    };
 
     class VoronoiPartition {
     public:
         VoronoiPartition(Graph& g, HeuristicResult& tr);
         ClosestEntry& getClosest(node_id n) {
-            if (closestTmp_ != nullptr)
+            if (closestTmp_[n] != nullptr) {
                 return *closestTmp_[n];
+            }
+
             return *closest_[n];
         }
         void reset();
@@ -59,6 +71,8 @@ namespace steiner {
             }
         };
 
+
+
     };
 
     class LocalOptimization {
@@ -66,17 +80,6 @@ namespace steiner {
         static void vertexInsertion(Graph* dg, HeuristicResult& tr);
         static void pathExchange(Graph& g, HeuristicResult& tr, node_id nTerminals);
         static void keyVertexDeletion(Graph& g, HeuristicResult& tr);
-    };
-
-    struct Bridge {
-        Bridge(cost_id total, node_id u, node_id v, cost_id c) : total(total), e(Edge(u, v, c))  {
-
-        }
-        Edge e;
-        cost_id total;
-        bool operator<(const Bridge& p2) const {
-            return total > p2.total;
-        }
     };
 
     struct KeyPath {

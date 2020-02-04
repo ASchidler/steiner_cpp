@@ -57,10 +57,10 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
 }
 
 void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, node_id numTerminals) {
-    if (tr.g->getNumNodes() < 5 || numTerminals > 1500)
+    if (tr.g->getNumNodes() < 5)
         return;
 
-    vector<Bridge> bridges[g.getMaxNode()];
+    vector<Edge> bridges[g.getMaxNode()];
     auto vor = VoronoiPartition(g, tr);
     bool isKey[tr.g->getMaxNode()];
 
@@ -77,27 +77,22 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         auto t2 = vor.getClosest(edge.v);
         // Is indeed a bridge
         if (t1.t != t2.t) {
-            auto total = edge.cost + t1.costEntry.cost + t2.costEntry.cost;
-            bridges[t1.t].emplace_back(total, edge.u, edge.v, edge.cost);
-            bridges[t2.t].emplace_back(total, edge.u, edge.v, edge.cost);
+            bridges[t1.t].emplace_back(edge.u, edge.v, edge.cost);
+            bridges[t2.t].emplace_back(edge.u, edge.v, edge.cost);
         }
         ++edgeIt;
     }
 
-    for(node_id i=0; i < g.getMaxNode(); i++) {
-        sort(bridges[i].begin(), bridges[i].end());
-    }
-
-    // Find key paths
+    // Find key paths. This is a long process.
     vector<node_id> q;
     node_id parents[g.getMaxNode()];
     parents[tr.root] = g.getMaxNode();
     vector<node_id> kvq;
-    unordered_map<node_id, vector<node_id>> subsets;
+    unordered_map<node_id, unordered_set<node_id>> subsets;
     unordered_set<node_id> pinned;
-    unordered_set<node_id> forbidden;
+    unordered_set<node_id> closed;
 
-    // Establish tree relationships, find leafs and key vertex structure
+    // Extract the key vertex tree. Establish child-parent between all vertices.
     q.push_back(tr.root);
     while(!q.empty()) {
         auto v = q.back();
@@ -113,6 +108,7 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         }
     }
 
+    // Iterate over the whole structure in DFS order
     while(! kvq.empty()) {
         // Get current node
         node_id n = kvq.back();
@@ -120,6 +116,7 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         // find path
         unordered_set<node_id> intermediaries;
         vector<node_id> path;
+        path.push_back(n);
         node_id p = parents[n];
         cost_id pathCost = 0;
         bool foundPinned = false;
@@ -134,80 +131,56 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         path.push_back(p);
         vector<Edge>* p1 = nullptr;
         vector<Edge>* p2 = nullptr;
+        node_id p1end = 0;
+        node_id p2end = 0;
 
-        // Update subsets of parent and current node
-        subsets[n].reserve(subsets[n].size() + path.size());
-        subsets[n].insert(subsets[n].end(), std::make_move_iterator(path.begin()), std::make_move_iterator(path.end()));
-        subsets[path.back()].reserve(subsets[path.back()].size() + subsets[n].size());
+        // Extend subset of parent key node
+        auto np = path.back();
+        subsets[n].insert(n);
+        subsets[np].reserve(subsets[n].size() + path.size() + subsets[n].size());
+        subsets[np].insert(subsets[n].begin(), subsets[n].end());
 
         // Do not move pinned elements
         if (foundPinned) {
-            std::move(begin(path), end(path), back_inserter(subsets[path.back()]));
+            subsets[np].insert(path.begin(), path.end());
             continue;
         }
 
         // Repair diagram -> move nodes previously assigned to intermediaries to other nodes (simulate removal)
         vor.repair(intermediaries);
 
-        // Find cheapest real bridge. I.e. after the Regions of the children have been merged
+        // Treat n as in intermediary from here on! (Do not move before repair!)
+        intermediaries.insert(n);
         Bridge minBridge(MAXCOST, 0, 0, 0);
-        while (!bridges[n].empty()) {
-            auto& cBridge = bridges[n].back();
-
-            bool uIn = intermediaries.count(cBridge.e.u) > 0;
-            bool vIn = intermediaries.count(cBridge.e.v) > 0;
-
-            for(auto n2 : subsets[n]) {
-                if (uIn && vIn)
-                    break;
-                uIn = uIn || vor.isInRegion(cBridge.e.u, n2) || vor.isInTmpRegion(cBridge.e.u, n2);
-                vIn = vIn || vor.isInRegion(cBridge.e.v, n2) || vor.isInTmpRegion(cBridge.e.v, n2);
-            }
-
-            if (uIn && vIn)
-                bridges[n].pop_back();
-            else {
-                p1 = vor.getPath(cBridge.e.u);
-                p2 = vor.getPath(cBridge.e.v);
-
-                if (forbidden.count(p1->back().v) == 0 && forbidden.count(p2->back().v)) {
-                    minBridge = cBridge;
-                }
-                // Found bridge, cancel search
-                break;
-            }
-        }
 
         // Repeat vor intermediaries. Slightly different from above
         for(auto im: intermediaries) {
-            for(auto& cBridge:bridges[im]) {
-                bool uIn = false;
-                bool vIn = false;
-                for(auto n2 : subsets[n]) {
-                    if (uIn && vIn)
-                        break;
-                    uIn = uIn || vor.isInRegion(cBridge.e.u, n2) || vor.isInTmpRegion(cBridge.e.u, n2);
-                    vIn = vIn || vor.isInRegion(cBridge.e.v, n2) || vor.isInTmpRegion(cBridge.e.v, n2);
+            for(size_t i=0; i < bridges[n].size(); i++) {
+                auto& cBridge = bridges[n][i];
+                auto r1 = vor.getClosest(cBridge.u);
+                auto r2 = vor.getClosest(cBridge.v);
+                // We know that one of the two nodes is in the current region, make sure not both (would disconnect graph)
+                bool uIn = subsets[n].count(r1.t) > 0;
+                bool vIn = subsets[n].count(r2.t) > 0;
+
+                // Since the region is getting larger, remove invalid bridges for key vertices
+                if (im == n && uIn && vIn) {
+                    if (i != bridges[n].size() - 1)
+                        std::swap(bridges[n][i], bridges[n].back());
+                    bridges[n].pop_back();
+                    i--;
                 }
+                else if (uIn ^ vIn) {
+                    cost_id totalCost = cBridge.cost + r1.costEntry.cost + r2.costEntry.cost;
+                    if (totalCost < minBridge.total && closed.count(r1.t) == 0 && closed.count(r2.t) == 0) {
+                        delete p1;
+                        delete p2;
+                        p1 = vor.getPath(cBridge.u);
+                        p2 = vor.getPath(cBridge.v);
+                        p1end = r1.t;
+                        p2end = r2.t;
 
-                // Is bridge?
-                if (uIn ^ vIn) {
-                    cost_id totalCost = cBridge.e.cost + vor.getRegionEntry(cBridge.e.u).cost + vor.getRegionEntry(cBridge.e.v).cost;
-                    if (totalCost < minBridge.total) {
-                        auto* tp1 = vor.getPath(cBridge.e.u);
-                        auto* tp2 = vor.getPath(cBridge.e.v);
-
-                        if (forbidden.count(tp1->back().v) == 0 && forbidden.count(tp2->back().v)) {
-                            minBridge = cBridge;
-                            minBridge.total = totalCost;
-                            delete p1;
-                            delete p2;
-                            p1 = tp1;
-                            p2 = tp2;
-                        } else {
-                            delete tp1;
-                            delete tp2;
-                        }
+                        minBridge = Bridge(totalCost, cBridge.u, cBridge.v, cBridge.cost);
                     }
                 }
             }
@@ -220,31 +193,46 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
             for(size_t idx=0; idx < path.size() - 1; idx++) {
                 tr.g->removeEdge(path[idx], path[idx+1]);
             }
+            int total = 0;
             // new path
-            for(auto& e: *p1)
+            for(auto& e: *p1) {
                 tr.g->addEdge(e.u, e.v, e.cost);
-            for(auto& e: *p2)
+                total += e.cost;
+            }
+            for(auto& e: *p2) {
                 tr.g->addEdge(e.u, e.v, e.cost);
+                total += e.cost;
+            }
             tr.g->addEdge(minBridge.e.u, minBridge.e.v, minBridge.e.cost);
+            total += minBridge.e.cost;
+            assert(minBridge.total == total);
 
-            // Forbid subset
+            // Forbid subset and intermediaries from  change
             for(auto f: subsets[n])
-                forbidden.insert(f);
+                closed.insert(f);
+            for(auto im: intermediaries)
+                closed.insert(im);
 
             // Pin endpoints
-            pinned.insert(p1->back().v);
-            pinned.insert(p2->back().v);
+            pinned.insert(p1end);
+            pinned.insert(p2end);
+            assert(tr.g->checkConnectedness(0, false));
+        } else {
+            subsets[np].insert(path.begin(), path.end());
         }
 
         // Move to parent key vertex
-        node_id np = path.back();
-        std::move(begin(subsets[n]), end(subsets[n]), back_inserter(subsets[np]));
+        //TODO: Reserve for intermediaries as well? Maybe count them above?
         bridges[np].reserve(bridges[np].size() + bridges[n].size());
-        std::move(begin(bridges[n]), end(bridges[n]), back_inserter(bridges[np]));
         for(auto im: intermediaries) {
             std::move(begin(bridges[im]), end(bridges[im]), back_inserter(bridges[np]));
         }
+        // TODO: I'm not sure if this presorting is actually efficient
+        sort(bridges[np].begin(), bridges[np].end());
         vor.reset();
+
+        delete p1;
+        delete p2;
     }
     tr.bound = tr.g->getCost();
 }
@@ -311,6 +299,7 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
         visited[i] = false;
     }
 
+    // Reassign all nodes associated with the "removed" voronoi centers
     for(auto n: intermediaries) {
         for(auto& n2: regions_[n]) {
             repairNodes.insert(n2.first);
@@ -321,6 +310,7 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
 
     // Initialize dijkstra. Boundary nodes are added with distance to center
     for(auto n: repairNodes) {
+        // Find a neighbor that is not in the same region and try if it's associated center fits
         for(auto& n2: g_.nb[n]) {
             auto& cl = closest_[n2.first];
             if (intermediaries.count(cl->t) == 0) {
@@ -335,8 +325,8 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
         q.pop();
         if (! visited[elem.n]) {
             visited[elem.n] = true;
-            auto newElement = regions_[elem.start].emplace(std::piecewise_construct, forward_as_tuple(elem.n), forward_as_tuple(elem.predecessor, elem.c));
-            closest_[elem.n] = new ClosestEntry(elem.start, newElement.first->second);
+            auto newElement = regionsTmp_[elem.start].emplace(std::piecewise_construct, forward_as_tuple(elem.n), forward_as_tuple(elem.predecessor, elem.c));
+            closestTmp_[elem.n] = new ClosestEntry(elem.start, newElement.first->second);
 
             for(auto& nb: g_.nb[elem.n]) {
                 if (!visited[nb.first] && repairNodes.count(nb.first) > 0) {
@@ -348,21 +338,22 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
 }
 
 vector<steiner::Edge>* steiner::VoronoiPartition::getPath(node_id n) {
-    auto& t = getClosest(n);
-    auto& r = !regionsTmp_[t.t].empty() ? regionsTmp_[t.t] : regions_[t.t];
-    bool switched = regionsTmp_[t.t].empty();
+    auto& t = getClosest(n).t;
+    auto* r = (!regionsTmp_[t].empty()) ? &regionsTmp_[t] : &regions_[t];
+    bool switched = regionsTmp_[t].empty();
 
     auto* path = new vector<Edge>;
 
-    while(t.t != n) {
+    while(t != n) {
         // Switch from new assignment to old, if no new assignments are available...
-        if (! switched && r.count(n) == 0) {
-            r = regions_[t.t];
+        if (! switched && r->count(n) == 0) {
+            r = &regions_[t];
             switched = true;
         }
 
-        auto& prev = r[n];
-        path->emplace_back(n, prev.node, g_.nb[n][prev.cost]);
+        assert(r->count(n) > 0);
+        auto& prev = (*r)[n];
+        path->emplace_back(n, prev.node, g_.nb[n][prev.node]);
         n = prev.node;
     }
 

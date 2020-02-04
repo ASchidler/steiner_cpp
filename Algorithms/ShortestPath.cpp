@@ -81,7 +81,22 @@ steiner::HeuristicResult* steiner::ShortestPath::calculate(node_id root, Graph* 
         }
     }
 
-    auto* result = new HeuristicResult(g->getCost(), g, root);
+    auto* mst = tr->mst();
+    delete tr;
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        auto n = mst->getNodes().begin();
+        while(n != mst->getNodes().end()) {
+            if (mst->nb[*n].size() == 1 && *n != root && *n >= nTerminals) {
+                n = mst->removeNode(n);
+                changed = true;
+            }
+            else
+                ++n;
+        }
+    }
+    auto* result = new HeuristicResult(mst->getCost(), mst, root);
 
     ShortestPath::hasRun = true;
     if (ShortestPath::bestResult > result->bound) {

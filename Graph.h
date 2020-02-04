@@ -69,7 +69,6 @@ namespace steiner {
 
         explicit Graph(node_id nNodes) {
             for(node_id i=0; i < nNodes; i++) {
-                nodes_.insert(i);
                 nb.emplace_back();
             }
         }

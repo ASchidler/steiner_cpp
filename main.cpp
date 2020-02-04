@@ -54,10 +54,11 @@ int main(int argc, char* argv[]) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
         auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
-        cout << "Original" << result2->bound << endl;
+        cout << "Original " << result2->bound << endl;
         LocalOptimization::vertexInsertion(s->getGraph(), *result2);
-        cout << result2->bound << endl;
+        cout << "V Delete " << result2->bound << endl;
         LocalOptimization::pathExchange(*s->getGraph(), *result2, s->getNumTerminals());
+        cout << "Path Exchange " << result2->bound << endl;
         delete result2;
     }
     cout <<"LB " << DualAscent::bestResult << endl;

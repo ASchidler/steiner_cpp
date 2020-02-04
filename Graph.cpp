@@ -29,7 +29,8 @@ bool steiner::Graph::addMappedEdge(node_id u, node_id v, cost_id cost) {
 bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     if (u == v) // Self loops cannot be optimal
         return false;
-
+    nodes_.insert(u);
+    nodes_.insert(v);
     if (nb[u].count(v) == 0) {
         this->nb[u].emplace(v, cost);
         this->nb[v].emplace(u, cost);
@@ -276,9 +277,9 @@ Graph *Graph::mst() {
     // Init
     minEdgeVal[0] = 0;
 
-    for(int i=0; i < getMaxNode(); i++) {
+    for(int i=0; i < getNumNodes(); i++) {
         val = MAXCOST;
-        for(const auto& k: nodes_) {
+        for(const auto k: nodes_) {
             if (minEdgeVal[k] < val) {
                 val = minEdgeVal[k];
                 idx = k;
@@ -290,11 +291,11 @@ Graph *Graph::mst() {
             result->addEdge(idx, minEdgeNode[idx], minEdgeVal[idx]);
         minEdgeVal[idx] = MAXCOST;
 
-        for(const auto& k: nodes_) {
+        for(const auto k: nodes_) {
             if (! taken[k]) {
-                auto dist = nb[idx][k];
-                if (dist < minEdgeVal[k]) {
-                    minEdgeVal[k] = dist;
+                auto dist = nb[idx].find(k);
+                if (dist != nb[idx].end() && dist->second < minEdgeVal[k]) {
+                    minEdgeVal[k] = dist->second;
                     minEdgeNode[k] = idx;
                 }
             }
