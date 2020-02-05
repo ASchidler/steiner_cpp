@@ -35,6 +35,9 @@ namespace steiner {
 
             return *closest_[n];
         }
+        ClosestEntry& getClosestNoTmp(node_id n) {
+            return *closest_[n];
+        }
         void reset();
 
         NodeWithCost& getRegionEntry(node_id n) {

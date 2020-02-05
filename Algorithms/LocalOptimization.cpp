@@ -241,12 +241,23 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
 }
 
 void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals) {
-    // Find predecessors for common ancestor finding.
+    // Find predecessors for common ancestor finding by performing a DFS traversal
     NodeWithCost p[g.getMaxNode()];
     p[tr.root] = NodeWithCost(tr.root, 0);
+    unordered_map<node_id, unordered_set<node_id>> subsets;
+    unordered_set<node_id> keyChildren[g.getMaxNode()];
+    vector<node_id> intermediaries[g.getMaxNode()];
+    unordered_set<node_id> pinned;
+
+    bool isKey[tr.g->getMaxNode()];
+    for(node_id n=0; n < tr.g->getMaxNode(); n++) {
+        isKey[n] = (n < nTerminals || tr.g->nb[n].size() > 2);
+    }
 
     vector<node_id> q;
     q.push_back(tr.root);
+    vector<node_id> kvq;
+    kvq.push_back(tr.root);
 
     while(! q.empty()) {
         auto n = q.back();
@@ -257,17 +268,17 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             if (nb.first != pr.node) {
                 p[nb.first] = NodeWithCost(n, pr.cost + 1);
                 q.push_back(nb.first);
+                if (isKey[nb.first])
+                    kvq.push_back(nb.first);
             }
         }
     }
 
-    vector<Bridge> bridges[tr.g->getMaxNode()];
+    vector<Edge> bridges[tr.g->getMaxNode()];
     vector<Edge> horizontal[tr.g->getMaxNode()];
+
     auto vor = VoronoiPartition(g, tr);
-    bool isKey[tr.g->getMaxNode()];
-    for(node_id n=0; n < tr.g->getMaxNode(); n++) {
-        isKey[n] = (n < nTerminals || tr.g->nb[n].size() > 2);
-    }
+
 
     auto it = g.findEdges();
     while(it.hasElement()) {
@@ -276,9 +287,8 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
         auto t2 = vor.getClosest(e.v);
 
         if (t1.t != t2.t) {
-            auto cost = t1.costEntry.cost + t2.costEntry.cost + e.cost;
-            bridges[t1.t].emplace_back(cost, e.u, e.v, e.cost);
-            bridges[t2.t].emplace_back(cost, e.u, e.v, e.cost);
+            bridges[t1.t].emplace_back(e.u, e.v, e.cost);
+            bridges[t2.t].emplace_back(e.u, e.v, e.cost);
 
             // Find common ancestor
             auto pred1 = NodeWithCost(t1.t, p[t1.t].cost + 1);
@@ -294,6 +304,142 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             if (pred1.node != t1.t && pred1.node != t2.t)
                 horizontal->push_back(e);
         }
+    }
+
+    while(! kvq.empty()) {
+        auto n = kvq.back();
+        kvq.pop_back();
+        vector<node_id> parentPath;
+        parentPath.push_back(n);
+
+        // Find path to parent key node
+        if (n != tr.root) {
+            auto pred = p[n].node;
+            while (! isKey[pred]) {
+                parentPath.push_back(pred);
+                pred = p[pred].node;
+                intermediaries[n].push_back(pred);
+            }
+            parentPath.push_back(pred);
+            keyChildren[pred].insert(n);
+        }
+
+        // Compute subnodes and intermediaries
+        for(auto kc : keyChildren[n]) {
+            subsets[n].insert(subsets[kc].begin(), subsets[kc].end());
+        }
+        subsets[n].insert(n);
+
+        // Can't remove terminals, need at least more than one key child
+        // TODO: Use reserve?
+        if (n < nTerminals || keyChildren[n].size() <= 1) {
+            for(auto kc : keyChildren[n]) {
+                subsets[n].insert(intermediaries[kc].begin(), intermediaries[kc].end());
+                std::move(begin(bridges[kc]), end(bridges[kc]), back_inserter(bridges[n]));
+                for(auto im: intermediaries[kc]) {
+                    std::move(begin(bridges[im]), end(bridges[im]), back_inserter(bridges[n]));
+                }
+            }
+            continue;
+        }
+
+        // compute intermediaries
+        unordered_set<node_id> allIntermediaries;
+        unordered_set<node_id> childIntermediaries;
+        allIntermediaries.insert(intermediaries[n].begin(), intermediaries[n].end());
+        for(auto kc : keyChildren[n]) {
+            allIntermediaries.insert(intermediaries[kc].begin(), intermediaries[kc].end());
+            childIntermediaries.insert(intermediaries[kc].begin(), intermediaries[kc].end());
+        }
+
+        // Check if any pinned vertices are in the intermediaries
+        bool foundPinned = false;
+        for(auto cP : pinned) {
+            if (allIntermediaries.count(cP) > 0) {
+                foundPinned = true;
+                break;
+            }
+        }
+        if (foundPinned)
+            // TODO: Should probably move up the bridges...
+            continue;
+
+        vor.repair(allIntermediaries);
+
+        // Find candidate edges
+        vector<Edge> candidateEdges;
+        for(auto& ce: horizontal[n]) {
+            auto r1 = vor.getClosestNoTmp(ce.u);
+            auto r2 = vor.getClosestNoTmp(ce.v);
+            if (childIntermediaries.count(r1.t) == 0 && childIntermediaries.count(r2.t) == 0)
+                candidateEdges.push_back(ce);
+        }
+
+        // Find min bridge and clean up bridges
+        for(auto ck: keyChildren[n]) {
+            Edge minBridge;
+            cost_id minBridgeCost = MAXCOST;
+            for (auto i = 0; i < bridges[ck].size(); i++) {
+                auto &ce = bridges[ck][i];
+                auto &t1 = vor.getClosest(ce.u);
+                auto &t2 = vor.getClosest(ce.v);
+                bool uInSub = subsets.count(t1.t) > 0;
+                bool uInInt = allIntermediaries.count(t1.t) > 0;
+                bool vInSub = subsets.count(t2.t) > 0;
+                bool vInInt = allIntermediaries.count(t2.t) > 0;
+
+
+                // We want bridges where one endpoint is above n and one is below n, so that connect the parent component
+                // with one of the child components
+                if (!((uInSub && !vInSub && !vInInt) || (vInSub && !uInSub && !uInInt))) {
+                    if (i < bridges[ck].size())
+                        swap(bridges[ck][i], bridges[ck].back());
+                    bridges[ck].pop_back();
+                    i--;
+                } else {
+                    auto cost = t1.costEntry.cost + t2.costEntry.cost + ce.cost;
+                    if (cost < minBridgeCost) {
+                        minBridge = ce;
+                    }
+                }
+            }
+            if (minBridgeCost < MAXCOST)
+                candidateEdges.push_back(minBridge);
+        }
+
+
+        for(auto im: allIntermediaries) {
+            for(auto& ce: bridges[im]) {
+                // Determine in which subcomponent the endpoints are
+                node_id c1 = parentPath.back();
+                node_id c2 = parentPath.back();
+                auto& t1 = vor.getClosest(ce.u);
+                auto& t2 = vor.getClosest(ce.v);
+                if (subsets.count(t1.t) > 0) {
+                    for(auto ck: keyChildren[n]) {
+                        if (subsets[ck].count(t1.t)) {
+                            c1 = ck;
+                            break;
+                        }
+                    }
+                }
+                if (subsets.count(t2.t) > 0) {
+                    for(auto ck: keyChildren[n]) {
+                        if (subsets[ck].count(t2.t)) {
+                            c2 = ck;
+                            break;
+                        }
+                    }
+                }
+                if (c1 != c2)
+                    candidateEdges.push_back(ce);
+            }
+        }
+
+        // Found all possible edges, compute MST
+
+            // Move bridges
+            // subsets[n].insert(intermediaries[kc].begin(), intermediaries[kc].end());
     }
     
 
