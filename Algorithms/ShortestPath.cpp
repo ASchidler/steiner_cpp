@@ -278,6 +278,7 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
 }
 
 void steiner::ShortestPath::recombine(node_id nSolutions) {
+    // First select indices to use. Use 2-5(?)
 
 }
 

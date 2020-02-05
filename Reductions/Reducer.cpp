@@ -8,7 +8,8 @@ void steiner::Reducer::reduce() {
     bool changed = true;
     node_id cnt = 0;
     node_id prevCnt = 0;
-    while(changed) {
+    unsigned int runs = 0;
+    while(changed && runs < limit_) {
         for(auto reduction: reductions_) {
             if (reduction->enabled) {
                 auto result = reduction->reduce(cnt, prevCnt);
@@ -20,6 +21,7 @@ void steiner::Reducer::reduce() {
                 assert(instance_->getGraph()->checkConnectedness(instance_->getNumTerminals(), false));
             }
         }
+        runs++;
         instance_->shrink();
 
         changed = cnt > 0;
