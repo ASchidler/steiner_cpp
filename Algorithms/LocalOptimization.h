@@ -82,7 +82,7 @@ namespace steiner {
     public:
         static void vertexInsertion(Graph* dg, HeuristicResult& tr);
         static void pathExchange(Graph& g, HeuristicResult& tr, node_id nTerminals);
-        static void keyVertexDeletion(Graph& g, HeuristicResult& tr);
+        static void keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals);
     };
 
     struct KeyPath {

@@ -275,7 +275,7 @@ Graph *Graph::mst() {
     }
 
     // Init
-    minEdgeVal[0] = 0;
+    minEdgeVal[*nodes_.begin()] = 0;
 
     for(int i=0; i < getNumNodes(); i++) {
         val = MAXCOST;

@@ -46,6 +46,10 @@ namespace steiner {
         bool operator>(const Edge& p2) const {
             return cost > p2.cost;
         }
+
+        bool operator==(const Edge& p2) const {
+            return cost == p2.cost && ((u == p2.u && v == p2.v) || (u == p2.v && v == p2.u));
+        }
     };
 
     struct ContractedEdge {
@@ -194,6 +198,17 @@ namespace steiner {
         cost_id bound;
         Graph* g;
         node_id root;
+    };
+}
+
+namespace std {
+    template <>
+    struct hash<steiner::Edge>
+    {
+        size_t operator()(const steiner::Edge& k) const
+        {
+            return (((hash<node_id>()(k.u) ^ hash<node_id>()(k.v))) ^ (hash<cost_id>()(k.cost) << 1u)) >> 1u;
+        }
     };
 }
 
