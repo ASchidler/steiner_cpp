@@ -80,7 +80,7 @@ namespace steiner {
 
     class LocalOptimization {
     public:
-        static void vertexInsertion(Graph* dg, HeuristicResult& tr);
+        static void vertexInsertion(Graph* dg, HeuristicResult& tr, node_id nTerminals);
         static void pathExchange(Graph& g, HeuristicResult& tr, node_id nTerminals, bool favorNew);
         static void keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals);
     };

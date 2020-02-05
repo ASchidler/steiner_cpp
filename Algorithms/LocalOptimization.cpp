@@ -5,7 +5,7 @@
 #include "LocalOptimization.h"
 
 
-void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr) {
+void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr, node_id nTerminals) {
     for(auto n: dg->getNodes()) {
         if (tr.g->getNodes().count(n) == 0) {
             // Find neighbors that are in the solution
@@ -41,6 +41,21 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
                         // Iterator is on dg, not tr, so it stays valid
                         cp->addEdge(n, b.node, b.cost);
                         cp->removeEdge(maxEdge.u, maxEdge.v);
+                    }
+                }
+
+                // Remove degree 1 non-terminals
+                bool changed = true;
+                while (changed) {
+                    changed = false;
+                    auto nit = cp->getNodes().begin();
+                    while(nit != cp->getNodes().end()) {
+                        if (cp->nb[*nit].size() == 1 && *nit != tr.root && *nit >= nTerminals) {
+                            nit = cp->removeNode(nit);
+                            changed = true;
+                        }
+                        else
+                            ++nit;
                     }
                 }
 
@@ -145,8 +160,8 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         subsets[np].insert(subsets[n].begin(), subsets[n].end());
         subsets[np].insert(path.begin(), path.end());
 
-        // Do not move pinned elements
-        if (foundPinned) {
+        // Do not move pinned elements and recheck if still important
+        if (foundPinned || (n >= numTerminals && tr.g->nb[n].size() <= 2)) {
             continue;
         }
 
@@ -196,8 +211,8 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
             for(size_t idx=0; idx < path.size() - 1; idx++) {
                 tr.g->removeEdge(path[idx], path[idx+1]);
             }
-            assert(tr.g->getNodes().count(p1end) > 0 || p1end < numTerminals);
-            assert(tr.g->getNodes().count(p2end) > 0 || p2end < numTerminals);
+            assert(tr.g->getNodes().count(p1end) > 0 || p1end < numTerminals || p1end == tr.root);
+            assert(tr.g->getNodes().count(p2end) > 0 || p2end < numTerminals || p2end == tr.root);
             int total = 0;
             // new path
             for(auto& e: *p1) {
@@ -253,6 +268,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
     for(node_id n=0; n < tr.g->getMaxNode(); n++) {
         isKey[n] = (n < nTerminals || tr.g->nb[n].size() > 2);
     }
+    isKey[tr.root] = true;
 
     vector<node_id> q;
     q.push_back(tr.root);
@@ -333,7 +349,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
 
         // Can't remove terminals, need at least more than one key child
         // TODO: Use reserve?
-        if (n > nTerminals && keyChildren[n].size() > 1) {
+        if (n >= nTerminals && keyChildren[n].size() > 1) {
             // compute intermediaries
             unordered_set<node_id> allIntermediaries;
             unordered_set<node_id> childIntermediaries;
@@ -372,11 +388,11 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
                 cost_id minBridgeCost = MAXCOST;
                 for (auto i = 0; i < bridges[ck].size(); i++) {
                     auto &ce = bridges[ck][i];
-                    auto &t1 = vor.getClosest(ce.u);
-                    auto &t2 = vor.getClosest(ce.v);
-                    bool uInSub = subsets[n].count(t1.t) > 0;
+                    auto &t1 = vor.getClosestNoTmp(ce.u);
+                    auto &t2 = vor.getClosestNoTmp(ce.v);
+                    bool uInSub = t1.t != n && subsets[n].count(t1.t) > 0;
                     bool uInInt = allIntermediaries.count(t1.t) > 0;
-                    bool vInSub = subsets[n].count(t2.t) > 0;
+                    bool vInSub = t2.t != n && subsets[n].count(t2.t) > 0;
                     bool vInInt = allIntermediaries.count(t2.t) > 0;
 
 
@@ -423,7 +439,8 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             }
 
             // Found all possible edges, compute MST
-            Graph subg = Graph(g.getMaxNode());
+            Graph subg = Graph();
+            //Graph subg = Graph(g.getMaxNode());
             unordered_map<Edge, Edge> edgeMap;
             // First compute shortest paths and add resulting edge to graph
             for (auto &ce: candidateEdges) {
@@ -435,16 +452,13 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
 
                 cost_id total = t1.costEntry.cost + t2.costEntry.cost + ce.cost;
                 if (closed.count(t1.t) == 0 && closed.count(t2.t) == 0) {
-                    if (subg.addEdge(c1, c2, total))
-                        edgeMap.emplace(Edge(c1, c2, total), ce);
+                    if (subg.addMappedEdge(c1, c2, total))
+                        edgeMap.emplace(Edge(subg.getNodeMapping(c1), subg.getNodeMapping(c2), total), ce);
                 }
             }
 
             // If we don't have enough bridges, the graph may be lacking, check first
-            bool foundAll = subg.getNodes().count(parentPath.back());
-            for (auto kv: keyChildren[n])
-                foundAll = foundAll && subg.getNodes().count(kv);
-            if (foundAll && subg.checkConnectedness(0, false)) {
+            if (keyChildren[n].size() + 1 == subg.getNumNodes() && subg.checkConnectedness(0, false)) {
                 auto *mst = subg.mst();
                 cost_id mst_cost = mst->getCost();
 
