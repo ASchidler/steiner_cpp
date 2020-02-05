@@ -32,7 +32,7 @@ namespace steiner {
             delete store_;
         }
 
-        SteinerTree* solve();
+        SteinerResult* solve();
 
     private:
         SteinerInstance *instance_;
@@ -104,8 +104,8 @@ namespace steiner {
         inline unordered_map<dynamic_bitset<>, PruneDistEntry>::iterator prune_compute_dist(const dynamic_bitset<>* label);
         inline cost_id prune_combine(const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
 
-        SteinerTree* backTrack();
-        void backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result);
+        SteinerResult* backTrack();
+        void backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerResult* result);
     };
 }
 

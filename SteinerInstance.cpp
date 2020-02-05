@@ -96,9 +96,9 @@ bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
 
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     // TODO: Is this inefficient for just getting the closest terminals over and over in the solver?
-    if (closest_terminals_ == nullptr || distanceState_ == invalid) {
+    if (distanceState_ == invalid)
         clearDistance();
-
+    if (closest_terminals_ == nullptr) {
         if (closest_terminals_ == nullptr) {
             closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
 

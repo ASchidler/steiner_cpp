@@ -27,7 +27,7 @@ namespace steiner {
 
     class VoronoiPartition {
     public:
-        VoronoiPartition(Graph& g, HeuristicResult& tr);
+        VoronoiPartition(Graph& g, SteinerResult& tr);
         ClosestEntry& getClosest(node_id n) {
             if (closestTmp_[n] != nullptr) {
                 return *closestTmp_[n];
@@ -80,9 +80,9 @@ namespace steiner {
 
     class LocalOptimization {
     public:
-        static void vertexInsertion(Graph* dg, HeuristicResult& tr, node_id nTerminals);
-        static void pathExchange(Graph& g, HeuristicResult& tr, node_id nTerminals, bool favorNew);
-        static void keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals);
+        static void vertexInsertion(Graph* dg, SteinerResult& tr, node_id nTerminals);
+        static void pathExchange(Graph& g, SteinerResult& tr, node_id nTerminals, bool favorNew);
+        static void keyVertexDeletion(Graph& g, SteinerResult& tr, node_id nTerminals);
     };
 
     struct KeyPath {

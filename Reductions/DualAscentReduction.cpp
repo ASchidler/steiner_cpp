@@ -18,7 +18,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     node_id numRoots = min((node_id)50, instance->getNumTerminals());
     node_id roots[numRoots];
     chooseRoots(roots, numRoots);
-    HeuristicResult* results[numRoots];
+    SteinerResult* results[numRoots];
     for(node_id t=0; t < numRoots; t++)
         results[t] = DualAscent::calculate(instance->getGraph(), roots[t], nullptr, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
 
@@ -47,13 +47,13 @@ bool pairSort(const pair<int,int> &a,
     return (a.first > b.first || (a.first == b.first && a.second > b.second));
 }
 
-node_id steiner::DualAscentReduction::reduceGraph(steiner::HeuristicResult* r) {
+node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
     r->g->findDistances(r->root);
     cost_id* dist = r->g->getDistances()[r->root];
     vector<pair<node_id, node_id>> candidates;
     node_id track = 0;
 
-    cost_id limit = instance->getApproximation().getLowest() - r->bound;
+    cost_id limit = instance->getApproximation().getLowest() - r->cost;
     auto vor = voronoi(r->g, instance->getNumTerminals());
 
     for(node_id t=0; t < instance->getNumTerminals(); t++) {
@@ -123,15 +123,15 @@ void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots)
     }
 }
 
-void steiner::DualAscentReduction::selectRoots(steiner::HeuristicResult** results, node_id numSolutions, const node_id *track) {
+void steiner::DualAscentReduction::selectRoots(steiner::SteinerResult** results, node_id numSolutions, const node_id *track) {
     // Okay so the idea is that we choose the two best roots in terms of bounds and the two best roots in terms of elimination
     cost_id bestBound = 0;
     node_id bestTrack = 0;
 
     for(node_id i=0; i < numSolutions; i++) {
-        if(results[i]->bound > bestBound) {
+        if(results[i]->cost > bestBound) {
             bestRoots[0] = results[i]->root;
-            bestBound = results[i]->bound;
+            bestBound = results[i]->cost;
         } else if (track[i] > bestTrack) {
             bestRoots[1] = results[i]->root;
             bestTrack = track[i];

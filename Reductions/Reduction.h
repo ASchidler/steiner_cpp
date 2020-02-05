@@ -15,30 +15,37 @@ namespace steiner {
         }
         virtual ~Reduction() = default;
         virtual node_id reduce(node_id currCount, node_id prevCount) = 0;
-        virtual bool postProcess(SteinerTree* solution) {
+        virtual bool postProcess(SteinerResult* solution) {
             bool change = false;
             if (! addedPreselected_) {
                 addedPreselected_ = true;
                 for (auto e: preselected) {
-                    solution->addEdge(e.u, e.v, e.cost);
+                    solution->g->addEdge(e.u, e.v, e.cost);
                     change = true;
                 }
             }
 
             for (auto n : merged) {
-                if (solution->removeEdge(n.newEdge.u, n.newEdge.v, n.newEdge.cost)) {
-                    solution->addEdge(n.oldEdge1.u, n.oldEdge1.v, n.oldEdge1.cost);
-                    solution->addEdge(n.oldEdge2.u, n.oldEdge2.v, n.oldEdge2.cost);
-                    change = true;
+                if (solution->g->nb.size() > n.newEdge.u) {
+                    auto e = solution->g->nb[n.newEdge.u].find(n.newEdge.v);
+                    if (e != solution->g->nb[n.newEdge.u].end() && e->second == n.newEdge.cost) {
+                        solution->g->removeEdge(n.newEdge.u, n.newEdge.v);
+                        solution->g->addEdge(n.oldEdge1.u, n.oldEdge1.v, n.oldEdge1.cost);
+                        solution->g->addEdge(n.oldEdge2.u, n.oldEdge2.v, n.oldEdge2.cost);
+                        change = true;
+                    }
                 }
             }
 
             for (auto n: contracted) {
-                if (solution->removeEdge(n.target, n.n, n.c)) {
-                    solution->addEdge(n.removed, n.n, n.c);
-                    change = true;
+                if (solution->g->nb.size() > n.target) {
+                    auto e = solution->g->nb[n.target].find(n.n);
+                    if (e != solution->g->nb[n.target].end() && e->second == n.c) {
+                        solution->g->removeEdge(n.target, n.n);
+                        solution->g->addEdge(n.removed, n.n, n.c);
+                        change = true;
+                    }
                 }
-
             }
 
             return change;

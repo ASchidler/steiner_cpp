@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     }
     //rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
     cout <<"LB " << DualAscent::bestResult << endl;
-    cout <<"UB " << rsph.getBest()->bound << endl;
+    cout << "UB " << rsph.getBest()->cost << endl;
 
     auto start = high_resolution_clock::now();
     if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
@@ -102,12 +102,8 @@ int main(int argc, char* argv[]) {
 
 
     reducer.unreduce(tree);
-    cout << tree->getCost() << endl;
+    cout << tree->cost << endl;
     delete s;
-
-
-    for(auto r: reductions)
-        delete r;
 
     return 0;
 }

@@ -26,7 +26,7 @@ namespace steiner {
         bool hasResults() {
             return !resultPool_.empty();
         }
-        HeuristicResult* getBest() {
+        SteinerResult* getBest() {
             if (!resultPool_.empty())
                 return resultPool_[0];
             return nullptr;
@@ -36,7 +36,7 @@ namespace steiner {
             return lowestBound_;
         }
 
-        static steiner::HeuristicResult* calculate(node_id root, Graph& g, node_id nTerminals);
+        static steiner::SteinerResult* calculate(node_id root, Graph& g, node_id nTerminals);
         static bool hasRun;
         static node_id bestRoot;
         static cost_id bestResult;
@@ -44,8 +44,8 @@ namespace steiner {
     private:
         cost_id lowestBound_ = MAXCOST;
         node_id poolSize_;
-        void addToPool(HeuristicResult* result);
-        vector<HeuristicResult*> resultPool_;
+        void addToPool(SteinerResult* result);
+        vector<SteinerResult*> resultPool_;
         node_id terminalRoots[5] = {0, 1, 2, 3, 4};
         node_id nonTerminalRoots[3] = {MAXNODE, MAXNODE, MAXNODE};
         unordered_set<node_id> selectRoots(steiner::Graph &g, node_id nTerminals, node_id nSolutions);

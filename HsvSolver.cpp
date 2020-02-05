@@ -33,18 +33,19 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
         }
     }
 
-    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    //TODO: Make this configurable and dynamic
+    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
     instance->getClosestTerminals(0);
 }
 
-SteinerTree* steiner::HsvSolver::solve() {
+SteinerResult* steiner::HsvSolver::solve() {
     // Special case, only root
     if (nTerminals_ == 0) {
-        auto result = new SteinerTree(root_);
+        auto result = new SteinerResult(0, new Graph(), instance_->getGraph()->getReverseMapping(root_));
         return result;
     }
 
@@ -259,16 +260,16 @@ cost_id HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dynamic_b
     return cost;
 }
 
-SteinerTree *HsvSolver::backTrack() {
-    auto result = new SteinerTree(root_);
+SteinerResult* HsvSolver::backTrack() {
+    auto result = new SteinerResult(0, new Graph(), instance_->getGraph()->getReverseMapping(root_));
     auto fullLabel = dynamic_bitset<>(nTerminals_);
     fullLabel.flip();
     backTrackSub(root_, &fullLabel, result);
-
+    result->cost = result->g->getCost();
     return result;
 }
 
-void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTree* result) {
+void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerResult* result) {
     auto c = costs_[n].find(*label)->second;
     if (c.merge) {
         // Found a leaf
@@ -283,7 +284,7 @@ void HsvSolver::backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerTr
         assert(instance_->getGraph()->nb[n].count(n2) > 0);
         assert(instance_->getGraph()->nb[n][n2] == instance_->getGraph()->nb[n2][n]);
         auto cn = instance_->getGraph()->nb[n][n2];
-        result->addEdge(instance_->getGraph()->getReverseMapping(n), instance_->getGraph()->getReverseMapping(n2), cn);
+        result->g->addEdge(instance_->getGraph()->getReverseMapping(n), instance_->getGraph()->getReverseMapping(n2), cn);
         backTrackSub(n2, label, result);
     }
 }

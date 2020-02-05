@@ -72,9 +72,7 @@ namespace steiner {
         Graph() = default;
 
         explicit Graph(node_id nNodes) {
-            for(node_id i=0; i < nNodes; i++) {
-                nb.emplace_back();
-            }
+            nb.resize(nNodes);
         }
 
         Graph(Graph& g, bool copyMapping) : nb(vector<unordered_map<node_id, cost_id>>(g.nb)), nodes_(g.nodes_) {
@@ -138,7 +136,6 @@ namespace steiner {
             return this->nodes_.size();
         }
 
-        // TODO: Return reference!
         unordered_set<node_id>& getNodes(){
             return nodes_;
         }
@@ -159,6 +156,7 @@ namespace steiner {
 
         unordered_set<node_id>::iterator removeNode(node_id u);
         unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
+        bool adaptWeight(node_id up, node_id vp, cost_id original, cost_id modified);
         void removeEdge(node_id u, node_id v);
         EdgeIterator removeEdge(EdgeIterator);
         // TODO: This is really ugly (result)
@@ -185,17 +183,18 @@ namespace steiner {
         unordered_map<node_id, node_id> nodeMap_;
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;
+        node_id distanceInit_ = 0;
     };
 
-    struct HeuristicResult {
-        HeuristicResult(cost_id bound, Graph* g, node_id root) :
-                bound(bound), g(g), root(root)
+    struct SteinerResult {
+        SteinerResult(cost_id bound, Graph* g, node_id root) :
+                cost(bound), g(g), root(root)
         {}
-        ~HeuristicResult() {
+        ~SteinerResult() {
             delete g;
         }
 
-        cost_id bound;
+        cost_id cost;
         Graph* g;
         node_id root;
     };

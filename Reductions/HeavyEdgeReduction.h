@@ -21,7 +21,7 @@ namespace  steiner {
             return "Heavy Edges";
         }
 
-        bool postProcess(SteinerTree *solution) override;
+        bool postProcess(SteinerResult *solution) override;
     private:
         node_id limit_;
         struct Adaption {

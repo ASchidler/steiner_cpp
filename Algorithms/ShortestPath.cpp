@@ -10,7 +10,7 @@ bool steiner::ShortestPath::hasRun = false;
 node_id steiner::ShortestPath::bestRoot = 0;
 cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
-steiner::HeuristicResult* steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
+steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
     auto* tr = new Graph(g.getMaxNode());
     node_id nRemaining = nTerminals;
     bool remaining[nTerminals];
@@ -94,11 +94,11 @@ steiner::HeuristicResult* steiner::ShortestPath::calculate(node_id root, Graph& 
                 ++n;
         }
     }
-    auto* result = new HeuristicResult(mst->getCost(), mst, root);
+    auto* result = new SteinerResult(mst->getCost(), mst, root);
 
     ShortestPath::hasRun = true;
-    if (ShortestPath::bestResult > result->bound) {
-        ShortestPath::bestResult = result->bound;
+    if (ShortestPath::bestResult > result->cost) {
+        ShortestPath::bestResult = result->cost;
         if (root < nTerminals)
             ShortestPath::bestRoot = root;
     }
@@ -138,17 +138,17 @@ void steiner::ShortestPath::resetPool(node_id nTerminals) {
     resultPool_.clear();
 }
 
-void steiner::ShortestPath::addToPool(steiner::HeuristicResult* result) {
+void steiner::ShortestPath::addToPool(steiner::SteinerResult* result) {
     bool smaller = false;
     bool handled = false;
-    lowestBound_ = min(lowestBound_, result->bound);
+    lowestBound_ = min(lowestBound_, result->cost);
 
     // Check if there is a larger result
     for(size_t i=0; i < resultPool_.size(); i++) {
         auto r = resultPool_[i];
         // We want only one result per root
         if (r->root == result->root) {
-            if (r->bound <= result->bound) {
+            if (r->cost <= result->cost) {
                 delete result;
                 return;
             } else {
@@ -156,7 +156,7 @@ void steiner::ShortestPath::addToPool(steiner::HeuristicResult* result) {
                 handled = true;
                 break;
             }
-        } else if (r->bound > result->bound) {
+        } else if (r->cost > result->cost) {
             smaller = true;
             break;
         }
@@ -176,7 +176,7 @@ void steiner::ShortestPath::addToPool(steiner::HeuristicResult* result) {
 
     // Bubble up to keep sorted
     for(size_t i=resultPool_.size() - 1; i > 0; i--) {
-        if (resultPool_[i]->bound < resultPool_[i-1]->bound)
+        if (resultPool_[i]->cost < resultPool_[i - 1]->cost)
             swap(resultPool_[i], resultPool_[i-1]);
     };
 }
@@ -285,7 +285,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions) {
 void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerminals) {
     for(int i=0; i < nSolutions && i < resultPool_.size(); i++) {
         auto r = resultPool_[i];
-        cout << "Before: " << r->bound << endl;
+        cout << "Before: " << r->cost << endl;
         //LocalOptimization::vertexInsertion(&g, *r, nTerminals);
         LocalOptimization::pathExchange(g, *r, nTerminals, true);
         LocalOptimization::keyVertexDeletion(g, *r, nTerminals);
@@ -303,11 +303,11 @@ void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerm
                     ++nit;
             }
         }
-        cout << "After: " << r->bound << endl;
-        lowestBound_ = min(lowestBound_, r->bound);
+        cout << "After: " << r->cost << endl;
+        lowestBound_ = min(lowestBound_, r->cost);
 
         // Maintain ordering
-        if (i > 0 && r->bound < resultPool_[i-1]->bound)
+        if (i > 0 && r->cost < resultPool_[i - 1]->cost)
             swap(resultPool_[i], resultPool_[i-1]);
     }
 }

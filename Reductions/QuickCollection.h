@@ -33,7 +33,7 @@ namespace  steiner {
             return track;
         }
 
-        bool postProcess(SteinerTree *solution) override {
+        bool postProcess(SteinerResult *solution) override {
             bool result1 = nv_.postProcess(solution);
             bool result2 = sl_.postProcess(solution);
             bool result3 = deg_.postProcess(solution);

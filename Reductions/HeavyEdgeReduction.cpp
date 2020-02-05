@@ -59,10 +59,10 @@ node_id steiner::HeavyEdgeReduction::reduce(node_id currCount, node_id prevCount
     return track;
 }
 
-bool steiner::HeavyEdgeReduction::postProcess(steiner::SteinerTree *solution) {
+bool steiner::HeavyEdgeReduction::postProcess(steiner::SteinerResult *solution) {
     bool changed = false;
     for(auto& a: adaptions_) {
-        if (solution->adaptWeight(a.t, a.n, a.oldCost, a.newCost))
+        if (solution->g->adaptWeight(a.t, a.n, a.oldCost, a.newCost))
             changed = true;
     }
     bool changed2 = Reduction::postProcess(solution);

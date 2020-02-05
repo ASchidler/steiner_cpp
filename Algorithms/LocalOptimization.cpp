@@ -5,7 +5,7 @@
 #include "LocalOptimization.h"
 
 
-void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr, node_id nTerminals) {
+void steiner::LocalOptimization::vertexInsertion(Graph* dg, SteinerResult& tr, node_id nTerminals) {
     for(auto n: dg->getNodes()) {
         if (tr.g->getNodes().count(n) == 0) {
             // Find neighbors that are in the solution
@@ -61,10 +61,10 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr,
 
                 // Check if we made progress:
                 auto trCost = cp->getCost();
-                if (tr.bound >= trCost) {
+                if (tr.cost >= trCost) {
                     delete tr.g;
                     tr.g = cp;
-                    tr.bound = trCost;
+                    tr.cost = trCost;
                 } else {
                     delete cp;
                 }
@@ -73,7 +73,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr,
     }
 }
 
-void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, node_id numTerminals, bool favorNew) {
+void steiner::LocalOptimization::pathExchange(Graph& g, SteinerResult& tr, node_id numTerminals, bool favorNew) {
     if (tr.g->getNumNodes() < 5)
         return;
 
@@ -251,10 +251,10 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         delete p1;
         delete p2;
     }
-    tr.bound = tr.g->getCost();
+    tr.cost = tr.g->getCost();
 }
 
-void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr, node_id nTerminals) {
+void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, node_id nTerminals) {
     // Find predecessors for common ancestor finding by performing a DFS traversal
     NodeWithCost p[g.getMaxNode()];
     p[tr.root] = NodeWithCost(tr.root, 0);
@@ -532,10 +532,10 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             }
         }
     }
-    tr.bound = tr.g->getCost();
+    tr.cost = tr.g->getCost();
 }
 
-steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::HeuristicResult &tr) : g_(g) {
+steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::SteinerResult &tr) : g_(g) {
     regions_ = new unordered_map<node_id, NodeWithCost>[tr.g->getMaxNode()];
     closest_ = new ClosestEntry*[g.getMaxNode()];
     regionsTmp_ = new unordered_map<node_id, NodeWithCost>[tr.g->getMaxNode()];

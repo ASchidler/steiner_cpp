@@ -31,6 +31,10 @@ bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
         return false;
     nodes_.insert(u);
     nodes_.insert(v);
+    node_id maxId = max(u, v);
+    if (maxId > nb.size()) {
+        nb.resize(maxId+1);
+    }
     if (nb[u].count(v) == 0) {
         this->nb[u].emplace(v, cost);
         this->nb[v].emplace(u, cost);
@@ -66,6 +70,7 @@ void steiner::Graph::findDistances(node_id u) {
     // Init distances
     if (distances_ == nullptr) {
         distances_ = new cost_id*[getMaxNode()];
+        distanceInit_ = getMaxNode();
         for(size_t i=0; i < getMaxNode(); i++) {
             distances_[i] = nullptr;
         }
@@ -354,7 +359,7 @@ cost_id Graph::mst_sum() {
 
 void Graph::discardDistances() {
     if (distances_ != nullptr) {
-        for (size_t i = 0; i < sizeof(distances_) / sizeof(cost_id); i++) {
+        for (size_t i = 0; i < distanceInit_; i++) {
             delete[] distances_[i];
             distances_[i] = nullptr;
         }
@@ -426,10 +431,27 @@ bool Graph::shrink() {
         }
     }
     // Remove unnecessary vectors, decreases maxnode
-    while(nb.size() > nodes_.size()) {
-        assert(nb.back().empty());
-        nb.pop_back();
-    }
+    nb.resize(nodes_.size());
+//    while(nb.size() > nodes_.size()) {
+//        assert(nb.back().empty());
+//        nb.pop_back();
+//    }
 
     return true;
+}
+
+bool Graph::adaptWeight(node_id up, node_id vp, cost_id original, cost_id modified) {
+    auto u = min(up, vp);
+    auto v = max(up, vp);
+
+    if (nb.size() > u) {
+        auto n = nb[u].find(v);
+        if (n != nb[u].end() && n->second == modified) {
+            n->second = original;
+            nb[v][u] = original;
+            return true;
+        }
+    }
+
+    return false;
 }

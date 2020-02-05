@@ -30,7 +30,7 @@ void steiner::Reducer::reduce() {
     }
 }
 
-void steiner::Reducer::unreduce(SteinerTree* solution) {
+void steiner::Reducer::unreduce(SteinerResult* solution) {
     bool changed = true;
     while (changed) {
         changed = false;
@@ -39,4 +39,5 @@ void steiner::Reducer::unreduce(SteinerTree* solution) {
                 changed = true;
         }
     }
+    solution->cost = solution->g->getCost();
 }

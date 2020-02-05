@@ -24,6 +24,7 @@
 #include "MstPreselection.h"
 #include "ShortLinksPreselection.h"
 #include "NearestVertexPreselection.h"
+#include "QuickCollection.h"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ namespace steiner {
                 delete r;
         }
         void reduce();
-        static Reducer getMinimalReducer(SteinerInstance* instance) {
+        static Reducer getMinimalReducer(SteinerInstance* s) {
             auto reductions = vector<Reduction*>();
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new LongEdgeReduction(s, true, 100));
@@ -52,12 +53,12 @@ namespace steiner {
             reductions.push_back(new Degree3Reduction(s));
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new NtdkReduction(s, 2000, false, 4));
-            reductions.push_back(new steiner::QuickCollection(s));
+            reductions.push_back(new QuickCollection(s));
 
-            auto r = Reducer(reductions, instance);
+            auto r = Reducer(reductions, s);
             r.setLimit(5);
         }
-        void unreduce(SteinerTree* solution);
+        void unreduce(SteinerResult* solution);
 
         void setLimit(unsigned int limit) {
             limit_ = limit;
