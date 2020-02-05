@@ -29,8 +29,6 @@ namespace steiner {
                 }
                 delete[] terminalSteinerDistances_;
             }
-
-            delete approximation_;
         }
 
         node_id getNumTerminals() {
@@ -51,22 +49,20 @@ namespace steiner {
         cost_id getSteinerDistance(node_id u, node_id v);
         enum ValueState { lower, exact, higher, invalid};
         void shrink();
-//TODO: Always keep the lowest known upper bound
-        HeuristicResult* getApproximation() {
+
+        ShortestPath& getApproximation() {
             if (approximationState_ != exact) {
-                delete approximation_;
-
-                approximation_ = steiner::ShortestPath::calculate((node_id)0, g_, nTerminals, g_->getMaxNode());
+                approximation_.resetPool(nTerminals);
+                // TODO: Find a good number of roots...
+                approximation_.findAndAdd(*g_, nTerminals, 30);
+                approximation_.optimize(*g_, 10, nTerminals);
                 approximationState_ = exact;
-                if (approximation_->bound < upperBound_)
-                    upperBound_ = approximation_->bound;
             }
-
             return approximation_;
         }
 
         cost_id getUpperBound() {
-            return upperBound_;
+            return approximation_.getLowest();
         }
 
         void setDistanceState(ValueState s) {
@@ -150,7 +146,7 @@ namespace steiner {
         ValueState distanceState_ = invalid;
         ValueState steinerDistanceState_ = invalid;
         ValueState approximationState_ = invalid;
-        HeuristicResult* approximation_ = nullptr;
+        ShortestPath approximation_ = ShortestPath(10);
 
         void clearClosest_() {
             if (closest_terminals_ != nullptr) {

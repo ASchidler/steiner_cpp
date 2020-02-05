@@ -298,13 +298,10 @@ Graph *Graph::mst() {
             result->addEdge(idx, minEdgeNode[idx], minEdgeVal[idx]);
         minEdgeVal[idx] = MAXCOST;
 
-        for(const auto k: nodes_) {
-            if (! taken[k]) {
-                auto dist = nb[idx].find(k);
-                if (dist != nb[idx].end() && dist->second < minEdgeVal[k]) {
-                    minEdgeVal[k] = dist->second;
-                    minEdgeNode[k] = idx;
-                }
+        for (auto& b: nb[idx]) {
+            if (! taken[b.first] && b.second < minEdgeVal[b.first]) {
+                minEdgeVal[b.first] = b.second;
+                minEdgeNode[b.first] = idx;
             }
         }
     }
@@ -343,12 +340,9 @@ cost_id Graph::mst_sum() {
         result += minEdgeVal[idx];
         minEdgeVal[idx] = MAXCOST;
 
-        for(const auto& k: nodes_) {
-            if (! taken[k]) {
-                auto dist = nb[idx].find(k);
-                if (dist != nb[idx].end() && dist->second < minEdgeVal[k]) {
-                    minEdgeVal[k] = dist->second;
-                }
+        for (auto& b: nb[idx]) {
+            if (! taken[b.first] && b.second < minEdgeVal[b.first]) {
+                minEdgeVal[b.first] = b.second;
             }
         }
     }

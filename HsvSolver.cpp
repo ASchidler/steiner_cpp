@@ -91,7 +91,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
 
         auto nbc = costs_[nb.first].find(*label);
         if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
-            if (! prune(n, newCost, label)) {
+            if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label)) {
                 if (nbc == costs_[nb.first].end()) {
                     auto pred = Predecessor();
                     pred.node = n;
@@ -101,8 +101,9 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
                     nbc->second.prev.node = n;
                     nbc->second.merge = false;
                 }
-
-                queue_.emplace(newCost + heuristic_->calculate( nb.first, label), newCost, nb.first, *label);
+                auto newTotal = newCost + heuristic_->calculate( nb.first, label);
+                if (newTotal <= instance_->getUpperBound())
+                    queue_.emplace(newTotal, newCost, nb.first, *label);
             }
         }
     }
@@ -115,7 +116,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
 
         auto nbc = costs_[n].find(combined);
         if (nbc == costs_[n].end() || nbc->second.cost > newCost) {
-            if (! prune(n, newCost, label, &(**other_set), &combined)) {
+            if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label, &(**other_set), &combined)) {
                 if (nbc == costs_[n].end()) {
                     auto pred = Predecessor();
                     pred.label = &(**other_set);
@@ -126,7 +127,9 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
                     nbc->second.prev.label = &(**other_set);
                 }
 
-                queue_.emplace(newCost + heuristic_->calculate(n, &combined), newCost, n, combined);
+                auto newTotal = newCost +  heuristic_->calculate(n, &combined);
+                if (newTotal <= instance_->getUpperBound())
+                    queue_.emplace(newTotal, newCost, n, combined);
             }
         }
     }

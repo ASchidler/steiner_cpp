@@ -50,21 +50,15 @@ int main(int argc, char* argv[]) {
         ts.emplace(i);
     }
 
-    for (int i=0; i < s->getNumTerminals() && i < 30; i++) {
+    auto rsph = ShortestPath(10);
+    rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 5);
+    for (int i=0; i < s->getNumTerminals() && i < 5; i++) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
-        auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
-        cout << "Original " << result2->bound << endl;
-        LocalOptimization::vertexInsertion(s->getGraph(), *result2);
-        cout << "V Insert " << result2->bound << endl;
-        LocalOptimization::keyVertexDeletion(*s->getGraph(), *result2, s->getNumTerminals());
-        cout << "KV Delete " << result2->bound << endl;
-        LocalOptimization::pathExchange(*s->getGraph(), *result2, s->getNumTerminals(), true);
-        cout << "Path Exchange " << result2->bound << endl;
-        delete result2;
     }
+    //rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
     cout <<"LB " << DualAscent::bestResult << endl;
-    cout <<"UB " << ShortestPath::bestResult << endl;
+    cout <<"UB " << rsph.getBest()->bound << endl;
 
     auto start = high_resolution_clock::now();
     if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
@@ -75,17 +69,18 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new TerminalDistanceReduction(s));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new LongEdgeReduction(s, true, 100));
+    reductions.push_back(new LongEdgeReduction(s, true, 2000));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new NtdkReduction(s, 100, true, 4));
-    reductions.push_back(new SdcReduction(s, 100));
+    reductions.push_back(new NtdkReduction(s, 2000, true, 4));
+    reductions.push_back(new SdcReduction(s, 2000));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new NtdkReduction(s, 100, false, 4));
+    reductions.push_back(new NtdkReduction(s, 2000, false, 4));
+    reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new DualAscentReduction(s));
     reductions.push_back(new DegreeReduction(s, true));
-    reductions.push_back(new HeavyEdgeReduction(s, 100));
+    reductions.push_back(new HeavyEdgeReduction(s, 2000));
     reductions.push_back(new MstPreselection(s));
     reductions.push_back(new steiner::QuickCollection(s));
     reductions.push_back(new DegreeReduction(s, true));
