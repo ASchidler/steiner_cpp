@@ -207,7 +207,7 @@ namespace std {
     {
         size_t operator()(const steiner::Edge& k) const
         {
-            return (((hash<node_id>()(k.u) ^ hash<node_id>()(k.v))) ^ (hash<cost_id>()(k.cost) << 1u)) >> 1u;
+            return hash<node_id>()(k.u) ^ hash<node_id>()(k.v);
         }
     };
 }

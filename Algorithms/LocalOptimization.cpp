@@ -26,7 +26,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
                 for(auto b: shared) {
                     // Find shortest path from
                     auto path = cp->findPath(n, b.node);
-                    auto maxEdge = Edge(path[0], path[1], dg->nb[path[0]][path[1]]);
+                    auto maxEdge = Edge(path[0], path[1], tr.g->nb[path[0]][path[1]]);
 
                     for (size_t cNode = 2; cNode < path.size(); cNode++) {
                         auto c = cp->nb[path[cNode - 1]][path[cNode]];
@@ -42,12 +42,11 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
                         cp->addEdge(n, b.node, b.cost);
                         cp->removeEdge(maxEdge.u, maxEdge.v);
                     }
-
                 }
 
                 // Check if we made progress:
                 auto trCost = cp->getCost();
-                if (tr.bound > trCost) {
+                if (tr.bound >= trCost) {
                     delete tr.g;
                     tr.g = cp;
                     tr.bound = trCost;
@@ -59,7 +58,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, HeuristicResult& tr)
     }
 }
 
-void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, node_id numTerminals) {
+void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, node_id numTerminals, bool favorNew) {
     if (tr.g->getNumNodes() < 5)
         return;
 
@@ -70,6 +69,7 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
     for(node_id n=0; n < tr.g->getMaxNode(); n++) {
         isKey[n] = (n < numTerminals || tr.g->nb[n].size() > 2);
     }
+    isKey[tr.root] = true;
 
 
     // Find bridging edges
@@ -104,7 +104,8 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
             if (nb.first != parents[v]) {
                 q.push_back(nb.first);
                 parents[nb.first] = v;
-                if (isKey[nb.first]) {
+                // Do not process the root, as there is no keypath from the root up
+                if (isKey[nb.first] && nb.first != tr.root) {
                     kvq.push_back(nb.first);
                 }
             }
@@ -142,10 +143,10 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         subsets[n].insert(n);
         subsets[np].reserve(subsets[n].size() + path.size() + subsets[n].size());
         subsets[np].insert(subsets[n].begin(), subsets[n].end());
+        subsets[np].insert(path.begin(), path.end());
 
         // Do not move pinned elements
         if (foundPinned) {
-            subsets[np].insert(path.begin(), path.end());
             continue;
         }
 
@@ -190,12 +191,13 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
         }
 
         // Found cheaper key path
-        // TODO: Favor new?
-        if (minBridge.total < pathCost) {
+        if (minBridge.total < pathCost || (favorNew && minBridge.total == pathCost)) {
             // Remove old path
             for(size_t idx=0; idx < path.size() - 1; idx++) {
                 tr.g->removeEdge(path[idx], path[idx+1]);
             }
+            assert(tr.g->getNodes().count(p1end) > 0 || p1end < numTerminals);
+            assert(tr.g->getNodes().count(p2end) > 0 || p2end < numTerminals);
             int total = 0;
             // new path
             for(auto& e: *p1) {
@@ -220,8 +222,6 @@ void steiner::LocalOptimization::pathExchange(Graph& g, HeuristicResult& tr, nod
             pinned.insert(p1end);
             pinned.insert(p2end);
             assert(tr.g->checkConnectedness(0, false));
-        } else {
-            subsets[np].insert(path.begin(), path.end());
         }
 
         // Move to parent key vertex
@@ -318,8 +318,8 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             auto pred = p[n].node;
             while (! isKey[pred]) {
                 parentPath.push_back(pred);
-                pred = p[pred].node;
                 intermediaries[n].push_back(pred);
+                pred = p[pred].node;
             }
             parentPath.push_back(pred);
             keyChildren[pred].insert(n);
@@ -342,6 +342,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
                 allIntermediaries.insert(intermediaries[kc].begin(), intermediaries[kc].end());
                 childIntermediaries.insert(intermediaries[kc].begin(), intermediaries[kc].end());
             }
+            allIntermediaries.insert(n);
 
             // Check if any pinned vertices are in the intermediaries
             bool foundPinned = false;
@@ -474,6 +475,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
                     auto mstEdges = mst->findEdges();
                     while (mstEdges.hasElement()) {
                         auto ce = *mstEdges;
+                        assert(edgeMap.count(ce) > 0);
                         auto &originalE = edgeMap[ce];
                         tr.g->addEdge(originalE.u, originalE.v, originalE.cost);
                         auto *p1 = vor.getPath(originalE.u);
@@ -496,6 +498,8 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
                         closed.insert(cs);
                     for (auto im: allIntermediaries)
                         closed.insert(im);
+
+                    assert(tr.g->checkConnectedness(0, false));
                 }
 
 
@@ -514,6 +518,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, HeuristicResult& tr
             }
         }
     }
+    tr.bound = tr.g->getCost();
 }
 
 steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::HeuristicResult &tr) : g_(g) {

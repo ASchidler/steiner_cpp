@@ -217,7 +217,14 @@ bool Graph::checkConnectedness(node_id nodeLimit, bool clean) {
         seen[i] = false;
 
     auto q = vector<node_id>();
-    auto first = *nodes_.begin();
+    auto nodeIt = nodes_.begin();
+    auto first = *nodeIt;
+    if (nodeLimit > 0) {
+        while(first >= nodeLimit && nodeIt != nodes_.end()) {
+            first = *nodeIt;
+            ++nodeIt;
+        }
+    }
     node_id cnt = 1;
     seen[first] = true;
     q.emplace_back(first);
@@ -287,7 +294,7 @@ Graph *Graph::mst() {
         }
 
         taken[idx] = true;
-        if (idx > 0)
+        if (i > 0)
             result->addEdge(idx, minEdgeNode[idx], minEdgeVal[idx]);
         minEdgeVal[idx] = MAXCOST;
 
@@ -321,9 +328,9 @@ cost_id Graph::mst_sum() {
     }
 
     // Init
-    minEdgeVal[0] = 0;
+    minEdgeVal[*nodes_.begin()] = 0;
 
-    for(int i=0; i < getMaxNode(); i++) {
+    for(int i=0; i < getNumNodes(); i++) {
         val = MAXCOST;
         for(const auto& k: nodes_) {
             if (minEdgeVal[k] < val) {
@@ -338,9 +345,9 @@ cost_id Graph::mst_sum() {
 
         for(const auto& k: nodes_) {
             if (! taken[k]) {
-                auto dist = nb[idx][k];
-                if (dist < minEdgeVal[k]) {
-                    minEdgeVal[k] = dist;
+                auto dist = nb[idx].find(k);
+                if (dist != nb[idx].end() && dist->second < minEdgeVal[k]) {
+                    minEdgeVal[k] = dist->second;
                 }
             }
         }

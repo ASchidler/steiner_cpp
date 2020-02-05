@@ -55,11 +55,11 @@ int main(int argc, char* argv[]) {
         delete result;
         auto result2 = ShortestPath::calculate(i, s->getGraph(), s->getNumTerminals(), s->getGraph()->getNumNodes());
         cout << "Original " << result2->bound << endl;
+        LocalOptimization::vertexInsertion(s->getGraph(), *result2);
+        cout << "V Insert " << result2->bound << endl;
         LocalOptimization::keyVertexDeletion(*s->getGraph(), *result2, s->getNumTerminals());
         cout << "KV Delete " << result2->bound << endl;
-        LocalOptimization::vertexInsertion(s->getGraph(), *result2);
-        cout << "V Delete " << result2->bound << endl;
-        LocalOptimization::pathExchange(*s->getGraph(), *result2, s->getNumTerminals());
+        LocalOptimization::pathExchange(*s->getGraph(), *result2, s->getNumTerminals(), true);
         cout << "Path Exchange " << result2->bound << endl;
         delete result2;
     }
