@@ -29,9 +29,9 @@ namespace steiner {
                 if (solution->g->getMaxNode() > n.newEdge.u) {
                     auto e = solution->g->nb[n.newEdge.u].find(n.newEdge.v);
                     if (e != solution->g->nb[n.newEdge.u].end() && e->second == n.newEdge.cost) {
-                        solution->g->removeEdge(n.newEdge.u, n.newEdge.v);
                         solution->g->addEdge(n.oldEdge1.u, n.oldEdge1.v, n.oldEdge1.cost);
                         solution->g->addEdge(n.oldEdge2.u, n.oldEdge2.v, n.oldEdge2.cost);
+                        solution->g->removeEdge(n.newEdge.u, n.newEdge.v);
                         change = true;
                     }
                 }
@@ -41,8 +41,8 @@ namespace steiner {
                 if (solution->g->getMaxNode() > n.target) {
                     auto e = solution->g->nb[n.target].find(n.n);
                     if (e != solution->g->nb[n.target].end() && e->second == n.c) {
-                        solution->g->removeEdge(n.target, n.n);
                         solution->g->addEdge(n.removed, n.n, n.c);
+                        solution->g->removeEdge(n.target, n.n);
                         change = true;
                     }
                 }

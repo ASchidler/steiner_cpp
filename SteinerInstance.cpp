@@ -90,7 +90,7 @@ unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_
 }
 
 bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
-    g_->addEdge(u, v, c);
+    return g_->addEdge(u, v, c);
 }
 
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
@@ -126,9 +126,8 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
  * Computing the exact steiner distances is very costly, so this is only a heuristic value.
  */
 cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
-    if (steinerDistanceState_ == invalid) {
+    if (steinerDistanceState_ == invalid || distanceState_ == invalid)
         clearDistance();
-    }
     if (terminalSteinerDistances_ == nullptr)
         calculateSteinerDistance();
 
@@ -215,41 +214,6 @@ void SteinerInstance::calculateSteinerDistance() {
                 }
             }
         }
-//        node_id goal = nTerminals - t - 1;
-//        for(node_id tmp=0; tmp < nTerminals; tmp++) {
-//            dist[tmp] = MAXCOST;
-//            if (tmp > t)
-//                found[tmp] = false;
-//        }
-//        dist[t] = 0;
-//        terminalSteinerDistances_[t][t] = 0;
-//
-//        priority_queue<DoubleCostEntry> q;
-//        q.emplace(t, 0, 0);
-//
-//        while (goal > 0) {
-//            auto elem = q.top();
-//            q.pop();
-//            if (elem.totalCost > dist[elem.node])
-//                continue;
-//            if (! found[elem.node]) {
-//                goal--;
-//                found[elem.node] = true;
-//            }
-//
-//            for (auto &v: mst->nb[elem.node]) {
-//                cost_id total = v.second + elem.totalCost;
-//                if (total < dist[v.first]) {
-//                    dist[v.first] = total;
-//                    cost_id maxVal = max(elem.edgeCost, v.second);
-//
-//                    terminalSteinerDistances_[t][elem.node] = maxVal;
-//                    terminalSteinerDistances_[elem.node][t] = maxVal;
-//
-//                    q.emplace(v.first, total, maxVal);
-//                }
-//            }
-//        }
     }
     delete mst;
 }

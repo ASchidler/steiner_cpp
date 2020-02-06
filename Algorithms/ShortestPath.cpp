@@ -286,7 +286,7 @@ void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerm
     for(int i=0; i < nSolutions && i < resultPool_.size(); i++) {
         auto r = resultPool_[i];
         cout << "Before: " << r->cost << endl;
-        //LocalOptimization::vertexInsertion(&g, *r, nTerminals);
+        LocalOptimization::vertexInsertion(&g, *r, nTerminals);
         LocalOptimization::pathExchange(g, *r, nTerminals, true);
         LocalOptimization::keyVertexDeletion(g, *r, nTerminals);
         // Remove degree 1 non-terminals

@@ -48,7 +48,6 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
             if (instance->getGraph()->nb[e.u].count(e.v) > 0) {
                 auto sd = SteinerLength::calculateSteinerLength(e.u, e.v, instance->getGraph(),
                                                                 e.cost + 1, depthLimit_, true, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
-                assert(e.cost == instance->getGraph()->nb[e.u][e.v]);
                 if (e.cost >= sd) {
                     instance->removeEdge(e.u, e.v);
                     track++;

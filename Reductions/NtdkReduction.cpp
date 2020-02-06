@@ -5,7 +5,8 @@
 #include "NtdkReduction.h"
 // Generally this would also be possible with dg > 4, experimentally the results where not that good
 node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
-    instance->requestDistanceState(SteinerInstance::higher);
+    if (restricted_)
+        instance->requestDistanceState(SteinerInstance::higher);
     node_id track = 0;
 
     auto n = instance->getGraph()->getNodes().begin();

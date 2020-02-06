@@ -18,24 +18,28 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
             unordered_set<node_id> ignoreNodes;
             ignoreNodes.insert(*n);
 
-            for (auto& v : nb) {
+            for (auto &v : nb) {
                 edgeSum += v.second;
                 nbs[idx++] = v.first;
             }
 
-            node_id distInput0[] = {nbs[0]};
+            vector<node_id> distInput0{nbs[0]};
+            vector<node_id> distInput1{nbs[1]};
 
-            auto cDist = Degree3Distances(instance, distInput0, 1, &ignoreNodes);
+            auto cDist = Degree3Distances(instance, distInput0, ignoreNodes);
+            auto cDist3 = Degree3Distances(instance, distInput0, ignoreNodes);
+            auto cDist2 = Degree3Distances(instance, distInput1, ignoreNodes);
             cost_id dist[] = {
                     cDist.get(nbs[1], edgeSum),
                     cDist.get(nbs[2], edgeSum),
-                    SubDijkstra(nbs[1], nbs[2], &ignoreNodes, edgeSum)
+                    cDist2.get(nbs[2], edgeSum)
             };
 
-            for (int i=0; i < 3; i++) {
+
+            for (int i = 0; i < 3; i++) {
                 auto p = nbs[i];;
-                auto x = nbs[(i+1) % 3];
-                auto y = nbs[(i+2) % 3];
+                auto x = nbs[(i + 1) % 3];
+                auto y = nbs[(i + 2) % 3];
                 auto up = nb[p];
                 auto ux = nb[x];
                 auto uy = nb[y];
@@ -51,14 +55,14 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                     track++;
                     instance->removeEdge(*n, p);
                     break;
-                // See if we can find another way by using a path instead of an age
+                    // See if we can find another way by using a path instead of an age
                 } else {
                     bool del = false;
-                    node_id distInput[] {x, y};
-                    cDist = Degree3Distances(instance, distInput, 2, &ignoreNodes);
+                    vector<node_id> distInput{x, y};
+                    auto dd = new Degree3Distances(instance, distInput, ignoreNodes);
                     while (true) { // while true
                         // Replace edge by path
-                        if (cDist.get(p, up + 1) <= up) {
+                        if (dd->get(p, up + 1) <= up) {
                             del = true;
                             break;
                         }
@@ -67,14 +71,15 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                         ignoreNodes.insert(p);
 
                         // Restart because ignore changed
-                        cDist = Degree3Distances(instance, distInput, 2, &ignoreNodes);
+                        delete dd;
+                        dd = new Degree3Distances(instance, distInput, ignoreNodes);
                         int numps = 0;
                         node_id np = 0;
                         cost_id pnp = 0;
 
-                        for(auto& q: instance->getGraph()->nb[p]) {
+                        for (auto &q: instance->getGraph()->nb[p]) {
                             if (numps < 2 && ignoreNodes.count(q.first) == 0
-                                && cDist.get(q.first, max(up, q.second) + 1) > max(up, q.second)) {
+                                && dd->get(q.first, max(up, q.second) + 1) > max(up, q.second)) {
                                 np = q.first;
                                 pnp = q.second;
                                 numps++;
@@ -97,7 +102,8 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                         track++;
                         break;
                     }
-                }
+                    delete dd;
+              }
             }
         } // Degree == 3
         ++n;
@@ -106,52 +112,11 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
     return track;
 }
 
-cost_id steiner::Degree3Reduction::SubDijkstra(node_id u, node_id v, unordered_set<node_id>* ignoreNodes, cost_id limit) {
-    priority_queue<NodeWithCost> q;
-    unordered_map<node_id, cost_id> dist;
-
-    q.emplace(u, 0);
-    dist[u] = 0;
-
-    while (! q.empty()) {
-        auto elem = q.top();
-        q.pop();
-
-        if (elem.cost > limit)
-            return limit;
-
-        if (elem.node == v)
-            return elem.cost;
-
-        if (elem.cost > dist[elem.node])
-            continue;
-
-        for (auto& nb: instance->getGraph()->nb[elem.node]) {
-            auto nCost = elem.cost + nb.second;
-            if (nCost < limit and ignoreNodes->count(nb.first) == 0) {
-                auto entry = dist.find(nb.first);
-                if (entry == dist.end()) {
-                    dist.emplace(nb.first, nCost);
-                    q.emplace(nb.first, nCost);
-                } else if (entry->second > nCost) {
-                    entry->second = nCost;
-                    q.emplace(nb.first, nCost);
-                }
-            }
-        }
-    }
-
-    return limit;
-}
-
 cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
     auto existing = dist_.find(target);
     // Weight may be suboptimal
-    if (existing != dist_.end() && existing->second <= cMax_)
+    if (existing != dist_.end() && existing->second < cMax_)
         return existing->second;
-
-    if (limit <= cMax_)
-        return limit;
 
     while (!q_.empty()) {
         auto elem = q_.top();
@@ -166,7 +131,7 @@ cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
 
         for (auto& nb: instance_->getGraph()->nb[elem.node]) {
             auto nCost = elem.cost + nb.second;
-            if (nCost < limit and ignore_->count(nb.first) == 0) {
+            if (nCost < limit and ignore_.count(nb.first) == 0) {
                 auto entry = dist_.find(nb.first);
                 if (entry == dist_.end()) {
                     dist_[nb.first] = nCost;

@@ -10,7 +10,7 @@
 namespace  steiner {
     class Degree3Reduction : public Reduction {
     public:
-        Degree3Reduction(SteinerInstance *s) : Reduction(s) {
+        explicit Degree3Reduction(SteinerInstance *s) : Reduction(s) {
         }
 
         node_id reduce(node_id currCount, node_id prevCount) override;
@@ -18,16 +18,14 @@ namespace  steiner {
         string getName() override {
             return "Degree3";
         }
-    private:
-        cost_id SubDijkstra(node_id u, node_id v, unordered_set<node_id>* ignoreNodes, cost_id limit);
     };
 
     class Degree3Distances {
     public:
-        Degree3Distances(SteinerInstance* instance, node_id us[], node_id uLen, unordered_set<node_id>* ignore) :
+        Degree3Distances(SteinerInstance* instance, const vector<node_id>& us, const unordered_set<node_id>& ignore) :
                 instance_(instance), ignore_(ignore){
-            for(int i=0; i < uLen; i++)
-                q_.emplace(us[i], 0);
+            for(auto n: us)
+                q_.emplace(n, 0);
         }
 
         cost_id get(node_id target, cost_id limit);
@@ -35,7 +33,7 @@ namespace  steiner {
     private:
         SteinerInstance* instance_;
         priority_queue<NodeWithCost> q_;
-        unordered_set<node_id>* ignore_;
+        const unordered_set<node_id>& ignore_;
         unordered_map<node_id, cost_id> dist_;
         cost_id cMax_ = 0;
     };

@@ -61,7 +61,6 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
         if (elem.cost > scanned[elem.node])
             continue;
 
-        assert(elem.node != u);
         for(auto& n: g->nb[elem.node]) {
             if (scannedEdges++ > depth_limit)
                 break;
