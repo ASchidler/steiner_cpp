@@ -128,8 +128,6 @@ namespace steiner {
         cost_id** terminalSteinerDistances_ = nullptr;
         node_id terminalSteinerDistanceInit_ = 0;
         node_id nTerminals = 0;
-        node_id maxTerminals = 0;
-        cost_id upperBound_ = MAXCOST;
 
         inline node_id removeNode_(node_id u);
         void calculateSteinerDistance();

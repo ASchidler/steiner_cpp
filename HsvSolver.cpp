@@ -113,6 +113,8 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
     auto other_set = store_->findLabels(n, label);
     for (; other_set->hasNext(); ++(*other_set)) {
         auto combined = *label | **other_set;
+        // TODO: At least store the pointer to the costs with the label
+        // TODO: Maybe run a cleanup in between, where entries according to prune are removed from P...
         auto newCost = cost + costs_[n][**other_set].cost;
 
         auto nbc = costs_[n].find(combined);
@@ -245,18 +247,24 @@ cost_id HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dynamic_b
     if (result2 == pruneBoundCache.end())
         return MAXCOST;
 
-    auto l1 = *label1; // Add room for root
-    auto l2 = *label2; // Add room for root
-    l1.push_back(false);
-    l2.push_back(false);
-//    bool l1disj = true;
-//    bool l2disj = true;
     // At least one set must be disjoint...
-    if ((l1 & result2->second.label).any() && (l2 & result1->second.label).any())
+    bool l1disj = true;
+    bool l2disj = true;
+    for(size_t i=0; i < label1->m_bits.size(); i++) {
+        l1disj = l1disj && (label1->m_bits[i] & result2->second.label.m_bits[i]) == 0;
+        l2disj = l2disj && (label2->m_bits[i] & result1->second.label.m_bits[i]) == 0;
+    }
+    if (!l1disj && !l2disj)
         return MAXCOST;
 
+    // Was this auto s = (result1->second.label | result2->second.label) & ~(l1 | l2);
+    auto l = *label1 | *label2;
+    l.push_back(false);
+    l.flip();
+
+    auto s = (result1->second.label | result2->second.label);
+    s &= l;
     auto cost = result1->second.cost + result2->second.cost;
-    auto s = (result1->second.label | result2->second.label) & ~(l1 | l2);
     pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(*combined), std::forward_as_tuple(cost, s));
 
     return cost;
