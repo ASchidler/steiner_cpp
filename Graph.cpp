@@ -32,7 +32,7 @@ bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     nodes_.insert(u);
     nodes_.insert(v);
     node_id maxId = max(u, v);
-    if (maxId > nb.size()) {
+    if (maxId >= nb.size()) {
         nb.resize(maxId+1);
     }
     if (nb[u].count(v) == 0) {
@@ -163,7 +163,8 @@ unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id rem
     for(const auto& n: nb[remove]) {
         if (n.first != target) {
             if (addEdge(target, n.first, n.second) && result != nullptr) {
-                result->emplace_back(remove, target, n.first, n.second);
+                // TODO: This mapping is too tightly coupled with the reductions
+                result->emplace_back(getReverseMapping(remove), getReverseMapping(target), getReverseMapping(n.first), n.second);
             }
         }
     }
@@ -444,7 +445,7 @@ bool Graph::adaptWeight(node_id up, node_id vp, cost_id original, cost_id modifi
     auto u = min(up, vp);
     auto v = max(up, vp);
 
-    if (nb.size() > u) {
+    if (nb.size() > v) {
         auto n = nb[u].find(v);
         if (n != nb[u].end() && n->second == modified) {
             n->second = original;

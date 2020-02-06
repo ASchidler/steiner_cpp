@@ -26,7 +26,7 @@ namespace steiner {
             }
 
             for (auto n : merged) {
-                if (solution->g->nb.size() > n.newEdge.u) {
+                if (solution->g->getMaxNode() > n.newEdge.u) {
                     auto e = solution->g->nb[n.newEdge.u].find(n.newEdge.v);
                     if (e != solution->g->nb[n.newEdge.u].end() && e->second == n.newEdge.cost) {
                         solution->g->removeEdge(n.newEdge.u, n.newEdge.v);
@@ -38,7 +38,7 @@ namespace steiner {
             }
 
             for (auto n: contracted) {
-                if (solution->g->nb.size() > n.target) {
+                if (solution->g->getMaxNode() > n.target) {
                     auto e = solution->g->nb[n.target].find(n.n);
                     if (e != solution->g->nb[n.target].end() && e->second == n.c) {
                         solution->g->removeEdge(n.target, n.n);
@@ -53,28 +53,25 @@ namespace steiner {
         virtual string getName() = 0;
         bool enabled = true;
     protected:
-        vector<Edge> preselected;
         vector<ContractedEdge> contracted;
-        vector<MergedEdges> merged;
         SteinerInstance* instance;
         virtual inline void preselect(node_id u, node_id v, cost_id c) {
             auto un = instance->getGraph()->getReverseMapping(u);
             auto vn = instance->getGraph()->getReverseMapping(v);
             preselected.emplace_back(un, vn, c);
         }
-        virtual inline void contract(node_id removed, node_id target, node_id n, cost_id c) {
-            auto rn = instance->getGraph()->getReverseMapping(removed);
-            auto tn = instance->getGraph()->getReverseMapping(target);
-            auto nn = instance->getGraph()->getReverseMapping(n);
-        }
 
         virtual inline void merge(node_id removed, node_id u, node_id v, cost_id cu, cost_id cv) {
             auto rn = instance->getGraph()->getReverseMapping(removed);
             auto un = instance->getGraph()->getReverseMapping(u);
             auto vn = instance->getGraph()->getReverseMapping(v);
+            merged.emplace_back(rn, un, vn, cu, cv);
         }
     private:
         bool addedPreselected_ = false;
+
+        vector<Edge> preselected;
+        vector<MergedEdges> merged;
     };
 }
 

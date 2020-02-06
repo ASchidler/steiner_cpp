@@ -34,8 +34,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     }
 
     //TODO: Make this configurable and dynamic
-    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
@@ -167,7 +167,7 @@ void HsvSolver::prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<
     // find minimum distance between n and any terminal not in the label (including root)
     auto dist_c = MAXCOST;
     auto dist_t = 0;
-    // TODO: We could actually compute this for all nodes at once
+
     // Distance to terminals outside the label
     // Since we know there is at least the root outside
     auto closest = instance_->getClosestTerminals(n);
@@ -249,6 +249,8 @@ cost_id HsvSolver::prune_combine(const dynamic_bitset<> *label1, const dynamic_b
     auto l2 = *label2; // Add room for root
     l1.push_back(false);
     l2.push_back(false);
+//    bool l1disj = true;
+//    bool l2disj = true;
     // At least one set must be disjoint...
     if ((l1 & result2->second.label).any() && (l2 & result1->second.label).any())
         return MAXCOST;

@@ -14,7 +14,6 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
         nTerminals++;
     }
     closest_terminals_ = nullptr;
-    maxTerminals = nTerminals;
 }
 
 unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
@@ -98,9 +97,11 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     // TODO: Is this inefficient for just getting the closest terminals over and over in the solver?
     if (distanceState_ == invalid)
         clearDistance();
+
     if (closest_terminals_ == nullptr) {
+        closestTerminalsInit = g_->getMaxNode();
         if (closest_terminals_ == nullptr) {
-            closest_terminals_ = new NodeWithCost *[g_->getMaxNode()];
+            closest_terminals_ = new NodeWithCost*[g_->getMaxNode()];
 
             for(int n=0; n < g_->getMaxNode(); n++) {
                 closest_terminals_[n] = nullptr;
@@ -125,10 +126,11 @@ NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
  * Computing the exact steiner distances is very costly, so this is only a heuristic value.
  */
 cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
-    if (terminalSteinerDistances_ == nullptr || steinerDistanceState_ == invalid) {
+    if (steinerDistanceState_ == invalid) {
         clearDistance();
-        calculateSteinerDistance();
     }
+    if (terminalSteinerDistances_ == nullptr)
+        calculateSteinerDistance();
 
     cost_id sd = MAXCOST;
     auto edgeCost = g_->nb[u].find(v);
@@ -163,9 +165,10 @@ cost_id SteinerInstance::getSteinerDistance(node_id u, node_id v) {
 void SteinerInstance::calculateSteinerDistance() {
     // Note that the number of terminals never goes up, so the array may be too large, but why care?
     if (terminalSteinerDistances_ == nullptr) {
-        terminalSteinerDistances_ = new cost_id*[maxTerminals];
-        for(int i=0; i < maxTerminals; i++)
-            terminalSteinerDistances_[i] = new cost_id[maxTerminals];
+        terminalSteinerDistances_ = new cost_id*[nTerminals];
+        for(int i=0; i < nTerminals; i++)
+            terminalSteinerDistances_[i] = new cost_id[nTerminals];
+        closestTerminalsInit = nTerminals;
     }
     steinerDistanceState_ = exact;
 
@@ -267,7 +270,7 @@ void SteinerInstance::moveTerminal(node_id t, node_id target) {
 }
 
 void SteinerInstance::invalidateTerminals() {
-    clearClosest_();
+    clearDistance();
     setSteinerDistanceState(invalid);
 }
 

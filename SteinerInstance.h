@@ -17,18 +17,7 @@ namespace steiner {
     public:
         SteinerInstance(Graph *g, vector<node_id> *terminals);
         ~SteinerInstance() {
-            for(int n=0; n < g_->getMaxNode(); n++) {
-                if (closest_terminals_[n] != nullptr)
-                    delete[] closest_terminals_[n];
-            }
-            delete[] closest_terminals_;
-
-            if (terminalSteinerDistances_ != nullptr) {
-                for (int i=0; i < maxTerminals; i++) {
-                    delete[] terminalSteinerDistances_[i];
-                }
-                delete[] terminalSteinerDistances_;
-            }
+            clearCache();
         }
 
         node_id getNumTerminals() {
@@ -135,7 +124,9 @@ namespace steiner {
     private:
         Graph *g_;
         NodeWithCost** closest_terminals_ = nullptr;
+        node_id closestTerminalsInit = 0;
         cost_id** terminalSteinerDistances_ = nullptr;
+        node_id terminalSteinerDistanceInit_ = 0;
         node_id nTerminals = 0;
         node_id maxTerminals = 0;
         cost_id upperBound_ = MAXCOST;
@@ -148,20 +139,31 @@ namespace steiner {
         ValueState approximationState_ = invalid;
         ShortestPath approximation_ = ShortestPath(10);
 
-        void clearClosest_() {
+        void clearCache() {
             if (closest_terminals_ != nullptr) {
-                for (int n = 0; n < g_->getMaxNode(); n++) {
+                for (int n = 0; n < closestTerminalsInit; n++) {
                     if (closest_terminals_[n] != nullptr)
                         delete[] closest_terminals_[n];
                 }
                 delete[] closest_terminals_;
                 closest_terminals_ = nullptr;
             }
+
+            if (terminalSteinerDistances_ != nullptr) {
+                for (int i=0; i < terminalSteinerDistanceInit_; i++) {
+                    delete[] terminalSteinerDistances_[i];
+                    terminalSteinerDistances_[i] = nullptr;
+                }
+                delete[] terminalSteinerDistances_;
+                terminalSteinerDistances_ = nullptr;
+            }
         }
         void clearDistance() {
             g_->discardDistances();
-            clearClosest_();
+            clearCache();
+
             distanceState_ = exact;
+            steinerDistanceState_ = exact;
         }
     };
 
