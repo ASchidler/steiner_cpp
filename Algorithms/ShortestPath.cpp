@@ -12,7 +12,9 @@ node_id steiner::ShortestPath::bestRoot = 0;
 cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
 steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
-    auto* tr = new Graph(g.getMaxNode());
+    Graph tr(g.getMaxNode());
+    tr.getNodes().insert(root);
+
     node_id nRemaining = nTerminals;
     bool remaining[nTerminals];
     cost_id costs[g.getMaxNode()];
@@ -49,7 +51,7 @@ steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g,
             node_id cPred = prev[elem.node];
             vector<node_id> cache;
             while (!added[cNode]) {
-                tr->addEdge(cNode, cPred, g.nb[cNode][cPred]);
+                tr.addEdge(cNode, cPred, g.nb[cNode][cPred]);
                 added[cNode] = true;
                 cache.push_back(cNode);
 
@@ -80,8 +82,7 @@ steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g,
         }
     }
 
-    auto* mst = tr->mst();
-    delete tr;
+    auto* mst = tr.mst();
     bool changed = true;
     while (changed) {
         changed = false;
@@ -285,12 +286,11 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
 void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
     // Do poolsize and then always halve...
     // The idea is to have (n is poolsize): n n/2 n/2 n/4 n/4 n/4 n4 ...
-
     for(node_id i=1; i < nSolutions; i *= 2) {
         for(node_id j=i; j < 2 * i && j < nSolutions; j++) {
+            // First select indices
             node_id numSolutions = max(3, (node_id) resultPool_.size() / i);
             vector<node_id> solutionIndices;
-
             if (numSolutions == resultPool_.size()) {
                 for (int idx = 0; idx < resultPool_.size(); idx++) {
                     solutionIndices.push_back(idx);
@@ -303,24 +303,31 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
                 }
             }
 
+            // Next build graph from vertices and edges in those solutions
             Graph g;
             for (auto s: solutionIndices) {
                 for (auto n: resultPool_[s]->g->getNodes()) {
-                    for (auto &nb: resultPool_[s]->g->nb[s]) {
+                    for (auto &nb: resultPool_[s]->g->nb[n]) {
                         if (n < nb.first)
                             g.addEdge(n, nb.first, nb.second);
                     }
                 }
             }
+
+            // Reduce away suboptimal components
             SteinerInstance s(&g, nTerminals);
             auto red = Reducer::getMinimalReducer(&s);
             red.reduce();
 
+            // Compute RSP
             auto targetRoots = selectRoots(g, s.getNumTerminals(), 5);
             for (auto r: targetRoots) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
-                // TODO: Translate to original nodes as seen by the reducer...
+                result->g->remap(g);
                 red.unreduce(result);
+                assert(result->g->checkConnectedness(0, false));
+                for(int t=0; t < nTerminals; t++)
+                    assert(result->g->getNodes().count(t) > 0);
                 addToPool(result);
             }
         }

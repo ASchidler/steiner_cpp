@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     }
 
     auto rsph = ShortestPath(10);
-    rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 5);
+    rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 10);
     for (int i=0; i < s->getNumTerminals() && i < 5; i++) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;

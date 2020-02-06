@@ -47,7 +47,9 @@ namespace steiner {
                 approximation_.resetPool(nTerminals);
                 // TODO: Find a good number of roots...
                 approximation_.findAndAdd(*g_, nTerminals, 30);
+                approximation_.recombine(10, nTerminals);
                 approximation_.optimize(*g_, 10, nTerminals);
+
                 approximationState_ = exact;
             }
             return approximation_;

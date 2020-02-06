@@ -29,8 +29,16 @@ bool steiner::Graph::addMappedEdge(node_id u, node_id v, cost_id cost) {
 bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     if (u == v) // Self loops cannot be optimal
         return false;
-    nodes_.insert(u);
-    nodes_.insert(v);
+
+    if (nodes_.insert(u).second) {
+        nodeMap_[u] = u;
+        nodeReverseMap_[u] = u;
+    }
+    if (nodes_.insert(v).second){
+        nodeMap_[v] = v;
+        nodeReverseMap_[v] = v;
+    }
+
     node_id maxId = max(u, v);
     if (maxId >= nb.size()) {
         nb.resize(maxId+1);
@@ -455,4 +463,26 @@ bool Graph::adaptWeight(node_id up, node_id vp, cost_id original, cost_id modifi
     }
 
     return false;
+}
+
+void Graph::remap(Graph& g) {
+    // Find maximum node for sizing
+    node_id maxNode = 0;
+    for(auto n: nodes_) {
+        maxNode = max(maxNode, g.nodeReverseMap_[n]);
+    }
+    vector<unordered_map<node_id, cost_id, NodeIdHash>> newNb;
+    newNb.resize(maxNode + 1);
+    unordered_set<node_id> newNodes;
+
+    // Copy datastructures mapped
+    for(auto n: nodes_) {
+        auto newN = g.nodeReverseMap_[n];
+        newNodes.insert(newN);
+        for(auto& b: nb[n])
+            newNb[newN].emplace(g.nodeReverseMap_[b.first], b.second);
+    }
+
+    swap(nb, newNb);
+    swap(nodes_, newNodes);
 }

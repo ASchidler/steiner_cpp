@@ -128,6 +128,8 @@ namespace steiner {
         bool addMappedEdge(node_id u, node_id v, cost_id cost);
         bool addEdge(node_id u, node_id v, cost_id cost);
 
+        void remap(Graph& g);
+
         node_id getMaxNode() {
             return this->nb.size();
         }

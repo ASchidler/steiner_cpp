@@ -53,7 +53,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
     vector<pair<node_id, node_id>> candidates;
     node_id track = 0;
 
-    cost_id limit = instance->getApproximation().getLowest() - r->cost;
+    cost_id limit = instance->getUpperBound() - r->cost;
     auto vor = voronoi(r->g, instance->getNumTerminals());
 
     for(node_id t=0; t < instance->getNumTerminals(); t++) {
