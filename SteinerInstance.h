@@ -16,6 +16,9 @@ namespace steiner {
     class SteinerInstance {
     public:
         SteinerInstance(Graph *g, vector<node_id> *terminals);
+        SteinerInstance(Graph *g, node_id nTerminals) : g_(g), nTerminals(nTerminals) {
+
+        }
         ~SteinerInstance() {
             clearCache();
         }

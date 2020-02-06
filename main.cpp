@@ -52,14 +52,20 @@ int main(int argc, char* argv[]) {
 
     auto rsph = ShortestPath(10);
     rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 5);
-    for (int i=0; i < s->getNumTerminals() && i < 100; i++) {
+    for (int i=0; i < s->getNumTerminals() && i < 5; i++) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
     }
-    //rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
+    cout << "Before " << rsph.getLowest() << endl;
+    rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
+    cout << "After Optimize " << rsph.getLowest() << endl;
+    rsph.recombine(5, s->getNumTerminals());
+    cout << "After Recombine " << rsph.getLowest() << endl;
+    rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
+    cout << "After Optimize" << rsph.getLowest() << endl;
     cout <<"LB " << DualAscent::bestResult << endl;
     cout << "UB " << rsph.getBest()->cost << endl;
-    exit(1);
+
     auto start = high_resolution_clock::now();
     if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
         cout << "Not Connected (start)" << endl;

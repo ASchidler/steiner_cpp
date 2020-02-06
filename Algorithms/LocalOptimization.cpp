@@ -543,9 +543,9 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
 }
 
 steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::SteinerResult &tr) : g_(g) {
-    regions_ = new unordered_map<node_id, NodeWithCost>[tr.g->getMaxNode()];
+    regions_ = new unordered_map<node_id, NodeWithCost>[g.getMaxNode()];
     closest_ = new ClosestEntry*[g.getMaxNode()];
-    regionsTmp_ = new unordered_map<node_id, NodeWithCost>[tr.g->getMaxNode()];
+    regionsTmp_ = new unordered_map<node_id, NodeWithCost>[g.getMaxNode()];
     closestTmp_ = new ClosestEntry*[g.getMaxNode()];
 
     auto q = priority_queue<VoronoiQueueEntry>();

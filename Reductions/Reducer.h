@@ -56,7 +56,8 @@ namespace steiner {
             reductions.push_back(new QuickCollection(s));
 
             auto r = Reducer(reductions, s);
-            r.setLimit(5);
+            r.setLimit(3);
+            return r;
         }
         void unreduce(SteinerResult* solution);
 

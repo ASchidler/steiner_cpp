@@ -5,6 +5,7 @@
 #include "ShortestPath.h"
 #include <random>
 #include "LocalOptimization.h"
+#include "../Reductions/Reducer.h"
 
 bool steiner::ShortestPath::hasRun = false;
 node_id steiner::ShortestPath::bestRoot = 0;
@@ -248,17 +249,21 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
         if (!resultPool_.empty()) {
             for(auto r: resultPool_) {
                 if (r->root >= numTerminalRoots) {
-                    roots.insert(r->root);
-                    ntAdded++;
-                    if (ntAdded >= numNonTerminalRoots || ntAdded >= 3)
-                        break;
+                    if (g.getNodes().count(r->root) > 0) {
+                        roots.insert(r->root);
+                        ntAdded++;
+                        if (ntAdded >= numNonTerminalRoots || ntAdded >= 3)
+                            break;
+                    }
                 }
             }
         } else {
             for (int i=0; i < 3 && ntAdded < numNonTerminalRoots; i++) {
                 if (g.getNodes().count(nonTerminalRoots[i]) > 0) {
-                    roots.insert(nonTerminalRoots[i]);
-                    ntAdded++;
+                    if (g.getNodes().count(nonTerminalRoots[i]) > 0) {
+                        roots.insert(nonTerminalRoots[i]);
+                        ntAdded++;
+                    }
                 }
             }
         }
@@ -277,15 +282,54 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
     return roots;
 }
 
-void steiner::ShortestPath::recombine(node_id nSolutions) {
-    // First select indices to use. Use 2-5(?)
+void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
+    // Do poolsize and then always halve...
+    // The idea is to have (n is poolsize): n n/2 n/2 n/4 n/4 n/4 n4 ...
 
+    for(node_id i=1; i < nSolutions; i *= 2) {
+        for(node_id j=i; j < 2 * i && j < nSolutions; j++) {
+            node_id numSolutions = max(3, (node_id) resultPool_.size() / i);
+            vector<node_id> solutionIndices;
+
+            if (numSolutions == resultPool_.size()) {
+                for (int idx = 0; idx < resultPool_.size(); idx++) {
+                    solutionIndices.push_back(idx);
+                }
+            } else {
+                for (int idx = 0; idx < numSolutions; idx++) {
+                    auto newIdx = random() % resultPool_.size();
+                    // Do not avoid duplicates
+                    solutionIndices.push_back(newIdx);
+                }
+            }
+
+            Graph g;
+            for (auto s: solutionIndices) {
+                for (auto n: resultPool_[s]->g->getNodes()) {
+                    for (auto &nb: resultPool_[s]->g->nb[s]) {
+                        if (n < nb.first)
+                            g.addEdge(n, nb.first, nb.second);
+                    }
+                }
+            }
+            SteinerInstance s(&g, nTerminals);
+            auto red = Reducer::getMinimalReducer(&s);
+            red.reduce();
+
+            auto targetRoots = selectRoots(g, s.getNumTerminals(), 5);
+            for (auto r: targetRoots) {
+                auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
+                // TODO: Translate to original nodes as seen by the reducer...
+                red.unreduce(result);
+                addToPool(result);
+            }
+        }
+    }
 }
 
 void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerminals) {
     for(int i=0; i < nSolutions && i < resultPool_.size(); i++) {
         auto r = resultPool_[i];
-        cout << "Before: " << r->cost << endl;
         LocalOptimization::vertexInsertion(&g, *r, nTerminals);
         LocalOptimization::pathExchange(g, *r, nTerminals, true);
         LocalOptimization::keyVertexDeletion(g, *r, nTerminals);
@@ -303,7 +347,6 @@ void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerm
                     ++nit;
             }
         }
-        cout << "After: " << r->cost << endl;
         lowestBound_ = min(lowestBound_, r->cost);
 
         // Maintain ordering

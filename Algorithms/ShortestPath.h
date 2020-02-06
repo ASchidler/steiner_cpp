@@ -20,7 +20,7 @@ namespace steiner {
         }
 
         void findAndAdd(Graph& g, node_id nTerminals, node_id nSolutions);
-        void recombine(node_id nSolutions);
+        void recombine(node_id nSolutions, node_id nTerminals);
         void optimize(Graph& g, node_id nSolutions, node_id nTerminals);
 
         bool hasResults() {

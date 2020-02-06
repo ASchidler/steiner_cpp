@@ -3,9 +3,11 @@
 //
 
 #include "HsvSolver.h"
+#include <chrono>
 
 using namespace std;
 using namespace boost;
+using namespace chrono;
 
 steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getMaxNode()];
@@ -34,8 +36,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     }
 
     //TODO: Make this configurable and dynamic
-    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
@@ -48,7 +50,7 @@ SteinerResult* steiner::HsvSolver::solve() {
         auto result = new SteinerResult(0, new Graph(), instance_->getGraph()->getReverseMapping(root_));
         return result;
     }
-
+    auto start = high_resolution_clock::now();
     for(int t=0; t < nTerminals_; t++) {
         auto label = dynamic_bitset<>(nTerminals_);
         label.set(t);
@@ -60,6 +62,9 @@ SteinerResult* steiner::HsvSolver::solve() {
     }
     // TODO: Add pointer to costs to queue entry to ease initial lookup?
     while (not queue_.empty()) {
+//        if (duration_cast<seconds>(high_resolution_clock::now() - start).count() > 300)
+//                return nullptr;
+
         auto entry = queue_.top();
         queue_.pop();
 
