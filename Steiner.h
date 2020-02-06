@@ -30,6 +30,15 @@ namespace std {
         }
     };
 };
+class NodeIdHash
+{
+    public:
+    size_t operator()( const node_id & key ) const // <-- don't forget const
+    {
+        return key;
+    }
+};
+
 
 namespace steiner {
     struct DoubleCostEntry {

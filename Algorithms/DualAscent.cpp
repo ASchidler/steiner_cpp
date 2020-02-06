@@ -29,7 +29,6 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
                 for(auto& nb: dg->nb[t]) {
-                    assert(dg->nb[nb.first].count(t) > 0);
                     edges[t].emplace_back(nb.first, t, &(dg->nb[nb.first][t]));
                 }
 
@@ -99,6 +98,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
 
 cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals) {
     vector<node_id> bfs_queue;
+    bfs_queue.reserve(edges.size());
 
     // Find new nodes for the cut and then trace them
     for(auto& e: edges) {
@@ -120,7 +120,6 @@ cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscen
         for (auto u: dg.nb[v]) {
             if (!cut[u.first]) {
                 // get the pred distance
-                assert(dg.nb[u.first].count(v) > 0);
                 auto cost = &(dg.nb[u.first][v]);
 
                 // 0 means traversable edge
