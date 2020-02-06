@@ -348,11 +348,16 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
         subsets[n].insert(n);
 
         // Can't remove terminals, need at least more than one key child
-        // TODO: Use reserve?
-        if (n >= nTerminals && keyChildren[n].size() > 1) {
-            // compute intermediaries
-            unordered_set<node_id> allIntermediaries;
-            unordered_set<node_id> childIntermediaries;
+        bool skip = false;
+
+        if (n < nTerminals || keyChildren[n].size() <= 1)
+            skip = true;
+
+        // compute intermediaries
+        unordered_set<node_id> allIntermediaries;
+        unordered_set<node_id> childIntermediaries;
+
+        if (! skip) {
             allIntermediaries.insert(intermediaries[n].begin(), intermediaries[n].end());
             for (auto kc : keyChildren[n]) {
                 allIntermediaries.insert(intermediaries[kc].begin(), intermediaries[kc].end());
@@ -369,8 +374,10 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
                 }
             }
             if (foundPinned)
-                goto cleanup;
+                skip = true;
+        }
 
+        if (!skip) {
             vor.repair(allIntermediaries);
 
             // Find candidate edges
@@ -496,8 +503,6 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
                         auto *p2 = vor.getPath(originalE.v);
                         auto t1 = vor.getClosest(originalE.u).t;
                         auto t2 = vor.getClosest(originalE.v).t;
-                        assert(t1 < nTerminals || t1 == tr.root || tr.g->getNodes().count(t1) > 0);
-                        assert(t2 < nTerminals || t2 == tr.root || tr.g->getNodes().count(t2) > 0);
 
                         for (auto &se: *p1)
                             tr.g->addEdge(se.u, se.v, se.cost);
@@ -513,7 +518,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
 
                     closed.reserve(closed.size() + subsets[n].size() + allIntermediaries.size());
                     closed.insert(subsets[n].begin(), subsets[n].end());
-                    closed.insert(subsets[n].begin(), subsets[n].end());
+                    closed.insert(allIntermediaries.begin(), allIntermediaries.end());
 
                     assert(tr.g->checkConnectedness(0, false));
                 }
@@ -521,11 +526,11 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
 
                 delete mst;
             }
-
-            // TODO: Use reserve?
-            vor.reset();
         }
-        cleanup:
+
+        vor.reset();
+
+        // TODO: Use reserve?
         for(auto kv: keyChildren[n]) {
             subsets[n].insert(intermediaries[kv].begin(), intermediaries[kv].end());
             std::move(begin(bridges[kv]), end(bridges[kv]), back_inserter(bridges[n]));
