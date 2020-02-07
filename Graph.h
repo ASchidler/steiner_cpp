@@ -124,7 +124,13 @@ namespace steiner {
             }
         }; //EdgeIterator
 
-        node_id addNode(node_id u);
+        node_id addMappedNode(node_id u);
+        void addUnmappedNode(node_id u) {
+            if (nodes_.insert(u).second) {
+                nodeMap_[u] = u;
+                nodeReverseMap_[u] = u;
+            }
+        }
         bool addMappedEdge(node_id u, node_id v, cost_id cost);
         bool addEdge(node_id u, node_id v, cost_id cost);
 

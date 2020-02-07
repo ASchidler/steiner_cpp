@@ -10,8 +10,8 @@ bool steiner::Graph::addMappedEdge(node_id u, node_id v, cost_id cost) {
     if (u == v) // Self loops cannot be optimal
         return false;
 
-    auto un = addNode(u);
-    auto vn = addNode(v);
+    auto un = addMappedNode(u);
+    auto vn = addMappedNode(v);
 
     if (nb[un].count(vn) == 0) {
         this->nb[un].emplace(vn, cost);
@@ -60,7 +60,7 @@ node_id steiner::Graph::getNodeMapping(node_id externalId) {
     return nodeMap_[externalId];
 }
 
-node_id steiner::Graph::addNode(node_id u) {
+node_id steiner::Graph::addMappedNode(node_id u) {
     auto result = nodeMap_.find(u);
 
     if (result == nodeMap_.end()) {
@@ -441,10 +441,6 @@ bool Graph::shrink() {
     }
     // Remove unnecessary vectors, decreases maxnode
     nb.resize(nodes_.size());
-//    while(nb.size() > nodes_.size()) {
-//        assert(nb.back().empty());
-//        nb.pop_back();
-//    }
 
     return true;
 }

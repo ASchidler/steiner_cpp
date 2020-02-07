@@ -36,8 +36,8 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
     }
 
     //TODO: Make this configurable and dynamic
-    heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    //heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);
@@ -62,8 +62,21 @@ SteinerResult* steiner::HsvSolver::solve() {
     }
     // TODO: Add pointer to costs to queue entry to ease initial lookup?
     while (not queue_.empty()) {
-//        if (duration_cast<seconds>(high_resolution_clock::now() - start).count() > 300)
-//                return nullptr;
+        if (duration_cast<seconds>(high_resolution_clock::now() - start).count() > 10) {
+            cout << "Queue Size: " << queue_.size() << "\n";
+            auto st = (HashSetLabelStore*) store_;
+            size_t labels = 0;
+            size_t violating = 0;
+            for(auto n: instance_->getGraph()->getNodes()) {
+                labels += st->labels_[n].size();
+                for(auto& l: st->labels_[n]) {
+                    if(costs_[n][l].cost > pruneBoundCache.find(l)->second.cost)
+                        violating++;
+                }
+            }
+            cout << "Labels: " << labels << " Violating: " <<  violating << "\n";
+            start = high_resolution_clock::now();
+        }
 
         auto entry = queue_.top();
         queue_.pop();

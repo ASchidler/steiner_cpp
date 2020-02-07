@@ -13,7 +13,7 @@ cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
 steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
     Graph tr(g.getMaxNode());
-    tr.getNodes().insert(root);
+    tr.addUnmappedNode(root);
 
     node_id nRemaining = nTerminals;
     bool remaining[nTerminals];
@@ -324,6 +324,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
             for (auto r: targetRoots) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
                 result->g->remap(g);
+                red.reset();
                 red.unreduce(result);
                 assert(result->g->checkConnectedness(0, false));
                 for(int t=0; t < nTerminals; t++)

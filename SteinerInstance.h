@@ -56,7 +56,7 @@ namespace steiner {
         }
 
         cost_id getUpperBound() {
-            return approximation_.getLowest();
+            return getApproximation().getLowest();
         }
 
         void setDistanceState(ValueState s) {

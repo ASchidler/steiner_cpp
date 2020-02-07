@@ -47,16 +47,16 @@ namespace steiner {
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new LongEdgeReduction(s, true, 100));
             reductions.push_back(new DegreeReduction(s, false));
-            reductions.push_back(new NtdkReduction(s, 100, true, 4));
-            reductions.push_back(new SdcReduction(s, 100));
+            reductions.push_back(new SdcReduction(s, 200));
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new Degree3Reduction(s));
             reductions.push_back(new DegreeReduction(s, false));
-            reductions.push_back(new NtdkReduction(s, 2000, false, 4));
+            reductions.push_back(new NtdkReduction(s, 200, false, 4));
             reductions.push_back(new QuickCollection(s));
 
             auto r = Reducer(reductions, s);
             r.setLimit(3);
+            r.setSilent();
             return r;
         }
         void unreduce(SteinerResult* solution);
@@ -65,10 +65,21 @@ namespace steiner {
             limit_ = limit;
         }
 
+        void reset() {
+            for(auto& r : reductions_) {
+                r->reset();
+            }
+        }
+
+        void setSilent() {
+            silent_ = true;
+        }
+
     private:
         vector<Reduction*> reductions_;
         SteinerInstance* instance_;
         unsigned int limit_ = UINT_MAX;
+        bool silent_ = false;
     };
 }
 

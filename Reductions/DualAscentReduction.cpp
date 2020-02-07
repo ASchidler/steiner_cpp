@@ -53,15 +53,34 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
     vector<pair<node_id, node_id>> candidates;
     node_id track = 0;
 
-    cost_id limit = instance->getUpperBound() - r->cost;
+    cost_id limit = instance->getUpperBound();
+    limit -= r->cost;
     auto vor = voronoi(r->g, instance->getNumTerminals());
 
     for(node_id t=0; t < instance->getNumTerminals(); t++) {
-        for(auto n: vor[t]) {
+        for(auto n: vor->closest[t]) {
+            // Check if we can remove node
             if (dist[n.node] + n.cost > limit) {
                 instance->removeNode(n.node);
                 track++;
             }
+            // NTDK test, does the node have maximum degree 2 in any steiner tree?
+            else if (n.node >= instance->getNumTerminals() && dist[n.node] + vor->second[n.node].cost > limit) {
+                if (instance->getGraph()->nb[n.node].size() <= 6 && instance->getGraph()->getNodes().count(dist[n.node]) > 0) {
+                    for (auto &b: instance->getGraph()->nb[n.node]) {
+                        for (auto &b2: instance->getGraph()->nb[n.node]) {
+                            if (b.first < b2.first) {
+                                if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
+                                    merge(n.node, b.first, b2.first, b.second, b2.second);
+                                }
+                            }
+                        }
+                    }
+                    instance->removeNode(n.node);
+                    track++;
+                }
+            }
+            // Can we remove some if the edges?
             else { // Identify deletable edges
                 auto nb = r->g->nb[n.node];
                 for(auto& n2: nb) {
@@ -70,7 +89,6 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
                     if (edgeCost > limit)
                         candidates.emplace_back(min(n.node, n2.first), max(n.node, n2.first));
                 }
-                // TODO: NTDK
             }
         }
     }
@@ -91,7 +109,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
         ++edgeIt;
     }
 
-    delete [] vor;
+    delete vor;
     return track;
 }
 

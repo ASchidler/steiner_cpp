@@ -51,7 +51,7 @@ namespace steiner {
 
         HashSetLabelIterator* findLabels(node_id node, const dynamic_bitset<> *target) override;
 
-    private:
+    //private:
         unordered_set<dynamic_bitset<>> *labels_;
     };
 }

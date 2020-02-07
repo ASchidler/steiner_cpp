@@ -15,6 +15,10 @@ namespace steiner {
         }
         virtual ~Reduction() = default;
         virtual node_id reduce(node_id currCount, node_id prevCount) = 0;
+        virtual void reset() {
+            enabled = true;
+            addedPreselected_ = false;
+        }
         virtual bool postProcess(SteinerResult* solution) {
             bool change = false;
             if (! addedPreselected_) {
