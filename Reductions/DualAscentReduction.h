@@ -28,13 +28,11 @@ namespace  steiner {
         void selectRoots(SteinerResult** results, node_id numSolutions, const node_id* track);
         struct Voronoi {
             Voronoi(node_id nTerminals, node_id nNodes) {
-                closest = new vector<NodeWithCost>[nTerminals];
+                closest.resize(nNodes);
                 second.resize(nNodes);
             }
-            ~Voronoi() {
-                delete[] closest;
-            }
-            vector<NodeWithCost>* closest;
+
+            vector<NodeWithCost> closest;
             vector<NodeWithCost> second;
         };
         // TODO: We can switch it around and look at the closest to the node, would ease edge calculation
@@ -64,12 +62,13 @@ namespace  steiner {
                     result->second[elem.n1].cost = elem.cost;
                     visited2[elem.n1] = true;
                 } else {
-                    result->closest[elem.n2].emplace_back(elem.n1, elem.cost);
+                    result->closest[elem.n1].node = elem.n2;
+                    result->closest[elem.n1].cost = elem.cost;
                     visited[elem.n1] = true;
                 }
 
                 for (auto& v: g->nb[elem.n1]) {
-                    if(! visited[v.first]) {
+                    if(! visited2[v.first]) {
                         q.emplace(v.first, elem.n2, elem.cost + g->nb[v.first][elem.n1]);
                     }
                 }

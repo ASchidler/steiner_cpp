@@ -50,19 +50,24 @@ int main(int argc, char* argv[]) {
         ts.emplace(i);
     }
 
+    assert(s->checkGraphIntegrity());
     auto rsph = ShortestPath(10);
     rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 10);
     for (int i=0; i < s->getNumTerminals() && i < 5; i++) {
         auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
         delete result;
     }
+    assert(s->checkGraphIntegrity());
     cout << "Before " << rsph.getLowest() << endl;
     rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
     cout << "After Optimize " << rsph.getLowest() << endl;
+    assert(s->checkGraphIntegrity());
     rsph.recombine(5, s->getNumTerminals());
     cout << "After Recombine " << rsph.getLowest() << endl;
+    assert(s->checkGraphIntegrity());
     rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
     cout << "After Optimize" << rsph.getLowest() << endl;
+    assert(s->checkGraphIntegrity());
     cout <<"LB " << DualAscent::bestResult << endl;
     cout << "UB " << rsph.getBest()->cost << endl;
 

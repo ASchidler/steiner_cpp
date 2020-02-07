@@ -465,6 +465,7 @@ void Graph::remap(Graph& g) {
     // Find maximum node for sizing
     node_id maxNode = 0;
     for(auto n: nodes_) {
+        assert(g.nodeReverseMap_.count(n) > 0);
         maxNode = max(maxNode, g.nodeReverseMap_[n]);
     }
     vector<unordered_map<node_id, cost_id, NodeIdHash>> newNb;
@@ -475,8 +476,9 @@ void Graph::remap(Graph& g) {
     for(auto n: nodes_) {
         auto newN = g.nodeReverseMap_[n];
         newNodes.insert(newN);
-        for(auto& b: nb[n])
+        for(auto& b: nb[n]) {
             newNb[newN].emplace(g.nodeReverseMap_[b.first], b.second);
+        }
     }
 
     swap(nb, newNb);

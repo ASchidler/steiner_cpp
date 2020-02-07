@@ -46,67 +46,57 @@ bool pairSort(const pair<int,int> &a,
 {
     return (a.first > b.first || (a.first == b.first && a.second > b.second));
 }
-
+// TODO: Maybe get rid of dynamic bitset? Change it to integers and only if > 128 use some other, non-expensive form?
 node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r) {
     r->g->findDistances(r->root);
     cost_id* dist = r->g->getDistances()[r->root];
-    vector<pair<node_id, node_id>> candidates;
     node_id track = 0;
 
     cost_id limit = instance->getUpperBound();
     limit -= r->cost;
     auto vor = voronoi(r->g, instance->getNumTerminals());
 
+    // Use r->g since the instance's nodes may change during iteration
+    for(const auto n : r->g->getNodes())
     for(node_id t=0; t < instance->getNumTerminals(); t++) {
-        for(auto n: vor->closest[t]) {
-            // Check if we can remove node
-            if (dist[n.node] + n.cost > limit) {
-                instance->removeNode(n.node);
-                track++;
-            }
-            // NTDK test, does the node have maximum degree 2 in any steiner tree?
-            else if (n.node >= instance->getNumTerminals() && dist[n.node] + vor->second[n.node].cost > limit) {
-                if (instance->getGraph()->nb[n.node].size() <= 6 && instance->getGraph()->getNodes().count(dist[n.node]) > 0) {
-                    for (auto &b: instance->getGraph()->nb[n.node]) {
-                        for (auto &b2: instance->getGraph()->nb[n.node]) {
-                            if (b.first < b2.first) {
-                                if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
-                                    merge(n.node, b.first, b2.first, b.second, b2.second);
-                                }
-                            }
-                        }
-                    }
-                    instance->removeNode(n.node);
-                    track++;
-                }
-            }
-            // Can we remove some if the edges?
-            else { // Identify deletable edges
-                auto nb = r->g->nb[n.node];
-                for(auto& n2: nb) {
-                    // n.cost is the cost to reach the terminal. We seek root -> edge(n2, n) -> t
-                    auto edgeCost = dist[n2.first] + r->g->nb[n2.first][n.node] + n.cost;
-                    if (edgeCost > limit)
-                        candidates.emplace_back(min(n.node, n2.first), max(n.node, n2.first));
-                }
-            }
-        }
-    }
-
-    // The edge candidates have the smaller vertex first, after sorting they are next to each other
-    sort(candidates.begin(), candidates.end(), pairSort);
-    auto edgeIt = candidates.begin();
-    while(edgeIt != candidates.end()) {
-        auto next = (edgeIt + 1);
-        if (next == candidates.end())
-            break;
-
-        if (edgeIt->first == next->first && edgeIt->second == next->second) {
-            instance->removeEdge(edgeIt->first, edgeIt->second);
-            ++edgeIt; // Skip one element
+        if (dist[n] + vor->closest[n].cost > limit) {
+            instance->removeNode(n);
             track++;
         }
-        ++edgeIt;
+        // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
+        else if (n >= instance->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
+            instance->getGraph()->nb[n].size() <= 6 && instance->getGraph()->getNodes().count(dist[n]) > 0) {
+            // Insert replacement edges
+            for (const auto &b: instance->getGraph()->nb[n]) {
+                for (const auto &b2: instance->getGraph()->nb[n]) {
+                    if (b.first < b2.first) {
+                        if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
+                            merge(n, b.first, b2.first, b.second, b2.second);
+                        }
+                    }
+                }
+            }
+
+            instance->removeNode(n);
+            track++;
+        }
+        // Can we remove some if the edges?
+        else {
+            auto nb = r->g->nb[n];
+            for(const auto& n2: nb) {
+                // Try to avoid doing the check twice
+                if (n < n2.first) {
+                    // Must be over the lower bound from both sides
+                    auto edgeCost1 = dist[n2.first] + r->g->nb[n2.first][n] + vor->closest[n].cost;
+                    auto edgeCost2 = dist[n] + n2.second + vor->closest[n2.first].cost;
+
+                    if (edgeCost1 > limit && edgeCost2 > limit) {
+                        instance->removeEdge(n, n2.first);
+                        track++;
+                    }
+                }
+            }
+        }
     }
 
     delete vor;
