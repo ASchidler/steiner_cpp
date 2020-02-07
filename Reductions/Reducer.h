@@ -66,7 +66,7 @@ namespace steiner {
         }
 
         void reset() {
-            for(auto& r : reductions_) {
+            for(const auto& r : reductions_) {
                 r->reset();
             }
         }

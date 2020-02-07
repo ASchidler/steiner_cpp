@@ -20,6 +20,7 @@ void steiner::Reducer::reduce() {
                     assert(instance_->getGraph()->getNodes().count(t) > 0);
                 }
                 assert(instance_->getGraph()->checkConnectedness(instance_->getNumTerminals(), false));
+                assert(instance_->checkGraphIntegrity());
             }
         }
         runs++;

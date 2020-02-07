@@ -114,17 +114,22 @@ namespace steiner {
         Graph *getGraph() {
             return this->g_;
         }
-        void checkGraphIntegrity() {
+        bool checkGraphIntegrity() {
+            bool integer = true;
             for (auto n: g_->getNodes()) {
                 for(auto v: g_->nb[n]) {
-                    if (g_->nb[v.first].count(n) == 0)
+                    if (g_->nb[v.first].count(n) == 0) {
                         cout << "ERROR, one sided" << endl;
+                        integer = false;
+                    }
                     else if (g_->nb[v.first][n] != v.second) {
                         cout << "ERROR! " << v.first << " " << n << " have different costs" << endl;
+                        integer = false;
                     }
                 }
 
             }
+            return integer;
         }
     private:
         Graph *g_;

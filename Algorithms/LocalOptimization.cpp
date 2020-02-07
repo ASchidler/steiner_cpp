@@ -140,13 +140,13 @@ void steiner::LocalOptimization::pathExchange(Graph& g, SteinerResult& tr, node_
         cost_id pathCost = 0;
         bool foundPinned = false;
         for(; !isKey[p]; p = parents[p]) {
-            pathCost += g.nb[path.back()][p];
+            pathCost += tr.g->nb[path.back()][p];
             path.push_back(p);
             intermediaries.insert(p);
             if (pinned.count(p) > 0)
                 foundPinned = true;
         }
-        pathCost += g.nb[path.back()][p];
+        pathCost += tr.g->nb[path.back()][p];
         path.push_back(p);
         vector<Edge>* p1 = nullptr;
         vector<Edge>* p2 = nullptr;

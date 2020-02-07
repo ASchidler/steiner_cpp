@@ -41,6 +41,12 @@ namespace  steiner {
             return result1 || result2 || result3;
         }
 
+        void reset() override {
+            nv_.reset();
+            sl_.reset();
+            deg_.reset();
+        }
+
         string getName() override {
             return "Quick Reduction";
         }

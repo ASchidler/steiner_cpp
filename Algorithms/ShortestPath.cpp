@@ -59,7 +59,7 @@ steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g,
                 cPred = prev[cNode];
             }
             // Reexpand with 0 base cost (separate step, otherwise prev will be overwritten while path finding)
-            for(auto c: cache) {
+            for(const auto c: cache) {
                 for(auto& v: g.nb[c]) {
                     if (v.second < costs[v.first] && !added[v.first]) {
                         q.emplace(v.first, v.second, v.second);
@@ -71,7 +71,7 @@ steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g,
 
         } else {
             // Normal Dijkstra expand
-            for(auto& v: g.nb[elem.node]) {
+            for(const auto& v: g.nb[elem.node]) {
                 auto total = elem.totalCost + v.second;
                 if (total < costs[v.first] && !added[v.first]) {
                     q.emplace(v.first, total, v.second);
@@ -320,15 +320,11 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
             red.reduce();
 
             // Compute RSP
-            auto targetRoots = selectRoots(g, s.getNumTerminals(), 5);
-            for (auto r: targetRoots) {
+            for (auto r=0; r < s.getNumTerminals() && r < 5; r++) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
                 result->g->remap(g);
                 red.reset();
                 red.unreduce(result);
-                assert(result->g->checkConnectedness(0, false));
-                for(int t=0; t < nTerminals; t++)
-                    assert(result->g->getNodes().count(t) > 0);
                 addToPool(result);
             }
         }

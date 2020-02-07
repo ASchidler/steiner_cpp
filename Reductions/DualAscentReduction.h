@@ -69,7 +69,7 @@ namespace  steiner {
                 }
 
                 for (auto& v: g->nb[elem.n1]) {
-                    if(! visited[v.first]) {
+                    if(! visited2[v.first]) {
                         q.emplace(v.first, elem.n2, elem.cost + g->nb[v.first][elem.n1]);
                     }
                 }
