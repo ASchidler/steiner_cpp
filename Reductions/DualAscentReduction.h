@@ -10,6 +10,16 @@
 #include <random>
 
 namespace  steiner {
+    struct Voronoi {
+        Voronoi(node_id nTerminals, node_id nNodes) {
+            closest.resize(nNodes);
+            second.resize(nNodes);
+        }
+
+        vector<NodeWithCost> closest;
+        vector<NodeWithCost> second;
+    };
+
     class DualAscentReduction : public Reduction {
     public:
         explicit DualAscentReduction(SteinerInstance *s) : Reduction(s) {
@@ -21,21 +31,13 @@ namespace  steiner {
             return "Dual Ascent";
         }
     private:
-        node_id reduceGraph(SteinerResult* r);
+        node_id reduceGraph(SteinerResult* r, Voronoi* vor);
+        void prune(SteinerResult* r, Voronoi* vor);
         node_id bestRoots[2] = {0, 1};
 
         void chooseRoots(node_id* roots, node_id numRoots);
         void selectRoots(SteinerResult** results, node_id numSolutions, const node_id* track);
-        struct Voronoi {
-            Voronoi(node_id nTerminals, node_id nNodes) {
-                closest.resize(nNodes);
-                second.resize(nNodes);
-            }
 
-            vector<NodeWithCost> closest;
-            vector<NodeWithCost> second;
-        };
-        // TODO: We can switch it around and look at the closest to the node, would ease edge calculation
         static inline Voronoi* voronoi(Graph* g, node_id nTerminals) {
             auto result = new Voronoi(nTerminals, g->getMaxNode());
 

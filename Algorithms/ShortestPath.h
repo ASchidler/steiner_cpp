@@ -41,10 +41,10 @@ namespace steiner {
         static node_id bestRoot;
         static cost_id bestResult;
         void resetPool(node_id nTerminals);
+        void addToPool(SteinerResult* result);
     private:
         cost_id lowestBound_ = MAXCOST;
         node_id poolSize_;
-        void addToPool(SteinerResult* result);
         vector<SteinerResult*> resultPool_;
         node_id terminalRoots[5] = {0, 1, 2, 3, 4};
         node_id nonTerminalRoots[3] = {MAXNODE, MAXNODE, MAXNODE};
