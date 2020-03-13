@@ -32,7 +32,7 @@ namespace  steiner {
         }
     private:
         node_id reduceGraph(SteinerResult* r, Voronoi* vor);
-        void prune(SteinerResult* r, Voronoi* vor);
+        //void prune(SteinerResult* r, Voronoi* vor);
         node_id bestRoots[2] = {0, 1};
 
         void chooseRoots(node_id* roots, node_id numRoots);

@@ -26,13 +26,13 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         results[t] = DualAscent::calculate(instance->getGraph(), roots[t], nullptr, instance->getNumTerminals(),
                                            instance->getGraph()->getMaxNode());
         results[t]->g->findDistances(results[t]->root);
-        vors[t] = voronoi(instance->getGraph(), instance->getNumTerminals());
+        vors[t] = voronoi(results[t]->g, instance->getNumTerminals());
     }
 
-    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-    for(node_id t=0; t < numRoots && t < 5; t++){
-        prune(results[t], vors[t]);
-    }
+//    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
+//    for(node_id t=0; t < numRoots && t < 5; t++){
+//        prune(results[t], vors[t]);
+//    }
 
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
@@ -155,90 +155,90 @@ void steiner::DualAscentReduction::selectRoots(steiner::SteinerResult** results,
         }
     }
 }
-
-void steiner::DualAscentReduction::prune(steiner::SteinerResult *r, steiner::Voronoi *vor) {
-    Graph g = Graph();
-    auto edgeIt = r->g->findEdges();
-
-    while(edgeIt.hasElement()) {
-        auto e = *edgeIt;
-        if (e.cost == 0)
-            g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
-        ++edgeIt;
-    }
-
-    SteinerInstance s(&g, instance->getNumTerminals());
-    auto red = Reducer::getMinimalReducer(&s);
-    red.reduce();
-
-    unsigned int cnt = 0;
-    do {
-        // Get upper bound
-        for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-            auto rt = random() % s.getNumTerminals();
-            auto result = ShortestPath::calculate(rt, g, s.getNumTerminals());
-            result->g->remap(g);
-            red.reset();
-            red.unreduce(result);
-            instance->getApproximation().addToPool(result);
-        }
-        cost_id cBound = instance->getApproximation().getLowest() * (1.0 - cnt * 0.1);
-        cost_id limit = cBound - r->cost;
-
-        auto dist = r->g->getDistances()[r->root];
-        for(const auto n : r->g->getNodes()) {
-            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
-            if (s.getGraph()->nb[n].empty())
-                continue;
-
-                // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
-            else if (n >= instance->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
-                     instance->getGraph()->nb[n].size() <= 6 && instance->getGraph()->getNodes().count(dist[n]) > 0) {
-                // Insert replacement edges
-                for (const auto &b: instance->getGraph()->nb[n]) {
-                    for (const auto &b2: instance->getGraph()->nb[n]) {
-                        if (b.first < b2.first) {
-                            if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
-                                merge(n, b.first, b2.first, b.second, b2.second);
-                            }
-                        }
-                    }
-                }
-
-                instance->removeNode(n);
-                track++;
-            }
-                // Can we remove some if the edges?
-            else {
-                auto nb = r->g->nb[n];
-                for(const auto& n2: nb) {
-                    // Try to avoid doing the check twice
-                    if (n < n2.first) {
-                        // Must be over the lower bound from both sides
-                        auto edgeCost1 = dist[n2.first] + r->g->nb[n2.first][n] + vor->closest[n].cost;
-                        auto edgeCost2 = dist[n] + n2.second + vor->closest[n2.first].cost;
-
-                        if (edgeCost1 > limit && edgeCost2 > limit) {
-                            instance->removeEdge(n, n2.first);
-                            track++;
-                        }
-                    }
-                }
-            }
-        }
-
-
-        // Use r->g since the instance's nodes may change during iteration
-        for(const auto n : r->g->getNodes()) {
-            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
-            if (instance->getGraph()->nb[n].empty())
-                continue;
-            if (dist[n] + vor->closest[n].cost > limit) {
-                instance->removeNode(n);
-                track++;
-            }
-
-        cnt++;
-    } while(cnt < 4 && g.checkConnectedness(s.getNumTerminals(), true));
-
-}
+//
+//void steiner::DualAscentReduction::prune(steiner::SteinerResult *r, steiner::Voronoi *vor) {
+//    Graph g = Graph();
+//    auto edgeIt = r->g->findEdges();
+//
+//    while(edgeIt.hasElement()) {
+//        auto e = *edgeIt;
+//        if (e.cost == 0)
+//            g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
+//        ++edgeIt;
+//    }
+//
+//    SteinerInstance s(&g, instance->getNumTerminals());
+//    auto red = Reducer::getMinimalReducer(&s);
+//    red.reduce();
+//
+//    unsigned int cnt = 0;
+//    do {
+//        // Get upper bound
+//        for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
+//            auto rt = random() % s.getNumTerminals();
+//            auto result = ShortestPath::calculate(rt, g, s.getNumTerminals());
+//            result->g->remap(g);
+//            red.reset();
+//            red.unreduce(result);
+//            instance->getApproximation().addToPool(result);
+//        }
+//        cost_id cBound = instance->getApproximation().getLowest() * (1.0 - cnt * 0.1);
+//        cost_id limit = cBound - r->cost;
+//
+//        auto dist = r->g->getDistances()[r->root];
+//        for(const auto n : r->g->getNodes()) {
+//            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
+//            if (s.getGraph()->nb[n].empty())
+//                continue;
+//
+//                // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
+//            else if (n >= instance->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
+//                     instance->getGraph()->nb[n].size() <= 6 && instance->getGraph()->getNodes().count(dist[n]) > 0) {
+//                // Insert replacement edges
+//                for (const auto &b: instance->getGraph()->nb[n]) {
+//                    for (const auto &b2: instance->getGraph()->nb[n]) {
+//                        if (b.first < b2.first) {
+//                            if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
+//                                merge(n, b.first, b2.first, b.second, b2.second);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                instance->removeNode(n);
+//                track++;
+//            }
+//                // Can we remove some if the edges?
+//            else {
+//                auto nb = r->g->nb[n];
+//                for(const auto& n2: nb) {
+//                    // Try to avoid doing the check twice
+//                    if (n < n2.first) {
+//                        // Must be over the lower bound from both sides
+//                        auto edgeCost1 = dist[n2.first] + r->g->nb[n2.first][n] + vor->closest[n].cost;
+//                        auto edgeCost2 = dist[n] + n2.second + vor->closest[n2.first].cost;
+//
+//                        if (edgeCost1 > limit && edgeCost2 > limit) {
+//                            instance->removeEdge(n, n2.first);
+//                            track++;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//
+//        // Use r->g since the instance's nodes may change during iteration
+//        for(const auto n : r->g->getNodes()) {
+//            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
+//            if (instance->getGraph()->nb[n].empty())
+//                continue;
+//            if (dist[n] + vor->closest[n].cost > limit) {
+//                instance->removeNode(n);
+//                track++;
+//            }
+//
+//        cnt++;
+//    } while(cnt < 4 && g.checkConnectedness(s.getNumTerminals(), true));
+//
+//}
