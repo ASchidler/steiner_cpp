@@ -1,1 +1,1 @@
-# steiner_cpp
+This is a C++ rewrite of a Steiner tree solver

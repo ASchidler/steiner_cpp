@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
     if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
         cout << "Not Connected (after reduction)" << endl;
     s->checkGraphIntegrity();
+
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
     auto solver = HsvSolver(s);
     auto tree = solver.solve();

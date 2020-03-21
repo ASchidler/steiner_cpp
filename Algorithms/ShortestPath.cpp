@@ -320,6 +320,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
             red.reduce();
 
             // Compute RSP
+            // TODO: Randomize r?
             for (auto r=0; r < s.getNumTerminals() && r < 5; r++) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
                 result->g->remap(g);

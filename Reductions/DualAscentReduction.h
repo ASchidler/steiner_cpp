@@ -18,6 +18,26 @@ namespace  steiner {
 
         vector<NodeWithCost> closest;
         vector<NodeWithCost> second;
+
+        cost_id getRadiusSum(node_id nTerminals) {
+            cost_id sum = 0;
+            cost_id max1 = 0;
+            cost_id max2 = 0;
+
+            for (node_id t=0; t < nTerminals; t++) {
+                auto cCost = second[t].cost;
+                sum += cCost;
+
+                if (cCost >= max1) {
+                    max2 = max1;
+                    max1 = cCost;
+                } else if (cCost > max2) {
+                    max2 = cCost;
+                }
+            }
+
+            return sum - max1 - max2;
+        }
     };
 
     class DualAscentReduction : public Reduction {
@@ -31,8 +51,9 @@ namespace  steiner {
             return "Dual Ascent";
         }
     private:
-        node_id reduceGraph(SteinerResult* r, Voronoi* vor);
-        //void prune(SteinerResult* r, Voronoi* vor);
+        node_id reduceGraph(SteinerResult* r, Voronoi* vor, SteinerInstance* inst, cost_id bound);
+        void prune(steiner::SteinerResult *r);
+
         node_id bestRoots[2] = {0, 1};
 
         void chooseRoots(node_id* roots, node_id numRoots);
@@ -48,29 +69,32 @@ namespace  steiner {
             for(node_id t=0; t < nTerminals; t++)
                 q.emplace(t, t, 0);
             for(node_id n=0; n < g->getMaxNode(); n++) {
-                visited[n] = false;
-                visited2[n] = false;
+                visited[n] = g->getMaxNode();
+                visited2[n] = g->getMaxNode();
             }
 
             while(!q.empty()) {
                 auto elem = q.top();
                 q.pop();
 
-                if (visited2[elem.n1]) {
+                // Skip done vertices, and do not use the closest terminal as second closest
+                if (visited2[elem.n1] != g->getMaxNode() || visited[elem.n1] == elem.n2) {
                     continue;
                 }
-                else if (visited[elem.n1]) {
+                // We already found the closest terminal, and it is a different one than the current
+                else if (visited[elem.n1] != g->getMaxNode()) {
                     result->second[elem.n1].node = elem.n2;
                     result->second[elem.n1].cost = elem.cost;
-                    visited2[elem.n1] = true;
+                    visited2[elem.n1] = elem.n2;
+                // First terminal arriving at this node, set closest
                 } else {
                     result->closest[elem.n1].node = elem.n2;
                     result->closest[elem.n1].cost = elem.cost;
-                    visited[elem.n1] = true;
+                    visited[elem.n1] = elem.n2;
                 }
 
                 for (auto& v: g->nb[elem.n1]) {
-                    if(! visited2[v.first]) {
+                    if(elem.n2 != visited[v.first] && visited2[v.first] == g->getMaxNode()) {
                         q.emplace(v.first, elem.n2, elem.cost + g->nb[v.first][elem.n1]);
                     }
                 }

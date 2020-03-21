@@ -8,6 +8,7 @@ node_id steiner::ShortLinksPreselection::reduce(node_id currCount, node_id prevC
     if (instance->getNumTerminals() <= 2)
         return 0;
 
+    // TODO: Whenever we contract a terminal away, here or in nearest vertex, the closest terminal list becomes invalid. This is a huge bottleneck, maybe we can do better?
     instance->requestDistanceState(SteinerInstance::higher);
 
     node_id track = 0;

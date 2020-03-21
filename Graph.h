@@ -157,6 +157,9 @@ namespace steiner {
         cost_id** getDistances() {
             return distances_;
         }
+        bool hasDistances() {
+            return distances_ != nullptr;
+        }
         void discardDistances();
         vector<node_id> findPath(node_id u, node_id v);
 

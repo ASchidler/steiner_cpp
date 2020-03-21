@@ -29,14 +29,15 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         vors[t] = voronoi(results[t]->g, instance->getNumTerminals());
     }
 
-//    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-//    for(node_id t=0; t < numRoots && t < 5; t++){
-//        prune(results[t], vors[t]);
-//    }
+    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
+    for(node_id t=0; t < numRoots && t < 5; t++){
+        prune(results[t]);
+    }
+    cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
-        tracks[t] = reduceGraph(results[t], vors[t]);
+        tracks[t] = reduceGraph(results[t], vors[t], instance, instance->getUpperBound());
         track += tracks[t];
     }
 
@@ -56,38 +57,40 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 }
 
 // TODO: Maybe get rid of dynamic bitset? Change it to integers and only if > 128 use some other, non-expensive form?
-node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r, Voronoi* vor) {
-    r->g->findDistances(r->root);
+//TODO: Bucket queues... Queue wrapper that either uses buckets or heap depending on upper bound
+node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, Voronoi* vor, SteinerInstance* inst, cost_id bound) {
+    if (!r->g->hasDistances())
+        r->g->findDistances(r->root);
+
     cost_id* dist = r->g->getDistances()[r->root];
     node_id track = 0;
 
-    cost_id limit = instance->getUpperBound();
-    limit -= r->cost;
+    cost_id limit = bound - r->cost;
 
     // Use r->g since the instance's nodes may change during iteration
     for(const auto n : r->g->getNodes()) {
         // Ensure that the node is still there, otherwise NTDK may add ghost edges...
-        if (instance->getGraph()->nb[n].empty())
+        if (inst->getGraph()->nb[n].empty())
             continue;
         if (dist[n] + vor->closest[n].cost > limit) {
-            instance->removeNode(n);
+            inst->removeNode(n);
             track++;
         }
         // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
-        else if (n >= instance->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
-            instance->getGraph()->nb[n].size() <= 6 && instance->getGraph()->getNodes().count(dist[n]) > 0) {
+        else if (n >= inst->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
+                inst->getGraph()->nb[n].size() <= 6 && inst->getGraph()->getNodes().count(dist[n]) > 0) {
             // Insert replacement edges
-            for (const auto &b: instance->getGraph()->nb[n]) {
-                for (const auto &b2: instance->getGraph()->nb[n]) {
+            for (const auto &b: inst->getGraph()->nb[n]) {
+                for (const auto &b2: inst->getGraph()->nb[n]) {
                     if (b.first < b2.first) {
-                        if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
+                        if (inst->addEdge(b.first, b2.first, b.second + b2.second)) {
                             merge(n, b.first, b2.first, b.second, b2.second);
                         }
                     }
                 }
             }
 
-            instance->removeNode(n);
+            inst->removeNode(n);
             track++;
         }
         // Can we remove some if the edges?
@@ -101,7 +104,7 @@ node_id steiner::DualAscentReduction::reduceGraph(steiner::SteinerResult* r, Vor
                     auto edgeCost2 = dist[n] + n2.second + vor->closest[n2.first].cost;
 
                     if (edgeCost1 > limit && edgeCost2 > limit) {
-                        instance->removeEdge(n, n2.first);
+                        inst->removeEdge(n, n2.first);
                         track++;
                     }
                 }
@@ -155,90 +158,78 @@ void steiner::DualAscentReduction::selectRoots(steiner::SteinerResult** results,
         }
     }
 }
-//
-//void steiner::DualAscentReduction::prune(steiner::SteinerResult *r, steiner::Voronoi *vor) {
-//    Graph g = Graph();
-//    auto edgeIt = r->g->findEdges();
-//
-//    while(edgeIt.hasElement()) {
-//        auto e = *edgeIt;
-//        if (e.cost == 0)
-//            g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
-//        ++edgeIt;
-//    }
-//
-//    SteinerInstance s(&g, instance->getNumTerminals());
-//    auto red = Reducer::getMinimalReducer(&s);
-//    red.reduce();
-//
-//    unsigned int cnt = 0;
-//    do {
-//        // Get upper bound
-//        for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-//            auto rt = random() % s.getNumTerminals();
-//            auto result = ShortestPath::calculate(rt, g, s.getNumTerminals());
-//            result->g->remap(g);
-//            red.reset();
-//            red.unreduce(result);
-//            instance->getApproximation().addToPool(result);
-//        }
-//        cost_id cBound = instance->getApproximation().getLowest() * (1.0 - cnt * 0.1);
-//        cost_id limit = cBound - r->cost;
-//
-//        auto dist = r->g->getDistances()[r->root];
-//        for(const auto n : r->g->getNodes()) {
-//            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
-//            if (s.getGraph()->nb[n].empty())
-//                continue;
-//
-//                // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
-//            else if (n >= instance->getNumTerminals() && dist[n] + vor->second[n].cost > limit and
-//                     instance->getGraph()->nb[n].size() <= 6 && instance->getGraph()->getNodes().count(dist[n]) > 0) {
-//                // Insert replacement edges
-//                for (const auto &b: instance->getGraph()->nb[n]) {
-//                    for (const auto &b2: instance->getGraph()->nb[n]) {
-//                        if (b.first < b2.first) {
-//                            if (instance->addEdge(b.first, b2.first, b.second + b2.second)) {
-//                                merge(n, b.first, b2.first, b.second, b2.second);
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                instance->removeNode(n);
-//                track++;
-//            }
-//                // Can we remove some if the edges?
-//            else {
-//                auto nb = r->g->nb[n];
-//                for(const auto& n2: nb) {
-//                    // Try to avoid doing the check twice
-//                    if (n < n2.first) {
-//                        // Must be over the lower bound from both sides
-//                        auto edgeCost1 = dist[n2.first] + r->g->nb[n2.first][n] + vor->closest[n].cost;
-//                        auto edgeCost2 = dist[n] + n2.second + vor->closest[n2.first].cost;
-//
-//                        if (edgeCost1 > limit && edgeCost2 > limit) {
-//                            instance->removeEdge(n, n2.first);
-//                            track++;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//
-//        // Use r->g since the instance's nodes may change during iteration
-//        for(const auto n : r->g->getNodes()) {
-//            // Ensure that the node is still there, otherwise NTDK may add ghost edges...
-//            if (instance->getGraph()->nb[n].empty())
-//                continue;
-//            if (dist[n] + vor->closest[n].cost > limit) {
-//                instance->removeNode(n);
-//                track++;
-//            }
-//
-//        cnt++;
-//    } while(cnt < 4 && g.checkConnectedness(s.getNumTerminals(), true));
-//
-//}
+
+void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
+    // Create a graph consisting of the edges in the dual ascent graph, we know that this is connected
+    Graph g = Graph();
+    auto edgeIt = r->g->findEdges();
+    while(edgeIt.hasElement()) {
+        auto e = *edgeIt;
+        // findEdges returns undirected edges, so look in both directions
+        if (r->g->nb[e.u][e.v] == 0 || r->g->nb[e.v][e.u] == 0)
+            g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
+        ++edgeIt;
+    }
+
+    // Use a limited reducer for this new sub-graph
+    SteinerInstance s(&g, instance->getNumTerminals());
+    auto red = Reducer::getMinimalReducer(&s);
+
+    // Now periodically lower the upper bound and apply bound based reduction
+    unsigned int cnt = 0;
+    do {
+        red.reduce();
+
+        // Get upper bound
+        //TODO: Make number of roots configurable?
+        for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
+            auto rt = random() % s.getNumTerminals();
+            auto result = ShortestPath::calculate(rt, g, s.getNumTerminals());
+            result->g->remap(g);
+            red.reset();
+            red.unreduce(result);
+            instance->getApproximation().addToPool(result);
+        }
+
+        // TODO: Make number of pruning cycles configurable
+        // TODO: Make number of prunings configurable
+        // TODO: Maybe remove shortlinks from minimal reducer, voronoi calculation is expensive, we do it anyway for the reduction, can we share this?
+        // Reduce, use simpler bound reduction based on voronoi regions
+        if (cnt <= 3) {
+            // Find Voronoi, required for reduction
+            auto instanceVor = voronoi(&g, s.getNumTerminals());
+            auto radius = instanceVor->getRadiusSum(s.getNumTerminals());
+            auto cBest = instance->getApproximation().getBest();
+
+            // Find upper bounds, such that a constant fraction of vertices will be removed
+            cost_id values[g.getNumNodes()];
+            cost_id* cVal = values;
+            for(auto n: g.getNodes()) {
+                *cVal = instanceVor->closest[n].cost + instanceVor->second[n].cost + radius;
+                cVal++;
+            }
+            std::sort(values, cVal, std::greater<>());
+            cost_id cBound = values[g.getNumNodes() / 10];
+
+            // Remove the nodes.
+            for(auto it = g.getNodes().begin(); it != g.getNodes().end(); ) {
+                if (*it >= s.getNumTerminals()) {
+                    auto lb = instanceVor->closest[*it].cost + instanceVor->second[*it].cost + radius;
+                    // Try not to remove nodes from the best solution to maintain connectedness.
+                    // Due to the reductions this is not a guarantee
+                    if (lb > cBound && cBest->g->getNodes().find(*it) == cBest->g->getNodes().end()) {
+                        it = g.removeNode(it);
+                        continue; // Avoid incrementing of iterator
+                    }
+                }
+                it++;
+            } // End remove nodes
+
+            s.setSteinerDistanceState(SteinerInstance::invalid);
+            s.setDistanceState(SteinerInstance::invalid);
+            s.setApproximationState(SteinerInstance::invalid);
+        }
+        cnt++;
+    // Do this several times or until the graph is disconnected
+    } while(cnt < 2 && g.checkConnectedness(s.getNumTerminals(), true) && s.getNumTerminals() > 3);
+}
