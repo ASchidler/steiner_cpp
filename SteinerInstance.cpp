@@ -33,8 +33,6 @@ unordered_set<node_id>::iterator
 SteinerInstance::contractEdge(unordered_set<node_id>::iterator target, node_id remove, vector<ContractedEdge> *result) {
     node_id oldRemove = remove;
     remove = removeNode_(remove);
-    if (remove < nTerminals)
-        invalidateTerminals();
 
     auto t = *target;
     if (*target == remove)
@@ -62,13 +60,13 @@ Graph::EdgeIterator SteinerInstance::removeEdge(Graph::EdgeIterator it) {
 node_id SteinerInstance::removeNode_(node_id u) {
     if (u < nTerminals) {
         nTerminals--;
+        invalidateTerminals();
         if (u < nTerminals) { // Could be equal now...
             // There should be a terminal and terminals must be connected
             assert(!g_->nb[nTerminals].empty());
             assert(g_->getNodes().count(nTerminals) > 0);
             moveTerminal(u, nTerminals);
             u = nTerminals;
-            invalidateTerminals();
         }
     }
     return u;
@@ -95,8 +93,9 @@ bool SteinerInstance::addEdge(node_id u, node_id v, cost_id c) {
 
 NodeWithCost* SteinerInstance::getClosestTerminals(node_id v) {
     // TODO: Is this inefficient for just getting the closest terminals over and over in the solver?
-    if (distanceState_ == invalid)
+    if (distanceState_ == invalid) {
         clearDistance();
+    }
 
     if (closest_terminals_ == nullptr) {
         closestTerminalsInit = g_->getMaxNode();
@@ -167,7 +166,7 @@ void SteinerInstance::calculateSteinerDistance() {
         terminalSteinerDistances_ = new cost_id*[nTerminals];
         for(int i=0; i < nTerminals; i++)
             terminalSteinerDistances_[i] = new cost_id[nTerminals];
-        closestTerminalsInit = nTerminals;
+        terminalSteinerDistanceInit_ = nTerminals;
     }
     steinerDistanceState_ = exact;
 
