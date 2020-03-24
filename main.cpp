@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new DegreeReduction(s, true));
     reductions.push_back(new HeavyEdgeReduction(s, 2000));
     reductions.push_back(new MstPreselection(s));
-    reductions.push_back(new steiner::QuickCollection(s));
+    reductions.push_back(new steiner::QuickCollection(s, true));
 
     auto reducer = Reducer(reductions, s);
     reducer.reduce();

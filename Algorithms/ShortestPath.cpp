@@ -11,7 +11,7 @@ bool steiner::ShortestPath::hasRun = false;
 node_id steiner::ShortestPath::bestRoot = 0;
 cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
-steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
+std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
     Graph tr(g.getMaxNode());
     tr.addUnmappedNode(root);
 
@@ -96,7 +96,8 @@ steiner::SteinerResult* steiner::ShortestPath::calculate(node_id root, Graph& g,
                 ++n;
         }
     }
-    auto* result = new SteinerResult(mst->getCost(), mst, root);
+
+    auto result = make_shared<SteinerResult>(mst->getCost(), mst, root);
 
     ShortestPath::hasRun = true;
     if (ShortestPath::bestResult > result->cost) {
@@ -117,7 +118,6 @@ void steiner::ShortestPath::resetPool(node_id nTerminals) {
         } else if (sol->root >= nTerminals && cnt < 3) {
             nonTerminalRoots[cnt] = sol->root;
         }
-        delete sol;
     }
     // Avoid duplicates
     for(; ct < 5; ct++) {
@@ -140,7 +140,7 @@ void steiner::ShortestPath::resetPool(node_id nTerminals) {
     resultPool_.clear();
 }
 
-void steiner::ShortestPath::addToPool(steiner::SteinerResult* result) {
+void steiner::ShortestPath::addToPool(std::shared_ptr<SteinerResult> result) {
     bool smaller = false;
     bool handled = false;
     lowestBound_ = min(lowestBound_, result->cost);
@@ -151,7 +151,6 @@ void steiner::ShortestPath::addToPool(steiner::SteinerResult* result) {
         // We want only one result per root
         if (r->root == result->root) {
             if (r->cost <= result->cost) {
-                delete result;
                 return;
             } else {
                 resultPool_[i] = result;
@@ -168,10 +167,8 @@ void steiner::ShortestPath::addToPool(steiner::SteinerResult* result) {
         if (resultPool_.size() < poolSize_)
             resultPool_.push_back(result);
         else if (!smaller) {
-            delete result;
             return;
         } else {
-            delete resultPool_.back();
             resultPool_.back() = result;
         }
     }
@@ -316,7 +313,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
 
             // Reduce away suboptimal components
             SteinerInstance s(&g, nTerminals);
-            auto red = Reducer::getMinimalReducer(&s);
+            auto red = Reducer::getMinimalReducer(&s, true);
             red.reduce();
 
             // Compute RSP
@@ -325,7 +322,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
                 result->g->remap(g);
                 red.reset();
-                red.unreduce(result);
+                red.unreduce(result.get());
                 addToPool(result);
             }
         }

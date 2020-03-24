@@ -42,7 +42,7 @@ namespace steiner {
                 delete r;
         }
         void reduce();
-        static Reducer getMinimalReducer(SteinerInstance* s) {
+        static Reducer getMinimalReducer(SteinerInstance* s, bool useSl) {
             auto reductions = vector<Reduction*>();
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new LongEdgeReduction(s, true, 100));
@@ -52,7 +52,7 @@ namespace steiner {
             reductions.push_back(new Degree3Reduction(s));
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new NtdkReduction(s, 200, false, 4));
-            reductions.push_back(new QuickCollection(s));
+            reductions.push_back(new QuickCollection(s, useSl));
 
             auto r = Reducer(reductions, s);
             r.setLimit(3);

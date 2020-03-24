@@ -14,7 +14,8 @@
 namespace  steiner {
     class QuickCollection : public Reduction {
     public:
-        explicit QuickCollection(SteinerInstance *s) : Reduction(s), deg_(DegreeReduction(s, false)), nv_(NearestVertexPreselection(s)), sl_(ShortLinksPreselection(s)) {
+        explicit QuickCollection(SteinerInstance *s, bool useSl) : Reduction(s), useSl_(useSl),
+        deg_(DegreeReduction(s, false)), nv_(NearestVertexPreselection(s)), sl_(ShortLinksPreselection(s)) {
         }
 
         node_id reduce(node_id currCount, node_id prevCount) override {
@@ -23,7 +24,9 @@ namespace  steiner {
             while (thisRun > 0) {
                 thisRun = 0;
                 thisRun += nv_.reduce(currCount, prevCount);
-                thisRun += sl_.reduce(currCount, prevCount);
+
+                if (useSl_)
+                    thisRun += sl_.reduce(currCount, prevCount);
 
                 if (thisRun > 0 || track == 0)
                     thisRun += deg_.reduce(currCount, prevCount);
@@ -54,6 +57,7 @@ namespace  steiner {
         DegreeReduction deg_;
         ShortLinksPreselection sl_;
         NearestVertexPreselection nv_;
+        bool useSl_;
     }
     ;
 }

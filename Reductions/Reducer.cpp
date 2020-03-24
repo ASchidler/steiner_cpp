@@ -19,11 +19,7 @@ void steiner::Reducer::reduce() {
                 for (node_id t = 0; t < instance_->getNumTerminals(); t++) {
                     assert(instance_->getGraph()->getNodes().count(t) > 0);
                 }
-                for(auto n: instance_->getGraph()->getNodes()) {
-                    for (node_id t = 0; t < instance_->getNumTerminals(); t++) {
-                        assert(instance_->getClosestTerminals(n)[t].node < instance_->getNumTerminals());
-                    }
-                }
+
                 assert(instance_->getGraph()->checkConnectedness(instance_->getNumTerminals(), false));
                 assert(instance_->checkGraphIntegrity());
             }

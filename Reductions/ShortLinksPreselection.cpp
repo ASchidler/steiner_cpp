@@ -8,12 +8,15 @@ node_id steiner::ShortLinksPreselection::reduce(node_id currCount, node_id prevC
     if (instance->getNumTerminals() <= 2)
         return 0;
 
-    // TODO: Whenever we contract a terminal away, here or in nearest vertex, the closest terminal list becomes invalid. This is a huge bottleneck, maybe we can do better?
     instance->requestDistanceState(SteinerInstance::higher);
 
     node_id track = 0;
     BridgingEdge bridgingEdges[instance->getNumTerminals()];
     cost_id comparison[instance->getNumTerminals()];
+    bool forbidden[instance->getNumTerminals()];
+    for (node_id t=0; t < instance->getNumTerminals(); t++) {
+        forbidden[t] = false;
+    }
 
     auto it = instance->getGraph()->findEdges();
 
@@ -55,6 +58,15 @@ node_id steiner::ShortLinksPreselection::reduce(node_id currCount, node_id prevC
         cost_id total = instance->getClosestTerminals(e.u)[0].cost + e.c + instance->getClosestTerminals(e.v)[0].cost;
 
         if (comparison[t] >= total) {
+            // The idea here is as follows, whenever we contract an edge between two terminals, one gets deleted.
+            // Now the cached data is stale. We therefore mark the removed terminal as forbidden, and ignore.
+            // As a terminal deletion implies swapping it with the last terminal, we also forbid it.
+            if (forbidden[instance->getClosestTerminals(e.u)[0].node] || forbidden[instance->getClosestTerminals(e.v)[0].node])
+                continue;
+            if (e.u < instance->getNumTerminals() && e.v < instance->getNumTerminals()) {
+                forbidden[e.u] = true;
+                forbidden[instance->getNumTerminals()-1] = true;
+            }
             preselect(e.u, e.v, e.c);
             if (e.v < instance->getNumTerminals())
                 instance->contractEdge(e.v, e.u, &contracted);
