@@ -29,6 +29,7 @@ namespace  steiner {
 
         void chooseRoots(node_id* roots, node_id numRoots);
         void selectRoots(SteinerResult** results, node_id numSolutions, const node_id* track);
+        void pruneAscent(SteinerResult** results, node_id numSolutions, node_id numRuns);
     };
 }
 

@@ -29,7 +29,11 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         results[t]->g->findDistances(results[t]->root);
         vors[t] = VoronoiDiagram::create(results[t]->g, instance->getNumTerminals());
     }
+    std::sort(results, results + numRoots, SteinerResult::cmp);
 
+    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
+    pruneAscent(results, numRoots, 10);
+    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
     cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
     for(node_id t=0; t < numRoots && t < 5; t++){
         prune(results[t]);
@@ -191,4 +195,46 @@ void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
         cnt++;
     // Do this several times or until the graph is disconnected
     } while(cnt < 4 && s.getNumTerminals() > 3 && p.prune());
+}
+
+void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSolutions, node_id numRuns) {
+    bool stop = false;
+    for(int cRun=1; cRun <= numRuns && !stop; cRun++) {
+        int numSelect = numSolutions / numRuns;
+        stop = numSelect > 1;
+
+        if (numSelect > 0) {
+            Graph g;
+            for(int cResult=0; cResult < numSelect; cResult++) {
+                auto edgeIt = results[cResult]->g->findEdges();
+                while(edgeIt.hasElement()) {
+                    auto e = *edgeIt;
+                    // findEdges returns undirected edges, so look in both directions
+                    if (results[cResult]->g->nb[e.u][e.v] == 0 || results[cResult]->g->nb[e.v][e.u] == 0)
+                        g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
+                    ++edgeIt;
+                }
+            }
+
+            // Use a limited reducer for this new sub-graph
+            SteinerInstance s(&g, instance->getNumTerminals());
+            GraphPruner p(s);
+
+            // Now periodically lower the upper bound and apply bound based reduction
+            unsigned int cnt = 0;
+            do {
+                p.reduce();
+
+                //TODO: Make number of roots configurable?
+                for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
+                    instance->getApproximation().addToPool(p.approximate());
+                }
+
+                // TODO: Make number of pruning cycles configurable
+                // TODO: Make number of prunings configurable
+                cnt++;
+                // Do this several times or until the graph is disconnected
+            } while(cnt < 4 && s.getNumTerminals() > 3 && p.prune());
+        }
+    }
 }

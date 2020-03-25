@@ -208,6 +208,16 @@ namespace steiner {
         cost_id cost;
         Graph* g;
         node_id root;
+
+        bool operator<(const SteinerResult& p2) const {
+            return cost > p2.cost;
+        }
+        bool operator>(const SteinerResult& p2) const {
+            return cost < p2.cost;
+        }
+        static bool cmp(SteinerResult* r1, SteinerResult* r2) {
+            return r1->cost < r2->cost;
+        }
     };
 }
 
