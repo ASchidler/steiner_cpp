@@ -32,7 +32,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     std::sort(results, results + numRoots, SteinerResult::cmp);
 
     cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    pruneAscent(results, numRoots, 10);
+    pruneAscent(results, numRoots, 20);
     cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
     cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
     for(node_id t=0; t < numRoots && t < 5; t++){
@@ -187,7 +187,7 @@ void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
 
         //TODO: Make number of roots configurable?
         for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-            instance->getApproximation().addToPool(p.approximate());
+            instance->getApproximation().addToPool(p.approximate(true));
         }
 
         // TODO: Make number of pruning cycles configurable
@@ -200,6 +200,11 @@ void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
 void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSolutions, node_id numRuns) {
     bool stop = false;
     for(int cRun=1; cRun <= numRuns && !stop; cRun++) {
+        cost_id counter[instance->getGraph()->getMaxNode()];
+        cost_id maxCount=0;
+        for(int cNode=0; cNode < instance->getGraph()->getMaxNode(); cNode++)
+            counter[cNode] = 0;
+
         int numSelect = numSolutions / numRuns;
         stop = numSelect > 1;
 
@@ -210,8 +215,11 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                 while(edgeIt.hasElement()) {
                     auto e = *edgeIt;
                     // findEdges returns undirected edges, so look in both directions
-                    if (results[cResult]->g->nb[e.u][e.v] == 0 || results[cResult]->g->nb[e.v][e.u] == 0)
+                    if (results[cResult]->g->nb[e.u][e.v] == 0 || results[cResult]->g->nb[e.v][e.u] == 0) {
                         g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
+                        maxCount = max(maxCount, ++counter[e.u]);
+                        maxCount = max(maxCount, ++counter[e.v]);
+                    }
                     ++edgeIt;
                 }
             }
@@ -224,10 +232,35 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
             unsigned int cnt = 0;
             do {
                 p.reduce();
+                auto edgeIt = g.findEdges();
+                while(edgeIt.hasElement()) {
+                    auto e = *edgeIt;
+                    g.nb[e.u][e.v] += 2 * maxCount - counter[e.u] - counter[e.v];
+                    g.nb[e.v][e.u] += 2 * maxCount - counter[e.u] - counter[e.v];
+                    ++edgeIt;
+                }
 
                 //TODO: Make number of roots configurable?
                 for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-                    instance->getApproximation().addToPool(p.approximate());
+                    auto cResult = p.approximate(false);
+                    auto edgeItA = cResult->g->findEdges();
+                    while(edgeItA.hasElement()) {
+                        auto e = *edgeItA;
+                        cResult->g->nb[e.u][e.v] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                        cResult->g->nb[e.v][e.u] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                        cResult->cost -= 2 * maxCount - counter[e.u] - counter[e.v];
+                        ++edgeItA;
+                    }
+                    p.unreduce(cResult);
+                    instance->getApproximation().addToPool(cResult);
+                }
+
+                auto edgeIt2 = g.findEdges();
+                while(edgeIt2.hasElement()) {
+                    auto e = *edgeIt2;
+                    g.nb[e.u][e.v] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                    g.nb[e.v][e.u] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                    ++edgeIt2;
                 }
 
                 // TODO: Make number of pruning cycles configurable
