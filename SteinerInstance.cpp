@@ -35,13 +35,16 @@ SteinerInstance::contractEdge(unordered_set<node_id>::iterator target, node_id r
     remove = removeNode_(remove);
 
     auto t = *target;
-    if (*target == remove)
+    bool switched = *target == remove;
+    if (switched) {
         t = oldRemove;
+    }
 
     // target was the pivot element has been swapped so remove can be deleted...
     auto it = g_->contractEdge(t, remove, result);
-    if (remove == *target)
+    if (switched) {
         return it;
+    }
 
     return target;
 }
