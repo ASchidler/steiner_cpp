@@ -27,26 +27,25 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
             vector<node_id> distInput1{nbs[1]};
 
             auto cDist = Degree3Distances(instance, distInput0, ignoreNodes);
-            auto cDist3 = Degree3Distances(instance, distInput0, ignoreNodes);
             auto cDist2 = Degree3Distances(instance, distInput1, ignoreNodes);
+
             cost_id dist[] = {
                     cDist.get(nbs[1], edgeSum),
                     cDist.get(nbs[2], edgeSum),
                     cDist2.get(nbs[2], edgeSum)
             };
 
-
             for (int i = 0; i < 3; i++) {
-                auto p = nbs[i];;
-                auto x = nbs[(i + 1) % 3];
-                auto y = nbs[(i + 2) % 3];
+                auto p = nbs[i]; // 0, 1 , 2
+                auto x = nbs[(i + 1) % 3]; // 1, 2, 0
+                auto y = nbs[(i + 2) % 3]; // 2, 0, 1
                 auto up = nb[p];
                 auto ux = nb[x];
                 auto uy = nb[y];
                 auto xp = dist[(3 - i) % 3]; // 0 2 1
                 auto yp = dist[(4 - i) % 3]; // 1 0 2
                 auto xy = dist[2 - i]; // 2 1 0
-                // Alternative is longer than using the two edges, no chance
+                // Alternative is longer than traveling over u
                 if (xp > ux + up || yp > uy + up)
                     continue;
 
@@ -56,7 +55,9 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                     instance->removeEdge(*n, p);
                     break;
                     // See if we can find another way by using a path instead of an age
-                } else {
+                }
+                else {
+                    break;
                     bool del = false;
                     vector<node_id> distInput{x, y};
                     auto dd = new Degree3Distances(instance, distInput, ignoreNodes);
@@ -114,9 +115,11 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
 
 cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
     auto existing = dist_.find(target);
-    // Weight may be suboptimal
-    if (existing != dist_.end() && existing->second < cMax_)
+    if (existing != dist_.end())
         return existing->second;
+
+    if (limit <= cMax_)
+        return limit;
 
     while (!q_.empty()) {
         auto elem = q_.top();
@@ -124,14 +127,14 @@ cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
         cMax_ = elem.cost;
 
         if (elem.node == target)
-            return elem.node;
+            return elem.cost;
 
         if (elem.cost > dist_[elem.node])
             continue;
 
         for (auto& nb: instance_->getGraph()->nb[elem.node]) {
             auto nCost = elem.cost + nb.second;
-            if (nCost < limit and ignore_.count(nb.first) == 0) {
+            if (ignore_.count(nb.first) == 0) {
                 auto entry = dist_.find(nb.first);
                 if (entry == dist_.end()) {
                     dist_[nb.first] = nCost;
@@ -143,6 +146,9 @@ cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
                 }
             }
         }
+
+        if (elem.cost > limit)
+            break;
     }
 
     return limit;
