@@ -3,6 +3,8 @@
 //
 
 #include "Graph.h"
+#include "Structures/Queue.h"
+
 using namespace steiner;
 
 //TODO: Create iterator over edges? Return only if u < v for undirected.
@@ -433,7 +435,6 @@ bool Graph::shrink() {
                 n = nodes_.erase(n);
                 nodes_.insert(last_idx);
                 last_idx++;
-                assert(checkConnectedness(0, false));
             }
         } else {
             ++n;

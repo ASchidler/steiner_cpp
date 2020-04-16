@@ -21,10 +21,10 @@ namespace steiner {
 
         // TODO: These are actually the wrong way so that priority queues are min queues...
         bool operator<(const NodeWithCost& p2) const {
-            return cost > p2.cost;
+            return cost > p2.cost || cost == p2.cost && node > p2.node;
         }
         bool operator>(const NodeWithCost& p2) const {
-            return cost < p2.cost;
+            return cost < p2.cost || cost == p2.cost && node < p2.node;
         }
     };
 
@@ -136,7 +136,7 @@ namespace steiner {
 
         void remap(Graph& g);
 
-        node_id getMaxNode() {
+        node_id getMaxNode() const {
             return this->nb.size();
         }
 

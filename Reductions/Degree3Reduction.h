@@ -6,6 +6,7 @@
 #define STEINER_DEGREE3REDUCTION_H
 #include "Reduction.h"
 #include "../Algorithms/SteinerLength.h"
+#include "../Structures/Queue.h"
 
 namespace  steiner {
     class Degree3Reduction : public Reduction {
