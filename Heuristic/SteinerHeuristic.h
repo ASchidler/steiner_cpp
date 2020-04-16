@@ -11,7 +11,7 @@ namespace steiner {
     class SteinerHeuristic {
     public:
         virtual ~SteinerHeuristic() {}
-        virtual cost_id calculate(node_id n, const dynamic_bitset<> *label) = 0;
+        virtual cost_id calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub) = 0;
     };
 }
 #endif //STEINER_STEINERHEURISTIC_H

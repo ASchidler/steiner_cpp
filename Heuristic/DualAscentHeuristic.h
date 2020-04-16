@@ -26,7 +26,7 @@ namespace steiner {
             }
         }
 
-        cost_id calculate(node_id n, const dynamic_bitset<> *label);
+        cost_id calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub);
 
     private:
         SteinerInstance* instance_;
@@ -35,7 +35,7 @@ namespace steiner {
         node_id nTerminals_;
         node_id nNodes_;
 
-        cost_id *precalculate(const dynamic_bitset<> *label);
+        cost_id *precalculate(const dynamic_bitset<> *label, const cost_id ub);
     };
 }
 

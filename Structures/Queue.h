@@ -21,7 +21,7 @@ namespace steiner {
         template<typename... Ts>
         void emplace(cost_id cost, Ts&&... args) {
             if (bucket_) {
-                bqueue_.enqueue(cost, std::forward<Ts>(args)...);
+                bqueue_.emplace(cost, std::forward<Ts>(args)...);
             } else {
                 pqueue_.emplace(std::forward<Ts>(args)...);
             }
@@ -29,6 +29,22 @@ namespace steiner {
 
         bool empty() {
             return (bucket_ && !bqueue_.hasNext()) || (!bucket_ && pqueue_.empty());
+        }
+
+        void push(cost_id cost, T& elem) {
+            if (bucket_) {
+                bqueue_.push(cost, elem);
+            } else {
+                pqueue_.push(elem);
+            }
+        }
+
+        const T& peek(){
+            if (bucket_) {
+                return bqueue_.peek();
+            } else {
+                return pqueue_.top();
+            }
         }
 
         T dequeue() {

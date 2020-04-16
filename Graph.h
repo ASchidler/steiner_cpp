@@ -153,7 +153,7 @@ namespace steiner {
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
 
-        void findDistances(node_id u);
+        void findDistances(node_id u, cost_id ub);
         cost_id** getDistances() {
             return distances_;
         }
@@ -161,7 +161,7 @@ namespace steiner {
             return distances_ != nullptr;
         }
         void discardDistances();
-        vector<node_id> findPath(node_id u, node_id v);
+        vector<node_id> findPath(node_id u, node_id v, cost_id ub);
 
         bool shrink();
 
@@ -191,15 +191,7 @@ namespace steiner {
         }
         cost_id getDistanceUpperBound(bool reset) {
             if (reset || distanceUb_ == MAXCOST) {
-                distanceUb_ = 0;
-                for(auto& n: nodes_) {
-                    cost_id cMax = 0;
-                    for(auto& n2: nb[n]) {
-                        if (n < n2.first)
-                            cMax = max(cMax, n2.second);
-                    }
-                    distanceUb_ += cMax;
-                }
+                distanceUb_ = mst_sum();
             }
 
             return distanceUb_;

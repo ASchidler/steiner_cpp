@@ -3,6 +3,7 @@
 //
 
 #include "SteinerInstance.h"
+#include "Structures/Queue.h"
 
 using namespace steiner;
 
@@ -195,12 +196,11 @@ void SteinerInstance::calculateSteinerDistance() {
         dist[t] = 0;
         terminalSteinerDistances_[t][t] = 0;
 
-        priority_queue<DoubleCostEntry> q;
-        q.emplace(t, 0, 0);
+        Queue<DoubleCostEntry> q(g.getDistanceUpperBound(false));
+        q.emplace(0, t, 0, 0);
 
         while (! q.empty()) {
-            auto elem = q.top();
-            q.pop();
+            auto elem = q.dequeue();
 
             if (dist[elem.node] < elem.totalCost)
                 continue;
@@ -212,7 +212,7 @@ void SteinerInstance::calculateSteinerDistance() {
                 if (total < dist[v.first]) {
                     dist[v.first] = total;
                     cost_id maxVal = max(elem.edgeCost, v.second);
-                    q.emplace(v.first, total, maxVal);
+                    q.emplace(total, v.first, total, maxVal);
                 }
             }
         }
@@ -226,7 +226,7 @@ cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
     }
 
     if (g_->getDistances() == nullptr || g_->getDistances()[n1] == nullptr)
-        g_->findDistances(n1);
+        g_->findDistances(n1, g_->getDistanceUpperBound(false));
 
     return g_->getDistances()[n1][n2];
 }

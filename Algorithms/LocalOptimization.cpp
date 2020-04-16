@@ -3,7 +3,7 @@
 //
 
 #include "LocalOptimization.h"
-
+#include "../Structures/Queue.h"
 
 void steiner::LocalOptimization::vertexInsertion(Graph* dg, SteinerResult& tr, node_id nTerminals) {
     for(auto n: dg->getNodes()) {
@@ -25,7 +25,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, SteinerResult& tr, n
                 // Check all other shared neighbors for improvement
                 for(auto b: shared) {
                     // Find shortest path from
-                    auto path = cp->findPath(n, b.node);
+                    auto path = cp->findPath(n, b.node, tr.cost);
                     auto maxEdge = Edge(path[0], path[1], tr.g->nb[path[0]][path[1]]);
 
                     for (size_t cNode = 2; cNode < path.size(); cNode++) {
@@ -548,7 +548,7 @@ steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::SteinerR
     regionsTmp_ = new unordered_map<node_id, NodeWithCost>[g.getMaxNode()];
     closestTmp_ = new ClosestEntry*[g.getMaxNode()];
 
-    auto q = priority_queue<VoronoiQueueEntry>();
+    auto q = Queue<VoronoiQueueEntry>(tr.cost);
     bool visited[g.getMaxNode()];
 
     for(auto i=0; i < g.getMaxNode(); i++){
@@ -558,12 +558,11 @@ steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::SteinerR
     }
 
     for(auto n: tr.g->getNodes()) {
-        q.emplace(0, n, n, n);
+        q.emplace(0, 0, n, n, n);
     }
 
     while(!q.empty()) {
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
 
         if (! visited[elem.n]) {
             visited[elem.n] = true;
@@ -571,8 +570,8 @@ steiner::VoronoiPartition::VoronoiPartition(steiner::Graph &g, steiner::SteinerR
             closest_[elem.n] = new ClosestEntry(elem.start, newElement.first->second);
 
             for(auto& nb: g.nb[elem.n]) {
-                if (!visited[nb.first]) {
-                    q.emplace(elem.c + nb.second, nb.first, elem.start, elem.n);
+                if (!visited[nb.first] && elem.c + nb.second < tr.cost) {
+                    q.emplace(elem.c + nb.second, elem.c + nb.second, nb.first, elem.start, elem.n);
                 }
             }
         }

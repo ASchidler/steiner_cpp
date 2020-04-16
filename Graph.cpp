@@ -76,7 +76,7 @@ node_id steiner::Graph::addMappedNode(node_id u) {
     return result->second;
 }
 
-void steiner::Graph::findDistances(node_id u) {
+void steiner::Graph::findDistances(node_id u, cost_id ub) {
     // Init distances
     if (distances_ == nullptr) {
         distances_ = new cost_id*[getMaxNode()];
@@ -95,14 +95,13 @@ void steiner::Graph::findDistances(node_id u) {
 
     // We could initialize with other known distances...
     // Dijkstra
-    auto q = priority_queue<NodeWithCost>();
+    auto q = Queue<NodeWithCost>(ub);
 
-    q.emplace(u, 0);
+    q.emplace(0, u, 0);
     distances_[u][u] = 0;
-//TODO: Implement bucket queue
+
     while(not q.empty()) {
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
 
         // already visited...
         if(elem.cost > distances_[u][elem.node])
@@ -111,7 +110,7 @@ void steiner::Graph::findDistances(node_id u) {
         for (const auto& v: nb[elem.node]) {
             if (distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
-                q.emplace(v.first, elem.cost + v.second);
+                q.emplace(elem.cost + v.second, v.first, elem.cost + v.second);
             }
         }
     }
@@ -283,6 +282,7 @@ bool Graph::checkConnectedness(node_id nodeLimit, bool clean) {
 
 Graph *Graph::mst() {
     auto result = new Graph(getMaxNode());
+    cost_id result_cost = 0;
 
     // Calculate mst of distance graph
     cost_id minEdgeVal[getMaxNode()];
@@ -312,6 +312,7 @@ Graph *Graph::mst() {
         taken[idx] = true;
         if (i > 0)
             result->addEdge(idx, minEdgeNode[idx], minEdgeVal[idx]);
+        result_cost += minEdgeVal[idx];
         minEdgeVal[idx] = MAXCOST;
 
         for (auto& b: nb[idx]) {
@@ -322,6 +323,7 @@ Graph *Graph::mst() {
         }
     }
 
+    distanceUb_ = result_cost;
     return result;
 }
 
@@ -363,6 +365,7 @@ cost_id Graph::mst_sum() {
         }
     }
 
+    distanceUb_ = result;
     return result;
 }
 
@@ -379,7 +382,7 @@ void Graph::discardDistances() {
     }
 }
 
-vector<node_id> Graph::findPath(node_id u, node_id v) {
+vector<node_id> Graph::findPath(node_id u, node_id v, cost_id ub) {
     cost_id dist[getMaxNode()];
     node_id p[getMaxNode()];
     for(size_t i=0; i < getMaxNode(); i++) {
@@ -387,14 +390,13 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
     }
 
     // Dijkstra
-    auto q = priority_queue<NodeWithCost>();
+    auto q = Queue<NodeWithCost>(ub);
 
-    q.emplace(u, 0);
+    q.emplace(0, u, 0);
     dist[u] = 0;
 
     while(not q.empty()) {
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
 
         if (elem.node == v)
             break;
@@ -407,7 +409,7 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
             if (dist[n.first] > elem.cost + n.second) {
                 dist[n.first] = elem.cost + n.second;
                 p[n.first] = elem.node;
-                q.emplace(n.first, elem.cost + n.second);
+                q.emplace(elem.cost + n.second, n.first, elem.cost + n.second);
             }
         }
     }
@@ -442,7 +444,7 @@ bool Graph::shrink() {
     }
     // Remove unnecessary vectors, decreases maxnode
     nb.resize(nodes_.size());
-
+    getDistanceUpperBound(true);
     return true;
 }
 

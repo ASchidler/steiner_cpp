@@ -117,7 +117,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
                     nbc->second.prev.node = n;
                     nbc->second.merge = false;
                 }
-                auto newTotal = newCost + heuristic_->calculate( nb.first, label);
+                auto newTotal = newCost + heuristic_->calculate( nb.first, label, instance_->getUpperBound());
                 if (newTotal <= instance_->getUpperBound())
                     queue_.emplace(newTotal, newTotal, newCost, nb.first, *label);
             }
@@ -145,7 +145,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
                     nbc->second.prev.label = &(**other_set);
                 }
 
-                auto newTotal = newCost +  heuristic_->calculate(n, &combined);
+                auto newTotal = newCost +  heuristic_->calculate(n, &combined, instance_->getUpperBound());
                 if (newTotal <= instance_->getUpperBound())
                     queue_.emplace(newTotal, newTotal, newCost, n, combined);
             }

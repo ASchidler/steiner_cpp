@@ -72,6 +72,10 @@ namespace steiner {
             bool operator<(const VoronoiQueueEntry& p2) const {
                 return c > p2.c;
             }
+
+            bool operator>(const VoronoiQueueEntry& p2) const {
+                return c > p2.c;
+            }
         };
 
 

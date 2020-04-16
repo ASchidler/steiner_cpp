@@ -28,7 +28,7 @@ namespace steiner {
         }
 
         template<typename... Ts>
-        void push(Ts&&... args) {
+        void emplace(Ts&&... args) {
             auto n = new LinkedStackNode<T>(cNode_, std::forward<Ts>(args)...);
             if (cNode_ == nullptr || n->payload_ > cNode_->payload_)
                 cNode_ = n;
@@ -36,6 +36,20 @@ namespace steiner {
                 n->prev_ = cNode_->prev_;
                 cNode_->prev_ = n;
             }
+        }
+
+        void push(T& elem) {
+            auto n = new LinkedStackNode<T>(cNode_, elem);
+            if (cNode_ == nullptr || n->payload_ > cNode_->payload_)
+                cNode_ = n;
+            else {
+                n->prev_ = cNode_->prev_;
+                cNode_->prev_ = n;
+            }
+        }
+
+        T& peek() {
+            return cNode_->payload_;
         }
     private:
         template<class T2>

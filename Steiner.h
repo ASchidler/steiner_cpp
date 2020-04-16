@@ -55,6 +55,11 @@ namespace steiner {
                    // Choosing shorter edges over longer ones often provides better results
                    (totalCost == p2.totalCost && edgeCost < p2.edgeCost);
         }
+        bool operator>(const DoubleCostEntry& p2) const {
+            return totalCost > p2.totalCost ||
+                   // Choosing shorter edges over longer ones often provides better results
+                   (totalCost == p2.totalCost && edgeCost < p2.edgeCost);
+        }
     };
 
     struct DoubleNodeEntry {

@@ -6,7 +6,7 @@
 
 using namespace steiner;
 
-cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label) {
+cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub) {
     //Special case where only root left
     if (label->all())
         return instance_->getGraph()->getDistances()[root_][n];

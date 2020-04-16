@@ -17,7 +17,7 @@ namespace steiner {
                 : instance_(instance), root_(root), nTerminals_(nTerminals) {
 
         }
-        cost_id calculate(node_id n, const dynamic_bitset<> *label) override;
+        cost_id calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub) override;
 
     private:
         SteinerInstance* instance_;

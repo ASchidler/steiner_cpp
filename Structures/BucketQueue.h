@@ -24,12 +24,22 @@ namespace steiner {
         }
 
         template<typename... Ts>
-        void enqueue(cost_id cost, Ts&&... elem) {
+        void emplace(cost_id cost, Ts&&... elem) {
             if (buckets_[cost] == nullptr) {
                 buckets_[cost] = new LinkedStack<T>();
             }
 
-            buckets_[cost]->push(std::forward<Ts>(elem)...);
+            buckets_[cost]->emplace(std::forward<Ts>(elem)...);
+            if (cost < pointer_)
+                pointer_ = cost;
+        }
+
+        void push(cost_id cost, T& elem) {
+            if (buckets_[cost] == nullptr) {
+                buckets_[cost] = new LinkedStack<T>();
+            }
+
+            buckets_[cost]->push(elem);
             if (cost < pointer_)
                 pointer_ = cost;
         }
@@ -45,6 +55,12 @@ namespace steiner {
             auto elem = buckets_[pointer_]->pop();
             return elem;
         }
+
+        T& peek() {
+            hasNext();
+            return buckets_[pointer_]->peek();
+        }
+
     private:
         LinkedStack<T>** buckets_;
         cost_id limit_;
