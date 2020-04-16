@@ -24,16 +24,16 @@ namespace  steiner {
     class Degree3Distances {
     public:
         Degree3Distances(SteinerInstance* instance, const vector<node_id>& us, const unordered_set<node_id>& ignore) :
-                instance_(instance), ignore_(ignore){
+                instance_(instance), ignore_(ignore), q_(instance->getGraph()->getDistanceUpperBound(false)){
             for(auto n: us)
-                q_.emplace(n, 0);
+                q_.emplace(0, n, 0);
         }
 
         cost_id get(node_id target, cost_id limit);
 
     private:
         SteinerInstance* instance_;
-        priority_queue<NodeWithCost> q_;
+        Queue<NodeWithCost> q_;
         const unordered_set<node_id>& ignore_;
         unordered_map<node_id, cost_id> dist_;
         cost_id cMax_ = 0;

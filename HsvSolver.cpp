@@ -9,7 +9,7 @@ using namespace std;
 using namespace boost;
 using namespace chrono;
 
-steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance) {
+steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), queue_(instance_->getApproximation().getLowest()) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getMaxNode()];
     store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getMaxNode());
 
@@ -54,16 +54,14 @@ SteinerResult* steiner::HsvSolver::solve() {
     for(int t=0; t < nTerminals_; t++) {
         auto label = dynamic_bitset<>(nTerminals_);
         label.set(t);
-        auto entry = QueueEntry(0, 0, t, label);
         auto pred = Predecessor();
         pred.label = nullptr;
         costs_[t].emplace(label, CostInfo(0, pred, true));
-        queue_.push(entry);
+        queue_.emplace(0, 0, 0, t, label);
     }
-    // TODO: Add pointer to costs to queue entry to ease initial lookup?
+
     while (not queue_.empty()) {
         if (duration_cast<seconds>(high_resolution_clock::now() - start).count() > 10) {
-            cout << "Queue Size: " << queue_.size() << "\n";
             auto st = (HashSetLabelStore*) store_;
             size_t labels = 0;
             size_t violating = 0;
@@ -78,8 +76,7 @@ SteinerResult* steiner::HsvSolver::solve() {
             start = high_resolution_clock::now();
         }
 
-        auto entry = queue_.top();
-        queue_.pop();
+        auto entry = queue_.dequeue();
 
         auto cost = costs_[entry.node][entry.label].cost;
         if (entry.node == root_ ) {
@@ -122,7 +119,7 @@ void steiner::HsvSolver::process_neighbors(node_id n, const dynamic_bitset<>* la
                 }
                 auto newTotal = newCost + heuristic_->calculate( nb.first, label);
                 if (newTotal <= instance_->getUpperBound())
-                    queue_.emplace(newTotal, newCost, nb.first, *label);
+                    queue_.emplace(newTotal, newTotal, newCost, nb.first, *label);
             }
         }
     }
@@ -150,7 +147,7 @@ void steiner::HsvSolver::process_labels(node_id n, const dynamic_bitset<>* label
 
                 auto newTotal = newCost +  heuristic_->calculate(n, &combined);
                 if (newTotal <= instance_->getUpperBound())
-                    queue_.emplace(newTotal, newCost, n, combined);
+                    queue_.emplace(newTotal, newTotal, newCost, n, combined);
             }
         }
     }

@@ -189,12 +189,28 @@ namespace steiner {
             }
             return sum;
         }
+        cost_id getDistanceUpperBound(bool reset) {
+            if (reset || distanceUb_ == MAXCOST) {
+                distanceUb_ = 0;
+                for(auto& n: nodes_) {
+                    cost_id cMax = 0;
+                    for(auto& n2: nb[n]) {
+                        if (n < n2.first)
+                            cMax = max(cMax, n2.second);
+                    }
+                    distanceUb_ += cMax;
+                }
+            }
+
+            return distanceUb_;
+        }
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;
         node_id distanceInit_ = 0;
+        cost_id distanceUb_ = MAXCOST;
     };
 
     struct SteinerResult {

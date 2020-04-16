@@ -17,6 +17,7 @@
 #include "Heuristic/DualAscentHeuristic.h"
 #include "Steiner.h"
 #include "SteinerTree.h"
+#include "Structures/Queue.h"
 
 using namespace std;
 
@@ -57,9 +58,16 @@ namespace steiner {
                                               (originalCost == p2.originalCost && node > p2.node))
                 );
             }
+            bool operator>(const QueueEntry& p2) const
+            {
+                return cost > p2.cost || (cost == p2.cost &&
+                                          ((originalCost > p2.originalCost) ||
+                                           (originalCost == p2.originalCost && node > p2.node))
+                );
+            }
         };
 
-        priority_queue<QueueEntry> queue_;
+        Queue<QueueEntry> queue_;
 
         union Predecessor {
             node_id node;

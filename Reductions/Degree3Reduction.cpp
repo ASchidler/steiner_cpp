@@ -122,8 +122,7 @@ cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
         return limit;
 
     while (!q_.empty()) {
-        auto elem = q_.top();
-        q_.pop();
+        auto elem = q_.dequeue();
         cMax_ = elem.cost;
 
         if (elem.node == target)
@@ -138,11 +137,11 @@ cost_id steiner::Degree3Distances::get(node_id target, cost_id limit) {
                 auto entry = dist_.find(nb.first);
                 if (entry == dist_.end()) {
                     dist_[nb.first] = nCost;
-                    q_.emplace(nb.first, nCost);
+                    q_.emplace(nCost, nb.first, nCost);
                 }
                 else if (entry->second > nCost) {
                     entry->second = nCost;
-                    q_.emplace(nb.first, nCost);
+                    q_.emplace(nCost, nb.first, nCost);
                 }
             }
         }
