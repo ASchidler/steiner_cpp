@@ -9,40 +9,48 @@
 using namespace std;
 
 namespace steiner {
-    template<class T>
+    template<typename T>
     class BucketQueue {
-        BucketQueue(cost_id limit) {
-            buckets_ = new vector<T>[limit];
+    public :
+        explicit BucketQueue(cost_id limit) {
+            buckets_ = new vector<T>*[limit]();
         }
         ~BucketQueue() {
+            for(int i=0; i < limit_; i++)
+                delete buckets_[i];
+
             delete[] buckets_;
         }
 
-        void enqueue(cost_id cost, T& elem) {
-            move(elem, back_inserter(buckets_[cost]));
+        template<typename... Ts>
+        void enqueue(cost_id cost, Ts&&... elem) {
+            if (buckets_[cost] == nullptr)
+                buckets_[cost] = new vector<T>();
+
+            buckets_[cost]->emplace_back(elem...);
             if (cost < pointer_)
                 pointer_ = cost;
         }
 
         bool hasNext() {
-            while(buckets_[pointer_].empty() && pointer_ < limit_)
+            while((buckets_[pointer_] == nullptr || buckets_[pointer_]->empty()) && pointer_ < limit_)
                 pointer_++;
 
             return pointer_ < limit_;
         }
 
         T dequeue() {
-            while(buckets_[pointer_].empty())
+            while(buckets_[pointer_]->empty())
                 pointer_++;
 
-            auto elem = buckets_[pointer_].back();
-            buckets_[pointer_].pop_back();
+            auto elem = buckets_[pointer_]->back();
+            buckets_[pointer_]->pop_back();
 
             return elem;
         }
     private:
-        vector<T>* buckets_;
-        cost_id limit_;
+        vector<T>** buckets_;
+        cost_id limit_{};
         cost_id pointer_ = 0;
     };
 }

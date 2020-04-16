@@ -97,9 +97,9 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
         }
     }
 
-    //TODO: Is this really necessary? The tree does not have to be valid for the reduced instance, but the upper bound must hold
-//    if (track > 0)
-//        instance->setApproximationState(SteinerInstance::invalid);
+    //TODO: This is necessary for recombining solutions. Maybe keep the best bound separate from the actual approximations?
+    if (track > 0)
+        instance->setApproximationState(SteinerInstance::invalid);
     enabled = track > 0;
     return track;
 }

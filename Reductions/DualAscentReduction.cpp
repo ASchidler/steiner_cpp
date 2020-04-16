@@ -205,13 +205,15 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
         for(int cNode=0; cNode < instance->getGraph()->getMaxNode(); cNode++)
             counter[cNode] = 0;
 
-        int numSelect = numSolutions / numRuns;
-        stop = numSelect > 1;
+
+        // TODO: Make upper limit configurable?
+        int numSelect = min(numSolutions / numRuns, 15);
+        stop = numSelect <= 1;
 
         if (numSelect > 0) {
             Graph g;
             for(int cResult=0; cResult < numSelect; cResult++) {
-                auto edgeIt = results[cResult]->g->findEdges();
+                auto edgeIt = results[random() % numSolutions]->g->findEdges();
                 while(edgeIt.hasElement()) {
                     auto e = *edgeIt;
                     // findEdges returns undirected edges, so look in both directions

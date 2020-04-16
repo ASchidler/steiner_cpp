@@ -3,6 +3,7 @@
 //
 
 #include "SteinerLength.h"
+#include "../Structures/Queue.h"
 
 cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Graph* g, cost_id cut_off, node_id depth_limit,
                                                        bool restrict, node_id nTerminals, node_id nNodes) {
@@ -42,18 +43,18 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
     }
     scanned[u] = 0;
     node_id scannedEdges = 0;
-    priority_queue<NodeWithCost> q;
+    Queue<NodeWithCost> q(cut_off + 1);
 
     for(auto& n: g->nb[u]) {
         if (n.first != v) { // Avoid the edge u,v
-            q.emplace(n.first, n.second);
+            if (n.second <= cut_off)
+                q.emplace(n.second, n.first, n.second);
             scanned[n.first] = n.second;
         }
     }
 
     while (! q.empty() && scannedEdges < depth_limit) {
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
 
         // Stop on v and terminals
         if (elem.node < nTerminals  || elem.node == v)
@@ -69,7 +70,7 @@ cost_id steiner::SteinerLength::calculateSteinerLength(node_id u, node_id v, Gra
 
             if (total < scanned[n.first] && total <= cut_off) {
                 scanned[n.first] = total;
-                q.emplace(n.first, total);
+                q.emplace(total, n.first, total);
             }
         }
     }
