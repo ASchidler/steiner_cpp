@@ -24,10 +24,11 @@ namespace steiner {
 
         template<typename... Ts>
         void enqueue(cost_id cost, Ts&&... elem) {
-            if (buckets_[cost] == nullptr)
+            if (buckets_[cost] == nullptr) {
                 buckets_[cost] = new vector<T>();
+            }
 
-            buckets_[cost]->emplace_back(elem...);
+            buckets_[cost]->emplace_back(std::forward<Ts>(elem)...);
             if (cost < pointer_)
                 pointer_ = cost;
         }
@@ -40,9 +41,6 @@ namespace steiner {
         }
 
         T dequeue() {
-            while(buckets_[pointer_]->empty())
-                pointer_++;
-
             auto elem = buckets_[pointer_]->back();
             buckets_[pointer_]->pop_back();
 
