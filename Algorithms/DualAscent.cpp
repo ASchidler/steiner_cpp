@@ -3,6 +3,7 @@
 //
 
 #include "DualAscent.h"
+#include "../Structures/Queue.h"
 using namespace steiner;
 
 bool DualAscent::hasRun = false;
@@ -13,7 +14,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
     auto dg = new Graph(*g, false);
     unsigned int bound = 0;
 
-    auto q = priority_queue<NodeWithCost>();
+    auto q = Queue<NodeWithCost>(g->getOriginalNumEdges());
     bool active[nTerminals];
     bool* cut[nTerminals];
     vector<DualAscentEdge> edges[nTerminals];
@@ -24,7 +25,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
         if (ts == nullptr || t == root || !ts->test(t)) {
             active[t] = true;
             if (t != root) {
-                q.emplace(t, dg->nb[t].size());
+                q.emplace(dg->nb[t].size(), t, dg->nb[t].size());
                 cut[t] = new bool[nNodes];
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
@@ -41,8 +42,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
 
     // run until not active components
     while (!q.empty()) { // main loop
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
 
         // Find cut, i.e. vertices in the weakly connected component of t and edges leading in
         auto minCost = findCut(*dg, elem.node, active, edges[elem.node], cut[elem.node], nTerminals);
@@ -52,10 +52,10 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
             // This is not necessary for correctness, but this ensures that the estimated weight is about right
             // and leads got generally better bounds
             if (!q.empty()) {
-                auto& elem2 = q.top();
+                auto& elem2 = q.peek();
                 if (edges[elem.node].size() > elem2.cost) {
                     elem.cost = edges[elem.node].size();
-                    q.push(elem);
+                    q.push(elem.cost, elem);
                     continue;
                 }
             }
@@ -76,7 +76,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
             // Add back to queue
             if (active[elem.node]) {
                 elem.cost = edges[elem.node].size() + cost;
-                q.push(elem);
+                q.push(elem.cost, elem);
             }
         }
     } // end main loop

@@ -226,7 +226,7 @@ cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
     }
 
     if (g_->getDistances() == nullptr || g_->getDistances()[n1] == nullptr)
-        g_->findDistances(n1, g_->getDistanceUpperBound(false));
+        g_->findDistances(n1);
 
     return g_->getDistances()[n1][n2];
 }

@@ -14,8 +14,8 @@ namespace steiner {
     class Queue {
     public:
         explicit Queue(cost_id upperBound) : pqueue_(priority_queue<T>()),
-        bqueue_(BucketQueue<T>(upperBound < BUCKET_LIMIT || upperBound == 0 ? upperBound : 0)) {
-            bucket_ = upperBound < BUCKET_LIMIT || upperBound == 0;
+        bqueue_(BucketQueue<T>(upperBound < BUCKET_LIMIT && upperBound != 0 ? upperBound : 0)) {
+            bucket_ = upperBound < BUCKET_LIMIT && upperBound != 0;
         }
 
         template<typename... Ts>

@@ -18,10 +18,12 @@ bool steiner::Graph::addMappedEdge(node_id u, node_id v, cost_id cost) {
     if (nb[un].count(vn) == 0) {
         this->nb[un].emplace(vn, cost);
         this->nb[vn].emplace(un, cost);
+        originalNumEdges_++;
         return true;
     } else if (nb[un][vn] > cost) {
         this->nb[un][vn] = cost;
         this->nb[vn][un] = cost;
+        originalNumEdges_++;
         return true;
     }
 
@@ -48,10 +50,12 @@ bool steiner::Graph::addEdge(node_id u, node_id v, cost_id cost) {
     if (nb[u].count(v) == 0) {
         this->nb[u].emplace(v, cost);
         this->nb[v].emplace(u, cost);
+        originalNumEdges_++;
         return true;
     } else if (nb[u][v] > cost) {
         this->nb[u][v] = cost;
         this->nb[v][u] = cost;
+        originalNumEdges_++;
         return true;
     }
 
@@ -76,7 +80,7 @@ node_id steiner::Graph::addMappedNode(node_id u) {
     return result->second;
 }
 
-void steiner::Graph::findDistances(node_id u, cost_id ub) {
+void steiner::Graph::findDistances(node_id u) {
     // Init distances
     if (distances_ == nullptr) {
         distances_ = new cost_id*[getMaxNode()];
@@ -95,7 +99,7 @@ void steiner::Graph::findDistances(node_id u, cost_id ub) {
 
     // We could initialize with other known distances...
     // Dijkstra
-    auto q = Queue<NodeWithCost>(ub);
+    auto q = Queue<NodeWithCost>(0);
 
     q.emplace(0, u, 0);
     distances_[u][u] = 0;
@@ -382,7 +386,7 @@ void Graph::discardDistances() {
     }
 }
 
-vector<node_id> Graph::findPath(node_id u, node_id v, cost_id ub) {
+vector<node_id> Graph::findPath(node_id u, node_id v) {
     cost_id dist[getMaxNode()];
     node_id p[getMaxNode()];
     for(size_t i=0; i < getMaxNode(); i++) {
@@ -390,7 +394,7 @@ vector<node_id> Graph::findPath(node_id u, node_id v, cost_id ub) {
     }
 
     // Dijkstra
-    auto q = Queue<NodeWithCost>(ub);
+    auto q = Queue<NodeWithCost>(0);
 
     q.emplace(0, u, 0);
     dist[u] = 0;

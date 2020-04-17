@@ -25,7 +25,7 @@ void steiner::LocalOptimization::vertexInsertion(Graph* dg, SteinerResult& tr, n
                 // Check all other shared neighbors for improvement
                 for(auto b: shared) {
                     // Find shortest path from
-                    auto path = cp->findPath(n, b.node, tr.cost);
+                    auto path = cp->findPath(n, b.node);
                     auto maxEdge = Edge(path[0], path[1], tr.g->nb[path[0]][path[1]]);
 
                     for (size_t cNode = 2; cNode < path.size(); cNode++) {

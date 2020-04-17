@@ -153,7 +153,7 @@ namespace steiner {
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
 
-        void findDistances(node_id u, cost_id ub);
+        void findDistances(node_id u);
         cost_id** getDistances() {
             return distances_;
         }
@@ -161,7 +161,7 @@ namespace steiner {
             return distances_ != nullptr;
         }
         void discardDistances();
-        vector<node_id> findPath(node_id u, node_id v, cost_id ub);
+        vector<node_id> findPath(node_id u, node_id v);
 
         bool shrink();
 
@@ -190,11 +190,24 @@ namespace steiner {
             return sum;
         }
         cost_id getDistanceUpperBound(bool reset) {
+            // This is a crude upper bound for the diameter of the graph. Assuming that we have a path using all nodes
+            // Use the maximum cost of an edge times the number of nodes to estimate maximum cost of this path
             if (reset || distanceUb_ == MAXCOST) {
-                distanceUb_ = mst_sum();
+                distanceUb_ = 0;
+                auto e = findEdges();
+                while(e.hasElement()) {
+                    auto ce = *e;
+                    distanceUb_ = max(distanceUb_, ce.cost);
+                    ++e;
+                }
             }
 
-            return distanceUb_;
+            // Multiply on the fly to incorporate reduction results
+            return distanceUb_ * (nodes_.size() - 1);
+        }
+
+        node_id getOriginalNumEdges() const {
+            return originalNumEdges_;
         }
     private:
         unordered_set<node_id> nodes_;
@@ -203,6 +216,7 @@ namespace steiner {
         cost_id** distances_ = nullptr;
         node_id distanceInit_ = 0;
         cost_id distanceUb_ = MAXCOST;
+        node_id originalNumEdges_ = 0;
     };
 
     struct SteinerResult {
