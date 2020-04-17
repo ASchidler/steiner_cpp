@@ -189,21 +189,11 @@ namespace steiner {
             }
             return sum;
         }
-        cost_id getDistanceUpperBound(bool reset) {
-            // This is a crude upper bound for the diameter of the graph. Assuming that we have a path using all nodes
-            // Use the maximum cost of an edge times the number of nodes to estimate maximum cost of this path
-            if (reset || distanceUb_ == MAXCOST) {
-                distanceUb_ = 0;
-                auto e = findEdges();
-                while(e.hasElement()) {
-                    auto ce = *e;
-                    distanceUb_ = max(distanceUb_, ce.cost);
-                    ++e;
-                }
-                distanceUb_ *= nodes_.size() - 1;
-            }
-
-            return distanceUb_;
+        cost_id getMaxKnownDistance() const {
+            // The idea here is that in the first run, the value is 0, therefore it will cause a bucket queue
+            // In subsequent calls, the maximum known distance is known and will work as a kind of upper bound
+            // It may be beneficial to reset this, in case reductions lower this significantly.
+            return maxKnownDistance_;
         }
 
         node_id getOriginalNumEdges() const {
@@ -215,7 +205,7 @@ namespace steiner {
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;
         node_id distanceInit_ = 0;
-        cost_id distanceUb_ = MAXCOST;
+        cost_id maxKnownDistance_ = 0;
         node_id originalNumEdges_ = 0;
     };
 

@@ -26,7 +26,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     for(node_id t=0; t < numRoots; t++) {
         results[t] = DualAscent::calculate(instance->getGraph(), roots[t], nullptr, instance->getNumTerminals(),
                                            instance->getGraph()->getMaxNode());
-        results[t]->g->findDistances(results[t]->root, instance->getGraph()->getDistanceUpperBound(false));
+        results[t]->g->findDistances(results[t]->root, instance->getGraph()->getMaxKnownDistance());
         vors[t] = VoronoiDiagram::create(results[t]->g, instance->getNumTerminals());
     }
     std::sort(results, results + numRoots, SteinerResult::cmp);
@@ -65,7 +65,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 //TODO: Bucket queues... Queue wrapper that either uses buckets or heap depending on upper bound
 node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagram& vor, SteinerInstance* inst, cost_id bound) {
     if (!r->g->hasDistances())
-        r->g->findDistances(r->root, instance->getGraph()->getDistanceUpperBound(false));
+        r->g->findDistances(r->root, instance->getGraph()->getMaxKnownDistance());
 
     cost_id* dist = r->g->getDistances()[r->root];
     node_id track = 0;

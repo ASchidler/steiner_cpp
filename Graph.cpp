@@ -111,6 +111,8 @@ void steiner::Graph::findDistances(node_id u, cost_id ub) {
         if(elem.cost > distances_[u][elem.node])
             continue;
 
+        maxKnownDistance_ = max(maxKnownDistance_, elem.cost);
+
         for (const auto& v: nb[elem.node]) {
             if (distances_[u][v.first] > elem.cost + v.second) {
                 distances_[u][v.first] = elem.cost + v.second;
@@ -327,7 +329,7 @@ Graph *Graph::mst() {
         }
     }
 
-    distanceUb_ = result_cost;
+    maxKnownDistance_ = result_cost;
     return result;
 }
 
@@ -369,7 +371,7 @@ cost_id Graph::mst_sum() {
         }
     }
 
-    distanceUb_ = result;
+    maxKnownDistance_ = result;
     return result;
 }
 
@@ -448,7 +450,6 @@ bool Graph::shrink() {
     }
     // Remove unnecessary vectors, decreases maxnode
     nb.resize(nodes_.size());
-    getDistanceUpperBound(true);
     return true;
 }
 

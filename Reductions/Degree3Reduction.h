@@ -24,7 +24,7 @@ namespace  steiner {
     class Degree3Distances {
     public:
         Degree3Distances(SteinerInstance* instance, const vector<node_id>& us, const unordered_set<node_id>& ignore) :
-                instance_(instance), ignore_(ignore), q_(instance->getGraph()->getDistanceUpperBound(false)){
+                instance_(instance), ignore_(ignore), q_(instance->getGraph()->getMaxKnownDistance()){
             for(auto n: us)
                 q_.emplace(0, n, 0);
         }

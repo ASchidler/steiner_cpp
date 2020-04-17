@@ -196,7 +196,7 @@ void SteinerInstance::calculateSteinerDistance() {
         dist[t] = 0;
         terminalSteinerDistances_[t][t] = 0;
 
-        Queue<DoubleCostEntry> q(g.getDistanceUpperBound(false));
+        Queue<DoubleCostEntry> q(g.getMaxKnownDistance());
         q.emplace(0, t, 0, 0);
 
         while (! q.empty()) {
@@ -226,7 +226,7 @@ cost_id SteinerInstance::getDistance(node_id n1, node_id n2) {
     }
 
     if (g_->getDistances() == nullptr || g_->getDistances()[n1] == nullptr)
-        g_->findDistances(n1, g_->getDistanceUpperBound(false));
+        g_->findDistances(n1, g_->getMaxKnownDistance());
 
     return g_->getDistances()[n1][n2];
 }

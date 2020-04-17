@@ -25,6 +25,9 @@ namespace steiner {
 
         template<typename... Ts>
         void emplace(cost_id cost, Ts&&... elem) {
+            if (cost >= limit_)
+                resize(cost);
+
             if (buckets_[cost] == nullptr) {
                 buckets_[cost] = new LinkedStack<T>();
             }
@@ -35,6 +38,9 @@ namespace steiner {
         }
 
         void push(cost_id cost, T& elem) {
+            if (cost >= limit_)
+                resize(cost);
+
             if (buckets_[cost] == nullptr) {
                 buckets_[cost] = new LinkedStack<T>();
             }
@@ -65,6 +71,16 @@ namespace steiner {
         LinkedStack<T>** buckets_;
         cost_id limit_;
         cost_id pointer_ = 0;
+
+        void resize(cost_id target) {
+            auto newLimit = max(limit_ * 2, target);
+            auto newarr = new LinkedStack<T>*[newLimit]();
+            std::copy(buckets_, buckets_ + limit_, newarr);
+
+            delete[] buckets_;
+            limit_ = newLimit;
+            buckets_ = newarr;
+        }
     };
 }
 
