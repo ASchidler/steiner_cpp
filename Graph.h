@@ -153,7 +153,7 @@ namespace steiner {
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
 
-        void findDistances(node_id u);
+        void findDistances(node_id u, cost_id ub);
         cost_id** getDistances() {
             return distances_;
         }
@@ -200,10 +200,10 @@ namespace steiner {
                     distanceUb_ = max(distanceUb_, ce.cost);
                     ++e;
                 }
+                distanceUb_ *= nodes_.size() - 1;
             }
 
-            // Multiply on the fly to incorporate reduction results
-            return distanceUb_ * (nodes_.size() - 1);
+            return distanceUb_;
         }
 
         node_id getOriginalNumEdges() const {

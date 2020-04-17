@@ -80,7 +80,7 @@ node_id steiner::Graph::addMappedNode(node_id u) {
     return result->second;
 }
 
-void steiner::Graph::findDistances(node_id u) {
+void steiner::Graph::findDistances(node_id u, cost_id ub) {
     // Init distances
     if (distances_ == nullptr) {
         distances_ = new cost_id*[getMaxNode()];
@@ -99,7 +99,7 @@ void steiner::Graph::findDistances(node_id u) {
 
     // We could initialize with other known distances...
     // Dijkstra
-    auto q = Queue<NodeWithCost>(0);
+    auto q = Queue<NodeWithCost>(ub);
 
     q.emplace(0, u, 0);
     distances_[u][u] = 0;
