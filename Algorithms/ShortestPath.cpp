@@ -21,7 +21,7 @@ std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id
     bool added[g.getMaxNode()];
     node_id prev[g.getMaxNode()];
 
-    priority_queue<DoubleCostEntry> q;
+    Queue<DoubleCostEntry> q(g.getMaxKnownDistance());
 
     for(int i=0; i < nTerminals; i++)
         remaining[i] = true;
@@ -36,11 +36,10 @@ std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id
         remaining[root] = false;
     }
     added[root] = true;
-    q.emplace(root, 0, 0);
+    q.emplace(0, root, 0, 0);
 
-    while (nRemaining > 0) {
-        auto elem = q.top();
-        q.pop();
+    while (nRemaining > 0 && !q.empty()) {
+        auto elem = q.dequeue();
 
         if (elem.node < nTerminals && remaining[elem.node]) {
             remaining[elem.node] = false;
@@ -62,7 +61,7 @@ std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id
             for(const auto c: cache) {
                 for(auto& v: g.nb[c]) {
                     if (v.second < costs[v.first] && !added[v.first]) {
-                        q.emplace(v.first, v.second, v.second);
+                        q.emplace(v.second, v.first, v.second, v.second);
                         costs[v.first] = v.second;
                         prev[v.first] = c;
                     }
@@ -74,7 +73,7 @@ std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id
             for(const auto& v: g.nb[elem.node]) {
                 auto total = elem.totalCost + v.second;
                 if (total < costs[v.first] && !added[v.first]) {
-                    q.emplace(v.first, total, v.second);
+                    q.emplace(total, v.first, total, v.second);
                     costs[v.first] = total;
                     prev[v.first] = elem.node;
                 }

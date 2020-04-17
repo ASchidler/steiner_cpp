@@ -74,6 +74,10 @@ namespace steiner {
         bool operator<(const DoubleNodeEntry& p2) const {
             return cost > p2.cost;
         }
+
+        bool operator>(const DoubleNodeEntry& p2) const {
+            return cost > p2.cost;
+        }
     };
 }
 #endif //STEINER_STEINER_H

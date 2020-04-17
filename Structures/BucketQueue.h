@@ -73,7 +73,7 @@ namespace steiner {
         cost_id pointer_ = 0;
 
         void resize(cost_id target) {
-            auto newLimit = max(limit_ * 2, target);
+            auto newLimit = max(limit_ * 2, target + 1);
             auto newarr = new LinkedStack<T>*[newLimit]();
             std::copy(buckets_, buckets_ + limit_, newarr);
 

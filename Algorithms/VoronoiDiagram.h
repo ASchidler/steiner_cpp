@@ -6,6 +6,7 @@
 #define STEINER_VORONOIDIAGRAM_H
 #include "../Steiner.h"
 #include "../Graph.h"
+#include "../Structures/Queue.h"
 
 namespace steiner{
     struct VoronoiDiagram {
@@ -42,18 +43,17 @@ namespace steiner{
 
             node_id visited[g->getMaxNode()];
             node_id visited2[g->getMaxNode()];
-            priority_queue<DoubleNodeEntry> q;
+            Queue<DoubleNodeEntry> q(g->getMaxKnownDistance());
 
             for(node_id t=0; t < nTerminals; t++)
-                q.emplace(t, t, 0);
+                q.emplace(0, t, t, 0);
             for(node_id n=0; n < g->getMaxNode(); n++) {
                 visited[n] = g->getMaxNode();
                 visited2[n] = g->getMaxNode();
             }
 
             while(!q.empty()) {
-                auto elem = q.top();
-                q.pop();
+                auto elem = q.dequeue();
 
                 // Skip done vertices, and do not use the closest terminal as second closest
                 if (visited2[elem.n1] != g->getMaxNode() || visited[elem.n1] == elem.n2) {
@@ -73,7 +73,7 @@ namespace steiner{
 
                 for (auto& v: g->nb[elem.n1]) {
                     if(elem.n2 != visited[v.first] && visited2[v.first] == g->getMaxNode()) {
-                        q.emplace(v.first, elem.n2, elem.cost + g->nb[v.first][elem.n1]);
+                        q.emplace(elem.cost + g->nb[v.first][elem.n1], v.first, elem.n2, elem.cost + g->nb[v.first][elem.n1]);
                     }
                 }
             }

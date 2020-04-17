@@ -606,7 +606,7 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
         }
     }
 
-    priority_queue<VoronoiQueueEntry> q;
+    Queue<VoronoiQueueEntry> q(g_.getMaxKnownDistance());
 
     // Initialize dijkstra. Boundary nodes are added with distance to center
     for(auto n: repairNodes) {
@@ -614,15 +614,15 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
         for(auto& n2: g_.nb[n]) {
             auto& cl = closest_[n2.first];
             if (intermediaries.count(cl->t) == 0) {
-                q.emplace(n2.second + cl->costEntry.cost, n, cl->t, n2.first);
+                q.emplace(n2.second + cl->costEntry.cost,n2.second + cl->costEntry.cost, n, cl->t, n2.first);
             }
         }
     }
 
     // Dijkstra, limited to dangling (repair) nodes
     while(!q.empty()) {
-        auto elem = q.top();
-        q.pop();
+        auto elem = q.dequeue();
+
         if (! visited[elem.n]) {
             visited[elem.n] = true;
             auto newElement = regionsTmp_[elem.start].emplace(std::piecewise_construct, forward_as_tuple(elem.n), forward_as_tuple(elem.predecessor, elem.c));
@@ -630,7 +630,7 @@ void steiner::VoronoiPartition::repair(unordered_set<node_id>& intermediaries) {
 
             for(auto& nb: g_.nb[elem.n]) {
                 if (!visited[nb.first] && repairNodes.count(nb.first) > 0) {
-                    q.emplace(elem.c + nb.second, nb.first, elem.start, elem.n);
+                    q.emplace(elem.c + nb.second, elem.c + nb.second, nb.first, elem.start, elem.n);
                 }
             }
         }
