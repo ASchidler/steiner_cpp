@@ -145,9 +145,9 @@ void Graph::removeEdge(node_id u, node_id v) {
     nb[u].erase(v);
     nb[v].erase(u);
 
-    if (nb[u].empty())
+    if (nb[u].empty() && nodes_.size() > 1)
         nodes_.erase(u);
-    if (nb[v].empty())
+    if (nb[v].empty() && nodes_.size() > 1)
         nodes_.erase(v);
 }
 
@@ -158,12 +158,12 @@ Graph::EdgeIterator Graph::removeEdge(Graph::EdgeIterator it) {
     assert(u != v);
     // Remove v first as the iterator points to u, these changes do not influence it.
     nb[v].erase(u);
-    if (nb[v].empty())
+    if (nb[v].empty() && nodes_.size() > 1)
         nodes_.erase(v);
 
     // Now remove the same for u, but take care of the iterators!
     it.nbState = nb[u].erase(it.nbState);
-    if (nb[u].empty()) {
+    if (nb[u].empty() && nodes_.size() > 1) {
         it.nodeState = nodes_.erase(it.nodeState);
         if (it.nodeState != nodes_.end())
             it.nbState = nb[*it.nodeState].begin();

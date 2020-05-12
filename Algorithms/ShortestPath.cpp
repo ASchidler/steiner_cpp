@@ -280,6 +280,10 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
 }
 
 void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
+    // In this case there is no point...
+    if (nTerminals == 1)
+        return;
+    
     // Do poolsize and then always halve...
     // The idea is to have (n is poolsize): n n/2 n/2 n/4 n/4 n/4 n4 ...
     for(node_id i=1; i < nSolutions; i *= 2) {
