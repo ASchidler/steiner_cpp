@@ -9,7 +9,8 @@ using namespace std;
 using namespace boost;
 using namespace chrono;
 
-steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), queue_(instance_->getApproximation().getLowest()) {
+steiner::HsvSolver::HsvSolver(SteinerInstance* instance, node_id dualAscentLimit) :
+        instance_(instance), queue_(instance_->getApproximation().getLowest()), dualAscentLimit_(dualAscentLimit) {
     costs_ = new unordered_map<dynamic_bitset<>, CostInfo>[instance->getGraph()->getMaxNode()];
     store_ = new HashSetLabelStore(instance_->getNumTerminals() - 1, instance->getGraph()->getMaxNode());
 
@@ -35,9 +36,18 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance) : instance_(instance), 
         }
     }
 
-    //TODO: Make this configurable and dynamic
-    //heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
-    heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    auto it = instance->getGraph()->findEdges();
+    node_id edgeCounter = 0;
+    while(it.hasElement()) {
+        edgeCounter++;
+        ++it;
+    }
+
+    if (edgeCounter <= dualAscentLimit_)
+        heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
+    else
+        heuristic_ = new MstHeuristic(instance, root_, nTerminals_);
+
 
     // Initialize distances. Recalculate after reductions. Also because terminals (root) has been resorted
     instance->setDistanceState(SteinerInstance::invalid);

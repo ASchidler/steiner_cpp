@@ -25,7 +25,7 @@ using namespace std;
 namespace steiner {
     class HsvSolver {
     public:
-        explicit HsvSolver(SteinerInstance *instance);
+        HsvSolver(SteinerInstance *instance, node_id dualAscentLimit);
 
         ~HsvSolver() {
             delete[] costs_;
@@ -40,6 +40,7 @@ namespace steiner {
         LabelStore* store_;
         node_id root_;
         node_id nTerminals_;
+        node_id dualAscentLimit_;
 
         struct QueueEntry {
             QueueEntry(cost_id cost, cost_id originalCost, node_id node, dynamic_bitset<> label) : cost(cost), node(node),

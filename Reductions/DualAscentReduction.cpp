@@ -31,14 +31,14 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     }
     std::sort(results, results + numRoots, SteinerResult::cmp);
 
-    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    pruneAscent(results, numRoots, 20);
-    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-    for(node_id t=0; t < numRoots && t < 5; t++){
-        prune(results[t]);
-    }
-    cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
+//    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
+    //pruneAscent(results, numRoots, 20);
+//    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
+    //cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
+//    for(node_id t=0; t < numRoots && t < 5; t++){
+//        prune(results[t]);
+//    }
+    //cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {

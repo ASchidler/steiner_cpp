@@ -30,12 +30,50 @@ using namespace steiner;
 using namespace chrono;
 // TODO: Voronoi bound reductions could be used for large instances...
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        cerr << "steiner expects only the filename as the first parameter." << endl;
+    bool useReductions = true;
+    int dualAscentLimit = 10000;
+
+    if (argc == 1) {
+        cerr << "Usage: steiner <filename>" << endl
+            << "The following paramaters are available:" << endl
+             << "-r Use no reductions" << endl
+             << "-d <number> sets the edge limit for dual ascent. Default is 10 000, 0 disables dual ascent" << endl;
         return 1;
     }
 
-    auto filename = string(argv[1]);
+    // Parse arguments
+    for (int i = 1; i < argc-1; ++i) {
+        string arg = string(argv[i]);
+        if (arg == "-r") {
+            useReductions = false;
+        }
+        else if (arg == "-d") {
+            if (argc <= i + 1) {
+                cerr << "-d requires a number";
+                return 1;
+            }
+            try {
+                auto conv_result = stoi(argv[i+1]);
+                if (conv_result < 0) {
+                    cerr << "Dual ascent limit cannot be negative" << endl;
+                    return 1;
+                }
+                dualAscentLimit = conv_result;
+                i++;
+            }
+            catch(invalid_argument const &e)
+            {
+                cerr << "Invalid number entered for dual ascent limit "<< argv[i+1] << endl;
+                return 1;
+            }
+            catch (std::out_of_range const &e) {
+                cerr << "Invalid number entered for dual ascent limit "<< argv[i+1] << endl;
+                return 1;
+            }
+        }
+    }
+
+    auto filename = string(argv[argc-1]);
     ifstream f(filename.c_str());
     if (not f.good()) {
         cerr << filename << " not found or not accessible" << endl;
@@ -49,33 +87,13 @@ int main(int argc, char* argv[]) {
     for (int i=0; i < s->getNumTerminals(); i++) {
         ts.emplace(i);
     }
-
     assert(s->checkGraphIntegrity());
-    auto rsph = ShortestPath(10);
-    rsph.findAndAdd(*s->getGraph(), s->getNumTerminals(), 10);
-    for (int i=0; i < s->getNumTerminals() && i < 5; i++) {
-        auto result = DualAscent::calculate(s->getGraph(), i, nullptr, s->getNumTerminals(), s->getGraph()->getMaxNode());
-        delete result;
-    }
-    assert(s->checkGraphIntegrity());
-    cout << "Before " << rsph.getLowest() << endl;
-    rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
-    cout << "After Optimize " << rsph.getLowest() << endl;
-    assert(s->checkGraphIntegrity());
-    rsph.recombine(5, s->getNumTerminals());
-    cout << "After Recombine " << rsph.getLowest() << endl;
-    assert(s->checkGraphIntegrity());
-    rsph.optimize(*s->getGraph(), 5, s->getNumTerminals());
-    cout << "After Optimize" << rsph.getLowest() << endl;
-    assert(s->checkGraphIntegrity());
-    cout <<"LB " << DualAscent::bestResult << endl;
-    cout << "UB " << rsph.getBest()->cost << endl;
 
     auto start = high_resolution_clock::now();
-    if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
-        cout << "Not Connected (start)" << endl;
+        if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
+            cout << "Not Connected (start)" << endl;
 
-    auto reductions = vector<Reduction*>();
+    auto reductions = vector<Reduction *>();
     reductions.push_back(new ZeroEdgePreselection(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new TerminalDistanceReduction(s));
@@ -96,14 +114,17 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new steiner::QuickCollection(s, true));
 
     auto reducer = Reducer(reductions, s);
-    reducer.reduce();
 
-    if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
-        cout << "Not Connected (after reduction)" << endl;
-    s->checkGraphIntegrity();
+    if (useReductions) {
+        reducer.reduce();
+
+        if (!s->getGraph()->checkConnectedness(s->getNumTerminals(), false))
+            cout << "Not Connected (after reduction)" << endl;
+        s->checkGraphIntegrity();
+    }
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
-    auto solver = HsvSolver(s);
+    auto solver = HsvSolver(s, dualAscentLimit);
     auto tree = solver.solve();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
@@ -111,8 +132,9 @@ int main(int argc, char* argv[]) {
 
     assert(tree != nullptr);
 
+    if (useReductions)
+        reducer.unreduce(tree);
 
-    reducer.unreduce(tree);
     cout << tree->cost << endl;
     delete s;
 
