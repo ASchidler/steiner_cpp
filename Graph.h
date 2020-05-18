@@ -199,6 +199,21 @@ namespace steiner {
         node_id getOriginalNumEdges() const {
             return originalNumEdges_;
         }
+
+        node_id getNumEdges() {
+            if (changed_) {
+                num_edges_ = 0;
+                for (auto &cN: nodes_) {
+                    for (auto &cE: nb[cN]) {
+                        if (cN < cE.first)
+                            num_edges_++;
+                    }
+                }
+            }
+
+            return num_edges_;
+        }
+
     private:
         unordered_set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
@@ -207,6 +222,8 @@ namespace steiner {
         node_id distanceInit_ = 0;
         cost_id maxKnownDistance_ = 0;
         node_id originalNumEdges_ = 0;
+        node_id num_edges_ = 0;
+        bool changed_ = true;
     };
 
     struct SteinerResult {

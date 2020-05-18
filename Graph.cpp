@@ -74,6 +74,7 @@ node_id steiner::Graph::addMappedNode(node_id u) {
         nodeMap_.insert(pair<node_id, node_id>(u, nb.size() - 1));
         nodeReverseMap_.insert(pair<node_id, node_id>(nb.size() - 1, u));
         nodes_.insert(nb.size() - 1);
+        changed_ = true;
         return nb.size() - 1;
     }
 
@@ -130,6 +131,7 @@ unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
     auto it = nodes_.find(u);
     if (it != nodes_.end())
         return nodes_.erase(it);
+    changed_ = true;
     return it;
 }
 
@@ -138,6 +140,7 @@ unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_i
         nb[elem.first].erase(*u);
     }
     nb[*u].clear();
+    changed_ = true;
     return nodes_.erase(u);
 }
 
@@ -149,6 +152,8 @@ void Graph::removeEdge(node_id u, node_id v) {
         nodes_.erase(u);
     if (nb[v].empty() && nodes_.size() > 1)
         nodes_.erase(v);
+
+    changed_ = true;
 }
 
 
@@ -169,6 +174,7 @@ Graph::EdgeIterator Graph::removeEdge(Graph::EdgeIterator it) {
             it.nbState = nb[*it.nodeState].begin();
     }
     it.findNext();
+    changed_ = true;
     return it;
 }
 
@@ -184,6 +190,7 @@ unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id rem
         }
     }
 
+    changed_ = true;
     return removeNode(remove);
 }
 

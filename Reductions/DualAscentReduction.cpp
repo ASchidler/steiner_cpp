@@ -10,6 +10,10 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     if (instance->getNumTerminals() < 3)
         return 0;
 
+    // This is a slow reduction, skip it while the graph is too big
+    if (instance->getNumTerminals() > 500 || instance->getGraph()->getNumEdges() > 10000)
+        return 0;
+
     node_id track = 0;
 
     // Always request a new approximation for this reduction
