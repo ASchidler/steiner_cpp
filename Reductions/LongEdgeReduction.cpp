@@ -43,7 +43,7 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
     }
 
     // Compute the restricted SL. As this is more expensive, do only upon "request"
-    if (handleEql_) {
+    if (handleEql_ && instance->getGraph()->getNumEdges() / instance->getGraph()->getNumNodes() <= 10) {
         for(auto& e: eql) {
             if (instance->getGraph()->nb[e.u].count(e.v) > 0) {
                 auto sd = SteinerLength::calculateSteinerLength(e.u, e.v, instance->getGraph(),

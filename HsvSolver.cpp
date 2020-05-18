@@ -36,14 +36,7 @@ steiner::HsvSolver::HsvSolver(SteinerInstance* instance, node_id dualAscentLimit
         }
     }
 
-    auto it = instance->getGraph()->findEdges();
-    node_id edgeCounter = 0;
-    while(it.hasElement()) {
-        edgeCounter++;
-        ++it;
-    }
-
-    if (edgeCounter <= dualAscentLimit_)
+    if (instance->getGraph()->getNumEdges() <= dualAscentLimit_)
         heuristic_ = new DualAscentHeuristic(instance, root_, nTerminals_, instance_->getGraph()->getMaxNode());
     else
         heuristic_ = new MstHeuristic(instance, root_, nTerminals_);

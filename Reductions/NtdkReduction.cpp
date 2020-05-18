@@ -7,6 +7,10 @@
 node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
     if (restricted_)
         instance->requestDistanceState(SteinerInstance::higher);
+
+    if (instance->getGraph()->getNumEdges() / instance->getGraph()->getNumNodes() > 10)
+        return 0;
+
     node_id track = 0;
 
     auto n = instance->getGraph()->getNodes().begin();

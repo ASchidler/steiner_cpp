@@ -5,6 +5,9 @@
 #include "SdcReduction.h"
 
 node_id steiner::SdcReduction::reduce(node_id currCount, node_id prevCount) {
+    if (instance->getGraph()->getNumEdges() / instance->getGraph()->getNumNodes() > 10)
+        return 0;
+
     auto it = instance->getGraph()->findEdges();
     node_id track = 0;
 

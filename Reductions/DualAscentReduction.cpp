@@ -11,8 +11,14 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         return 0;
 
     // This is a slow reduction, skip it while the graph is too big
-    if (instance->getNumTerminals() > 500 || instance->getGraph()->getNumEdges() > 10000)
+    if (instance->getNumTerminals() > 500)
         return 0;
+
+    node_id numRoots = 50;
+    if (instance->getGraph()->getNumEdges() > 10000)
+        numRoots = 25;
+    if (instance->getGraph()->getNumEdges() > 50000)
+        numRoots = 10;
 
     node_id track = 0;
 
@@ -21,7 +27,7 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
 
     // TODO: Define control parameters according to instance size
 
-    node_id numRoots = min((node_id)50, instance->getNumTerminals());
+    numRoots = min(numRoots, instance->getNumTerminals());
     node_id roots[numRoots];
     chooseRoots(roots, numRoots);
     SteinerResult* results[numRoots];
@@ -36,13 +42,13 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     std::sort(results, results + numRoots, SteinerResult::cmp);
 
 //    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    //pruneAscent(results, numRoots, 20);
+//    pruneAscent(results, numRoots, 20);
 //    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    //cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
+//    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
 //    for(node_id t=0; t < numRoots && t < 5; t++){
 //        prune(results[t]);
 //    }
-    //cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
+//    cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
@@ -236,7 +242,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
 
         // TODO: Make upper limit configurable?
-        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)15);
+        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)5);
         stop = numSelect <= 1;
 
         if (numSelect > 0) {
