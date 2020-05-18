@@ -71,21 +71,6 @@ SteinerResult* steiner::HsvSolver::solve() {
     }
 
     while (not queue_.empty()) {
-        if (duration_cast<seconds>(high_resolution_clock::now() - start).count() > 10) {
-            auto st = (HashSetLabelStore*) store_;
-            size_t labels = 0;
-            size_t violating = 0;
-            for(auto n: instance_->getGraph()->getNodes()) {
-                labels += st->labels_[n].size();
-                for(auto& l: st->labels_[n]) {
-                    if(costs_[n][l].cost > pruneBoundCache.find(l)->second.cost)
-                        violating++;
-                }
-            }
-            cout << "Labels: " << labels << " Violating: " <<  violating << "\n";
-            start = high_resolution_clock::now();
-        }
-
         auto entry = queue_.dequeue();
 
         auto cost = costs_[entry.node][entry.label].cost;

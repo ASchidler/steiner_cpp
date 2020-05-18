@@ -16,6 +16,8 @@ using namespace boost;
 
 typedef uint16_t node_id;
 #define MAXNODE 65535
+//typedef uint32_t node_id;
+//#define MAXNODE 4294967295U
 typedef uint32_t cost_id; // TODO: 32 or 64 bit?
 //#define MAXCOST (__UINT64_C(18446744073709551615))
 #define MAXCOST 4294967295U

@@ -50,6 +50,13 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         track += tracks[t];
     }
 
+    // NTDK is a separate operation as it invalidates the distances found. I.e. execute all reductions before
+    // executing NTDK
+    for(node_id t=0; t < numRoots; t++) {
+        tracks[t] = reduceGraphNtdk(results[t], *vors[t], instance, instance->getUpperBound());
+        track += tracks[t];
+    }
+
     selectRoots(results, numRoots, tracks);
     for(node_id t=0; t < numRoots; t++) {
         delete results[t];
@@ -71,13 +78,13 @@ node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagr
     if (!r->g->hasDistances())
         r->g->findDistances(r->root, instance->getGraph()->getMaxKnownDistance());
 
-    cost_id* dist = r->g->getDistances()[r->root];
+    cost_id *dist = r->g->getDistances()[r->root];
     node_id track = 0;
 
     cost_id limit = bound - r->cost;
 
     // Use r->g since the instance's nodes may change during iteration
-    for(const auto n : r->g->getNodes()) {
+    for (const auto n : r->g->getNodes()) {
         // Ensure that the node is still there, otherwise NTDK may add ghost edges...
         if (inst->getGraph()->nb[n].empty())
             continue;
@@ -85,27 +92,10 @@ node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagr
             inst->removeNode(n);
             track++;
         }
-        // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
-        else if (n >= inst->getNumTerminals() && dist[n] + vor.second[n].cost > limit and
-                inst->getGraph()->nb[n].size() <= 6 && inst->getGraph()->getNodes().count(dist[n]) > 0) {
-            // Insert replacement edges
-            for (const auto &b: inst->getGraph()->nb[n]) {
-                for (const auto &b2: inst->getGraph()->nb[n]) {
-                    if (b.first < b2.first) {
-                        if (inst->addEdge(b.first, b2.first, b.second + b2.second)) {
-                            merge(n, b.first, b2.first, b.second, b2.second);
-                        }
-                    }
-                }
-            }
-
-            inst->removeNode(n);
-            track++;
-        }
-        // Can we remove some if the edges?
+            // Can we remove some if the edges?
         else {
             auto nb = r->g->nb[n];
-            for(const auto& n2: nb) {
+            for (const auto &n2: nb) {
                 // Try to avoid doing the check twice
                 if (n < n2.first) {
                     // Must be over the lower bound from both sides
@@ -120,6 +110,41 @@ node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagr
             }
         }
     }
+    return track;
+}
+
+node_id steiner::DualAscentReduction::reduceGraphNtdk(SteinerResult* r, VoronoiDiagram& vor, SteinerInstance* inst, cost_id bound) {
+    if (!r->g->hasDistances())
+        r->g->findDistances(r->root, instance->getGraph()->getMaxKnownDistance());
+
+    cost_id *dist = r->g->getDistances()[r->root];
+    node_id track = 0;
+
+    cost_id limit = bound - r->cost;
+
+    for(const auto n : r->g->getNodes()) {
+        // Ensure that the node is still there, otherwise NTDK may add ghost edges...
+        if (inst->getGraph()->nb[n].empty())
+            continue;
+
+        // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
+        if (n >= inst->getNumTerminals() && dist[n] + vor.second[n].cost > limit &&
+             inst->getGraph()->nb[n].size() <= 6 && inst->getGraph()->getNodes().count(dist[n]) > 0) {
+            // Insert replacement edges
+            for (const auto &b: inst->getGraph()->nb[n]) {
+                for (const auto &b2: inst->getGraph()->nb[n]) {
+                    if (b.first < b2.first) {
+                        if (inst->addEdge(b.first, b2.first, b.second + b2.second)) {
+                            merge(n, b.first, b2.first, b.second, b2.second);
+                        }
+                    }
+                }
+            }
+
+            inst->removeNode(n);
+            track++;
+        }
+    }
 
     return track;
 }
@@ -127,7 +152,7 @@ node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagr
 void steiner::DualAscentReduction::chooseRoots(node_id *roots, node_id numRoots) {
     assert(numRoots <= instance->getNumTerminals());
     node_id rootsSelected = 0;
-    node_id selectBest = min(2, numRoots/2);
+    node_id selectBest = min((node_id)2, (node_id)(numRoots/2));
     for(auto i=0; i < selectBest && rootsSelected < numRoots; i++) {
         if (bestRoots[i] < instance->getNumTerminals()) {
             roots[rootsSelected] = bestRoots[i];
@@ -211,7 +236,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
 
         // TODO: Make upper limit configurable?
-        int numSelect = min(numSolutions / numRuns, 15);
+        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)15);
         stop = numSelect <= 1;
 
         if (numSelect > 0) {

@@ -289,7 +289,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
     for(node_id i=1; i < nSolutions; i *= 2) {
         for(node_id j=i; j < 2 * i && j < nSolutions; j++) {
             // First select indices
-            node_id numSolutions = max(3, (node_id) resultPool_.size() / i);
+            node_id numSolutions = max((node_id)3, (node_id) (resultPool_.size() / i));
             vector<node_id> solutionIndices;
             if (numSolutions == resultPool_.size()) {
                 for (int idx = 0; idx < resultPool_.size(); idx++) {

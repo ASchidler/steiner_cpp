@@ -26,6 +26,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
 
             bool is_terminal = false;
             bool is_edge = false;
+            bool is_edge_count = false;
             int token = 0;
 
             if (ln.length() > 0) {
@@ -38,21 +39,30 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                     if (tok.length() == 0)
                         continue;
 
-                    if (is_edge || is_terminal) {
+                    if (is_edge || is_terminal || is_edge_count) {
                         lineResult[token] = std::stoul(tok);
                         token++;
                     }
 
-                    if (tok == "e" || tok == "a") {
-                        is_edge = true;
-                    } else if (tok == "t") {
-                        is_terminal = true;
+                    if (i == 0) {
+                        if (tok == "e" || tok == "a") {
+                            is_edge = true;
+                        } else if (tok == "t") {
+                            is_terminal = true;
+                        } else if (tok == "edges") {
+                            is_edge_count = true;
+                        }
                     }
                 }
                 if (is_terminal) {
                     ts.emplace_back((node_id)lineResult[0]);
                 } else if (is_edge) {
                     g->addMappedEdge((node_id) lineResult[0], (node_id) lineResult[1], lineResult[2]);
+                } else if (is_edge_count) {
+                    if (lineResult[0] > 65535) {
+                        cout << "Cannot process instances with more than 65535 edges " << endl;
+                        exit(10);
+                    }
                 }
             }
         }
