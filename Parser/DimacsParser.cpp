@@ -14,7 +14,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
     fl.open(file, ios::in);
     auto* g = new Graph();
     auto ts = vector<node_id>();
-    cost_id lineResult[3];
+    cost_id lineResult[10]; // 3 should suffice, but use 10 for tolerance
 
     //TODO: Error Handling
     if (fl.is_open()) {
@@ -43,7 +43,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                         token++;
                     }
 
-                    if (tok == "e") {
+                    if (tok == "e" || tok == "a") {
                         is_edge = true;
                     } else if (tok == "t") {
                         is_terminal = true;
