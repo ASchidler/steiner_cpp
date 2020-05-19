@@ -316,7 +316,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
 
             // Reduce away suboptimal components
             SteinerInstance s(&g, nTerminals);
-            auto red = Reducer::getMinimalReducer(&s, true);
+            auto red = Reducer::getMinimalReducer(&s, false);
             red.reduce();
 
             // Compute RSP

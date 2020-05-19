@@ -31,7 +31,7 @@ namespace  steiner {
         void selectRoots(SteinerResult** results, node_id numSolutions, const node_id* track);
         void pruneAscent(SteinerResult** results, node_id numSolutions, node_id numRuns);
 
-        node_id reduceGraphNtdk(SteinerResult *r, VoronoiDiagram &vor, SteinerInstance *inst, cost_id bound);
+        node_id reduceGraphNtdk(SteinerResult *r, VoronoiDiagram &vor, SteinerInstance *inst, cost_id bound, Graph& cumulative);
     };
 }
 

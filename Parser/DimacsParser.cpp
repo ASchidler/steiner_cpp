@@ -59,8 +59,8 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
                 } else if (is_edge) {
                     g->addMappedEdge((node_id) lineResult[0], (node_id) lineResult[1], lineResult[2]);
                 } else if (is_edge_count) {
-                    if (lineResult[0] > 65535) {
-                        cout << "Cannot process instances with more than 65535 edges " << endl;
+                    if (lineResult[0] >= MAXNODE) {
+                        cout << "Cannot process instances with more than "<< MAXNODE << " edges " << endl;
                         exit(10);
                     }
                 }

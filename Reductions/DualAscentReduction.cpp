@@ -56,10 +56,15 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         track += tracks[t];
     }
 
+
+//    instance->getApproximation().recombine(10, instance->getNumTerminals());
+//    instance->getApproximation().optimize(*instance->getGraph(), 10, instance->getNumTerminals());
     // NTDK is a separate operation as it invalidates the distances found. I.e. execute all reductions before
     // executing NTDK
+    // Cumulative is used, s.t. merged edges are not considered for removal
+    auto cumulative = Graph(instance->getGraph()->getMaxNode());
     for(node_id t=0; t < numRoots; t++) {
-        tracks[t] = reduceGraphNtdk(results[t], *vors[t], instance, instance->getUpperBound());
+        tracks[t] = reduceGraphNtdk(results[t], *vors[t], instance, instance->getUpperBound(), cumulative);
         track += tracks[t];
     }
 
@@ -119,28 +124,32 @@ node_id steiner::DualAscentReduction::reduceGraph(SteinerResult* r, VoronoiDiagr
     return track;
 }
 
-node_id steiner::DualAscentReduction::reduceGraphNtdk(SteinerResult* r, VoronoiDiagram& vor, SteinerInstance* inst, cost_id bound) {
+node_id steiner::DualAscentReduction::reduceGraphNtdk(SteinerResult* r, VoronoiDiagram& vor, SteinerInstance* inst, cost_id bound, Graph& cumulative) {
+    node_id track = 0;
+
     if (!r->g->hasDistances())
         r->g->findDistances(r->root, instance->getGraph()->getMaxKnownDistance());
 
     cost_id *dist = r->g->getDistances()[r->root];
-    node_id track = 0;
 
     cost_id limit = bound - r->cost;
 
-    for(const auto n : r->g->getNodes()) {
+    for (const auto n : r->g->getNodes()) {
         // Ensure that the node is still there, otherwise NTDK may add ghost edges...
         if (inst->getGraph()->nb[n].empty())
             continue;
 
         // NTDK test, does the node is a non-terminal and have maximum degree 2 in any steiner tree?
         if (n >= inst->getNumTerminals() && dist[n] + vor.second[n].cost > limit &&
-             inst->getGraph()->nb[n].size() <= 6 && inst->getGraph()->getNodes().count(dist[n]) > 0) {
+            inst->getGraph()->nb[n].size() <= 6 && inst->getGraph()->getNodes().count(dist[n]) > 0 &&
+            cumulative.nb[n].empty()
+            ) {
             // Insert replacement edges
             for (const auto &b: inst->getGraph()->nb[n]) {
                 for (const auto &b2: inst->getGraph()->nb[n]) {
                     if (b.first < b2.first) {
                         if (inst->addEdge(b.first, b2.first, b.second + b2.second)) {
+                            cumulative.addEdge(b.first, b2.first, b.second + b2.second);
                             merge(n, b.first, b2.first, b.second, b2.second);
                         }
                     }

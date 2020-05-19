@@ -15,7 +15,7 @@ using namespace steiner;
 namespace steiner {
     class GraphPruner {
     public:
-        GraphPruner(SteinerInstance& instance) : instance_(instance),
+        explicit GraphPruner(SteinerInstance& instance) : instance_(instance),
             reducer_(Reducer::getMinimalReducer(&instance, false))
         {
         };

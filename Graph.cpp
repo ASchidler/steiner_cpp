@@ -408,11 +408,14 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
     q.emplace(0, u, 0);
     dist[u] = 0;
 
+    bool found = false;
     while(not q.empty()) {
         auto elem = q.dequeue();
 
-        if (elem.node == v)
+        if (elem.node == v) {
+            found = true;
             break;
+        }
 
         // already visited...
         if(elem.cost > dist[elem.node])
@@ -426,6 +429,8 @@ vector<node_id> Graph::findPath(node_id u, node_id v) {
             }
         }
     }
+
+    assert(found);
 
     vector<node_id> path;
     path.push_back(v);
