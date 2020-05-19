@@ -111,7 +111,7 @@ void steiner::ShortestPath::resetPool(node_id nTerminals) {
     int ct = 0;
     int cnt = 0;
 
-    for(auto sol: resultPool_) {
+    for(const auto& sol: resultPool_) {
         if (sol->root < nTerminals && ct < 5) {
             terminalRoots[ct] = sol->root;
         } else if (sol->root >= nTerminals && cnt < 3) {
@@ -139,7 +139,7 @@ void steiner::ShortestPath::resetPool(node_id nTerminals) {
     resultPool_.clear();
 }
 
-void steiner::ShortestPath::addToPool(std::shared_ptr<SteinerResult> result) {
+void steiner::ShortestPath::addToPool(const std::shared_ptr<SteinerResult>& result) {
     bool smaller = false;
     bool handled = false;
     lowestBound_ = min(lowestBound_, result->cost);
@@ -176,7 +176,7 @@ void steiner::ShortestPath::addToPool(std::shared_ptr<SteinerResult> result) {
     for(size_t i=resultPool_.size() - 1; i > 0; i--) {
         if (resultPool_[i]->cost < resultPool_[i - 1]->cost)
             swap(resultPool_[i], resultPool_[i-1]);
-    };
+    }
 }
 
 void steiner::ShortestPath::findAndAdd(steiner::Graph &g, node_id nTerminals, node_id nSolutions) {
@@ -208,7 +208,7 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
         node_id tAdded = 0;
         // Use best roots
         if (!resultPool_.empty()) {
-            for(auto r: resultPool_) {
+            for(const auto& r: resultPool_) {
                 if (r->root < nTerminals) {
                     roots.insert(r->root);
                     tAdded++;
@@ -244,7 +244,7 @@ unordered_set<node_id> steiner::ShortestPath::selectRoots(steiner::Graph &g, nod
     } else {
         int ntAdded = 0;
         if (!resultPool_.empty()) {
-            for(auto r: resultPool_) {
+            for(const auto& r: resultPool_) {
                 if (r->root >= numTerminalRoots) {
                     if (g.getNodes().count(r->root) > 0) {
                         roots.insert(r->root);

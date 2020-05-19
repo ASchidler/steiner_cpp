@@ -38,7 +38,7 @@ namespace steiner {
         static node_id bestRoot;
         static cost_id bestResult;
         void resetPool(node_id nTerminals);
-        void addToPool(std::shared_ptr<SteinerResult> result);
+        void addToPool(const std::shared_ptr<SteinerResult>& result);
     private:
         cost_id lowestBound_ = MAXCOST;
         node_id poolSize_;

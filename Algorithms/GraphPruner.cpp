@@ -45,9 +45,9 @@ std::shared_ptr<SteinerResult> GraphPruner::approximate(bool unreduce) {
     // TODO: Maybe incorporate non-terminals here?
     auto rt = random() % instance_.getNumTerminals();
     auto result = ShortestPath::calculate(rt, *instance_.getGraph(), instance_.getNumTerminals());
-    result->g->remap(*instance_.getGraph());
 
     if (unreduce) {
+        result->g->remap(*instance_.getGraph());
         reducer_.reset();
         reducer_.unreduce(result.get());
 
@@ -63,6 +63,7 @@ void GraphPruner::reduce() {
 }
 
 void GraphPruner::unreduce(std::shared_ptr<SteinerResult> result) {
+    result->g->remap(*instance_.getGraph());
     reducer_.reset();
     reducer_.unreduce(result.get());
 

@@ -41,24 +41,23 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     }
     std::sort(results, results + numRoots, SteinerResult::cmp);
 
-//    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
-//    pruneAscent(results, numRoots, 20);
-//    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
-//    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-//    for(node_id t=0; t < numRoots && t < 5; t++){
-//        prune(results[t]);
-//    }
-//    cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
+    cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
+    pruneAscent(results, numRoots, 5);
+    cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
+    cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
+    for(node_id t=0; t < numRoots && t < 20; t++){
+        prune(results[t]);
+    }
+    cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
+    instance->getApproximation().recombine(5, instance->getNumTerminals());
+    instance->getApproximation().optimize(*instance->getGraph(), 5, instance->getNumTerminals());
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
         tracks[t] = reduceGraph(results[t], *vors[t], instance, instance->getUpperBound());
         track += tracks[t];
     }
 
-
-//    instance->getApproximation().recombine(10, instance->getNumTerminals());
-//    instance->getApproximation().optimize(*instance->getGraph(), 10, instance->getNumTerminals());
     // NTDK is a separate operation as it invalidates the distances found. I.e. execute all reductions before
     // executing NTDK
     // Cumulative is used, s.t. merged edges are not considered for removal
@@ -251,7 +250,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
 
         // TODO: Make upper limit configurable?
-        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)5);
+        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)15);
         stop = numSelect <= 1;
 
         if (numSelect > 0) {
@@ -292,6 +291,8 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                     auto edgeItA = cResult->g->findEdges();
                     while(edgeItA.hasElement()) {
                         auto e = *edgeItA;
+                        assert(cResult->g->nb[e.u][e.v] == g.nb[e.u][e.v]);
+                        assert(cResult->g->nb[e.v][e.u] == g.nb[e.v][e.u]);
                         cResult->g->nb[e.u][e.v] -= 2 * maxCount - counter[e.u] - counter[e.v];
                         cResult->g->nb[e.v][e.u] -= 2 * maxCount - counter[e.u] - counter[e.v];
                         cResult->cost -= 2 * maxCount - counter[e.u] - counter[e.v];
