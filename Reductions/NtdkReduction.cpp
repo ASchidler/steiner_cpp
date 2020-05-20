@@ -104,6 +104,6 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
     //TODO: This is necessary for recombining solutions. Maybe keep the best bound separate from the actual approximations?
     if (track > 0)
         instance->setApproximationState(SteinerInstance::invalid);
-    enabled = track > 0;
+    enabled = track > 0 || prevCount > 0;
     return track;
 }

@@ -14,11 +14,24 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     if (instance->getNumTerminals() > 500)
         return 0;
 
-    node_id numRoots = 50;
-    if (instance->getGraph()->getNumEdges() > 10000)
+    node_id numRoots = 100;
+    node_id numPrunes = 10;
+    node_id numPruneAscents = 10;
+    if (instance->getGraph()->getNumEdges() > 1000) {
+        numRoots = 50;
+        numPrunes = prewarning_ ? 5 : 1;
+        numPruneAscents = prewarning_ ? 5 : 0;
+    }
+    if (instance->getGraph()->getNumEdges() > 10000) {
         numRoots = 25;
-    if (instance->getGraph()->getNumEdges() > 50000)
+        numPrunes = prewarning_ ? 1 : 0;
+        numPruneAscents = prewarning_ ? 1 : 0;
+    }
+    if (instance->getGraph()->getNumEdges() > 50000) {
         numRoots = 10;
+        numPrunes = 0;
+        numPruneAscents = 0;
+    }
 
     node_id track = 0;
 
@@ -42,22 +55,23 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     std::sort(results, results + numRoots, SteinerResult::cmp);
 
     cout << "Before Prune Ascent " << instance->getApproximation().getLowest() << endl;
-    pruneAscent(results, numRoots, 5);
+    pruneAscent(results, numRoots, numPruneAscents);
     cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
     cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-    for(node_id t=0; t < numRoots && t < 5; t++){
+    for(node_id t=0; t < numRoots && t < numPrunes; t++){
         prune(results[t]);
     }
     cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
-    instance->getApproximation().recombine(5, instance->getNumTerminals());
-    instance->getApproximation().optimize(*instance->getGraph(), 5, instance->getNumTerminals());
+    instance->getApproximation().recombine(instance->getGraph()->getNumEdges() < 10000 ? 20: 5, instance->getNumTerminals());
+
     cout << "After Optimize: " << instance->getApproximation().getLowest() << endl;
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
         tracks[t] = reduceGraph(results[t], *vors[t], instance, instance->getUpperBound());
         track += tracks[t];
     }
+    cout << "LB: " << results[0]->cost << endl;
 
     // NTDK is a separate operation as it invalidates the distances found. I.e. execute all reductions before
     // executing NTDK
@@ -227,12 +241,14 @@ void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
 
     // Now periodically lower the upper bound and apply bound based reduction
     unsigned int cnt = 0;
+    instance->getApproximation().addToPool(p.approximate(true, r->root));
+
     do {
         p.reduce();
 
         //TODO: Make number of roots configurable?
         for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-            instance->getApproximation().addToPool(p.approximate(true));
+            instance->getApproximation().addToPool(p.approximate(true, random() % s.getNumTerminals()));
         }
 
         // TODO: Make number of pruning cycles configurable
@@ -253,13 +269,13 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
 
         // TODO: Make upper limit configurable?
-        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)15);
+        int numSelect = min((node_id)(numSolutions / numRuns), (node_id)10);
         stop = numSelect <= 1;
 
         if (numSelect > 0) {
             Graph g;
             for(int cResult=0; cResult < numSelect; cResult++) {
-                auto cIdx = random() % numSolutions;
+                auto cIdx = random() % min(numSolutions, (node_id) 15);
                 auto edgeIt = results[cIdx]->g->findEdges();
                 while(edgeIt.hasElement()) {
                     auto e = *edgeIt;
@@ -291,7 +307,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
                 //TODO: Make number of roots configurable?
                 for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-                    auto cResult = p.approximate(false);
+                    auto cResult = p.approximate(false, random() % s.getNumTerminals());
                     auto edgeItA = cResult->g->findEdges();
                     while(edgeItA.hasElement()) {
                         auto e = *edgeItA;
@@ -299,7 +315,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                         assert(cResult->g->nb[e.v][e.u] == g.nb[e.v][e.u]);
                         cResult->g->nb[e.u][e.v] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
                         cResult->g->nb[e.v][e.u] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
-                        cResult->cost -= 2 * maxCount - counter[e.u] - counter[e.v];
+                        cResult->cost -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
                         ++edgeItA;
                     }
                     p.unreduce(cResult);

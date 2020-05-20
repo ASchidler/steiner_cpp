@@ -296,7 +296,8 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
                     solutionIndices.push_back(idx);
                 }
             } else {
-                for (int idx = 0; idx < numSolutions; idx++) {
+                solutionIndices.push_back(0);
+                for (int idx = 0; idx < numSolutions-1; idx++) {
                     auto newIdx = random() % resultPool_.size();
                     // Do not avoid duplicates
                     solutionIndices.push_back(newIdx);
@@ -304,12 +305,24 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
             }
 
             // Next build graph from vertices and edges in those solutions
+            node_id maxNode = 0;
+            for (auto s: solutionIndices)
+                maxNode = max(maxNode, resultPool_[s]->g->getMaxNode());
+            cost_id counter[maxNode];
+            cost_id maxCount=0;
+            cost_id mult = 0;
+            for(int cNode=0; cNode < maxNode; cNode++)
+                counter[cNode] = 0;
+
             Graph g;
             for (auto s: solutionIndices) {
                 for (auto n: resultPool_[s]->g->getNodes()) {
                     for (auto &nb: resultPool_[s]->g->nb[n]) {
-                        if (n < nb.first)
+                        if (n < nb.first) {
                             g.addEdge(n, nb.first, nb.second);
+                            maxCount = max(maxCount, ++counter[n]);
+                            maxCount = max(maxCount, ++counter[nb.first]);
+                        }
                     }
                 }
             }
@@ -319,10 +332,29 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
             auto red = Reducer::getMinimalReducer(&s, false);
             red.reduce();
 
+            auto edgeIt = g.findEdges();
+            while(edgeIt.hasElement()) {
+                auto e = *edgeIt;
+                g.nb[e.u][e.v] += mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                g.nb[e.v][e.u] += mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                ++edgeIt;
+            }
+
             // Compute RSP
             // TODO: Randomize r?
             for (auto r=0; r < s.getNumTerminals() && r < 5; r++) {
                 auto result = ShortestPath::calculate(r, g, s.getNumTerminals());
+                ShortestPath::optimizeSolution(g, result, s.getNumTerminals());
+
+                auto edgeItA = result->g->findEdges();
+                while(edgeItA.hasElement()) {
+                    auto e = *edgeItA;
+                    result->g->nb[e.u][e.v] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                    result->g->nb[e.v][e.u] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                    result->cost -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                    ++edgeItA;
+                }
+
                 result->g->remap(g);
                 red.reset();
                 red.unreduce(result.get());
@@ -338,6 +370,8 @@ void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerm
         LocalOptimization::vertexInsertion(&g, *r, nTerminals);
         LocalOptimization::pathExchange(g, *r, nTerminals, true);
         LocalOptimization::keyVertexDeletion(g, *r, nTerminals);
+
+        optimizeSolution(g, r, nTerminals);
         // Remove degree 1 non-terminals
         bool changed = true;
         while (changed) {
@@ -357,5 +391,25 @@ void steiner::ShortestPath::optimize(Graph& g, node_id nSolutions, node_id nTerm
         // Maintain ordering
         if (i > 0 && r->cost < resultPool_[i - 1]->cost)
             swap(resultPool_[i], resultPool_[i-1]);
+    }
+}
+
+void steiner::ShortestPath::optimizeSolution(Graph& g, const std::shared_ptr<SteinerResult>& r, node_id nTerminals) {
+    LocalOptimization::vertexInsertion(&g, *r, nTerminals);
+    LocalOptimization::pathExchange(g, *r, nTerminals, true);
+    LocalOptimization::keyVertexDeletion(g, *r, nTerminals);
+    // Remove degree 1 non-terminals
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        auto nit = r->g->getNodes().begin();
+        while(nit != r->g->getNodes().end()) {
+            if (r->g->nb[*nit].size() == 1 && *nit != r->root && *nit >= nTerminals) {
+                nit = r->g->removeNode(nit);
+                changed = true;
+            }
+            else
+                ++nit;
+        }
     }
 }

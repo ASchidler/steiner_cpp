@@ -47,8 +47,8 @@ namespace steiner {
                 approximation_.resetPool(nTerminals);
                 // TODO: Find a good number of roots...
                 approximation_.findAndAdd(*g_, nTerminals, 30);
-                approximation_.recombine(10, nTerminals);
                 approximation_.optimize(*g_, 10, nTerminals);
+                approximation_.recombine(10, nTerminals);
 
                 approximationState_ = exact;
             }
@@ -151,7 +151,7 @@ namespace steiner {
         ValueState distanceState_ = invalid;
         ValueState steinerDistanceState_ = invalid;
         ValueState approximationState_ = invalid;
-        ShortestPath approximation_ = ShortestPath(10);
+        ShortestPath approximation_ = ShortestPath(20);
 
         void clearCache() {
             if (closest_terminals_ != nullptr) {
