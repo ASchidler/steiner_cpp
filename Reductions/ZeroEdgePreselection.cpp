@@ -17,6 +17,7 @@ node_id steiner::ZeroEdgePreselection::reduce(node_id currCount, node_id prevCou
                 it = instance->contractEdge(*it, n.first, &contracted);
                 track++;
                 changed = true;
+                break;
             }
         }
         if (! changed)

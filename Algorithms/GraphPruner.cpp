@@ -62,7 +62,7 @@ void GraphPruner::reduce() {
     reducer_.reduce();
 }
 
-void GraphPruner::unreduce(std::shared_ptr<SteinerResult> result) {
+void GraphPruner::unreduce(const std::shared_ptr<SteinerResult>& result) {
     result->g->remap(*instance_.getGraph());
     reducer_.reset();
     reducer_.unreduce(result.get());

@@ -60,6 +60,8 @@ namespace steiner {
         }
 
         void setDistanceState(ValueState s) {
+            if (distanceState_ == invalid)
+                return;
             if (distanceState_ == exact)
                 distanceState_ = s;
             else if ((distanceState_ == lower && s == higher) || (distanceState_ == higher && s == lower))
@@ -77,6 +79,8 @@ namespace steiner {
         }
 
         void setSteinerDistanceState(ValueState s) {
+            if (steinerDistanceState_ == invalid)
+                return;
             if (steinerDistanceState_ == exact)
                 steinerDistanceState_ = s;
             else if ((steinerDistanceState_ == lower && s == higher) || (steinerDistanceState_ == higher && s == lower))
@@ -94,6 +98,8 @@ namespace steiner {
         }
 
         void setApproximationState(ValueState s) {
+            if (approximationState_ == invalid)
+                return;
             if (approximationState_ == exact)
                 approximationState_ = s;
             if ((approximationState_ == lower && s == higher) || (approximationState_ == higher && s == lower))
