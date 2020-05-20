@@ -312,6 +312,7 @@ Graph *Graph::mst() {
 
     // Init
     minEdgeVal[*nodes_.begin()] = 0;
+    result->addUnmappedNode(*nodes_.begin());
 
     for(int i=0; i < getNumNodes(); i++) {
         val = MAXCOST;

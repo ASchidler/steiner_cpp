@@ -24,6 +24,7 @@ namespace  steiner {
     private:
         node_id reduceGraph(SteinerResult* r, VoronoiDiagram& vor, SteinerInstance* inst, cost_id bound);
         void prune(steiner::SteinerResult *r);
+        bool prewarning_ = false;
 
         node_id bestRoots[2] = {0, 1};
 

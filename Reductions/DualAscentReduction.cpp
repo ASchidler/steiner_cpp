@@ -45,13 +45,14 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
     pruneAscent(results, numRoots, 5);
     cout << "After Prune Ascent " << instance->getApproximation().getLowest() << endl;
     cout << "Before Prune: " << instance->getApproximation().getLowest() << endl;
-    for(node_id t=0; t < numRoots && t < 20; t++){
+    for(node_id t=0; t < numRoots && t < 5; t++){
         prune(results[t]);
     }
     cout << "After Prune: " << instance->getApproximation().getLowest() << endl;
 
     instance->getApproximation().recombine(5, instance->getNumTerminals());
     instance->getApproximation().optimize(*instance->getGraph(), 5, instance->getNumTerminals());
+    cout << "After Optimize: " << instance->getApproximation().getLowest() << endl;
     node_id tracks[numRoots];
     for(node_id t=0; t < numRoots; t++) {
         tracks[t] = reduceGraph(results[t], *vors[t], instance, instance->getUpperBound());
@@ -78,7 +79,8 @@ node_id steiner::DualAscentReduction::reduce(node_id currCount, node_id prevCoun
         instance->setDistanceState(SteinerInstance::invalid);
         instance->setSteinerDistanceState(SteinerInstance::invalid);
     }
-    enabled = track > 0;
+    enabled = track > 0 || !prewarning_;
+    prewarning_ = track == 0;
     return track;
 }
 
@@ -245,6 +247,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
     for(int cRun=1; cRun <= numRuns && !stop; cRun++) {
         cost_id counter[instance->getGraph()->getMaxNode()];
         cost_id maxCount=0;
+        cost_id mult = 10;
         for(int cNode=0; cNode < instance->getGraph()->getMaxNode(); cNode++)
             counter[cNode] = 0;
 
@@ -256,11 +259,12 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
         if (numSelect > 0) {
             Graph g;
             for(int cResult=0; cResult < numSelect; cResult++) {
-                auto edgeIt = results[random() % numSolutions]->g->findEdges();
+                auto cIdx = random() % numSolutions;
+                auto edgeIt = results[cIdx]->g->findEdges();
                 while(edgeIt.hasElement()) {
                     auto e = *edgeIt;
                     // findEdges returns undirected edges, so look in both directions
-                    if (results[cResult]->g->nb[e.u][e.v] == 0 || results[cResult]->g->nb[e.v][e.u] == 0) {
+                    if (results[cIdx]->g->nb[e.u][e.v] == 0 || results[cIdx]->g->nb[e.v][e.u] == 0) {
                         g.addEdge(e.u, e.v, instance->getGraph()->nb[e.u][e.v]);
                         maxCount = max(maxCount, ++counter[e.u]);
                         maxCount = max(maxCount, ++counter[e.v]);
@@ -280,8 +284,8 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                 auto edgeIt = g.findEdges();
                 while(edgeIt.hasElement()) {
                     auto e = *edgeIt;
-                    g.nb[e.u][e.v] += 2 * maxCount - counter[e.u] - counter[e.v];
-                    g.nb[e.v][e.u] += 2 * maxCount - counter[e.u] - counter[e.v];
+                    g.nb[e.u][e.v] += mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                    g.nb[e.v][e.u] += mult * (2 * maxCount - counter[e.u] - counter[e.v]);
                     ++edgeIt;
                 }
 
@@ -293,8 +297,8 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                         auto e = *edgeItA;
                         assert(cResult->g->nb[e.u][e.v] == g.nb[e.u][e.v]);
                         assert(cResult->g->nb[e.v][e.u] == g.nb[e.v][e.u]);
-                        cResult->g->nb[e.u][e.v] -= 2 * maxCount - counter[e.u] - counter[e.v];
-                        cResult->g->nb[e.v][e.u] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                        cResult->g->nb[e.u][e.v] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                        cResult->g->nb[e.v][e.u] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
                         cResult->cost -= 2 * maxCount - counter[e.u] - counter[e.v];
                         ++edgeItA;
                     }
@@ -305,8 +309,8 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
                 auto edgeIt2 = g.findEdges();
                 while(edgeIt2.hasElement()) {
                     auto e = *edgeIt2;
-                    g.nb[e.u][e.v] -= 2 * maxCount - counter[e.u] - counter[e.v];
-                    g.nb[e.v][e.u] -= 2 * maxCount - counter[e.u] - counter[e.v];
+                    g.nb[e.u][e.v] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
+                    g.nb[e.v][e.u] -= mult * (2 * maxCount - counter[e.u] - counter[e.v]);
                     ++edgeIt2;
                 }
 

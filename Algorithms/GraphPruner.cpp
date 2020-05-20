@@ -18,7 +18,7 @@ bool GraphPruner::prune() {
         cVal++;
     }
     std::sort(values, cVal, std::greater<>());
-    cost_id cBound = values[g->getNumNodes() / 10];
+    cost_id cBound = values[g->getNumNodes() / 7];
 
     // Remove the nodes.
     for(auto it = g->getNodes().begin(); it != g->getNodes().end(); ) {

@@ -19,6 +19,7 @@ node_id steiner::LongEdgeReduction::reduce(node_id currCount, node_id prevCount)
         auto sl = instance->getSteinerDistance(e.u, e.v);
         if (e.cost > sl) {
             it = instance->removeEdge(it);
+            track++;
         }
         else {
             // SL is unrestricted, so we do not know if it holds for equality

@@ -168,8 +168,9 @@ void SteinerInstance::calculateSteinerDistance() {
     // Note that the number of terminals never goes up, so the array may be too large, but why care?
     if (terminalSteinerDistances_ == nullptr) {
         terminalSteinerDistances_ = new cost_id*[nTerminals];
-        for(int i=0; i < nTerminals; i++)
+        for(int i=0; i < nTerminals; i++) {
             terminalSteinerDistances_[i] = new cost_id[nTerminals];
+        }
         terminalSteinerDistanceInit_ = nTerminals;
     }
     steinerDistanceState_ = exact;
@@ -184,9 +185,7 @@ void SteinerInstance::calculateSteinerDistance() {
 
     // Find shortest path in mst
     auto mst = g.mst();
-    bool found[nTerminals];
     cost_id dist[nTerminals];
-    found[0] = true;
     for (node_id t=0; t < nTerminals; t++) {
         // Find maximum edge on shortest path to other terminals
         //TODO: Optimize
