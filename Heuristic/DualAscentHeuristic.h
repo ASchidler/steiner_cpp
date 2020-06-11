@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/23/20.
+// Created on 1/23/20.
 //
 
 #ifndef STEINER_DUALASCENTHEURISTIC_H
@@ -13,10 +13,11 @@ using namespace steiner;
 using namespace boost;
 
 namespace steiner {
-    class DualAscentHeuristic : public SteinerHeuristic {
+    template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
+    class DualAscentHeuristic : public SteinerHeuristic<T> {
     public:
-        DualAscentHeuristic(SteinerInstance* instance, node_id root, node_id nTerminals, node_id numNodes)
-        : instance_(instance), root_(root), nTerminals_(nTerminals), nNodes_(numNodes) {
+        DualAscentHeuristic(SteinerInstance* instance, node_id root, node_id nTerminals, node_id numNodes, T maxTerminal)
+        : instance_(instance), root_(root), nTerminals_(nTerminals), nNodes_(numNodes), maxTerminal_(maxTerminal) {
 
         }
 
@@ -26,7 +27,7 @@ namespace steiner {
             }
         }
 
-        cost_id calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub);
+        cost_id calculate(node_id n, const T label, const cost_id ub);
 
     private:
         SteinerInstance* instance_;
@@ -34,8 +35,9 @@ namespace steiner {
         unordered_map<dynamic_bitset<>, cost_id*> cache_;
         node_id nTerminals_;
         node_id nNodes_;
+        T maxTerminal_;
 
-        cost_id *precalculate(const dynamic_bitset<> *label, const cost_id ub);
+        cost_id *precalculate(const T label, const cost_id ub);
     };
 }
 

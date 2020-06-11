@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/27/20.
+// Created on 1/27/20.
 //
 
 #ifndef STEINER_REDUCER_H

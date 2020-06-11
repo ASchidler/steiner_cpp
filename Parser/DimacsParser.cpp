@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/23/20.
+// Created on 1/23/20.
 //
 
 #include "DimacsParser.h"

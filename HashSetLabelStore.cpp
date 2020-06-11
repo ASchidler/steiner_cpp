@@ -1,52 +1,49 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #include "HashSetLabelStore.h"
 
-void steiner::HashSetLabelStore::addLabel(node_id node, const dynamic_bitset<>* newLabel) {
+template <typename T>
+void steiner::HashSetLabelStore<T>::addLabel(node_id node, const T newLabel) {
     this->labels_[node].emplace(*newLabel);
 }
 
-HashSetLabelIterator* steiner::HashSetLabelStore::findLabels(node_id node, const dynamic_bitset<>* target) {
-    return new HashSetLabelIterator(labels_[node].begin(), labels_[node].end(), target);
+template <typename T>
+HashSetLabelIterator<T>* steiner::HashSetLabelStore<T>::findLabels(node_id node, const T target) {
+    return new HashSetLabelIterator<T>(labels_[node].begin(), labels_[node].end(), target);
 }
 
 // TODO: Create labels centrally and then just link to them? Would that be feasible... (how to identify them...)
 // TODO: Create datastructures that are cache aware for iterating through the values...
-
-const dynamic_bitset<>& steiner::HashSetLabelIterator::operator*() {
+template <typename T>
+T steiner::HashSetLabelIterator<T>::operator*() {
     return *pos;
 }
 
-dynamic_bitset<>* HashSetLabelIterator::operator->() {
-    auto* ptr = const_cast<dynamic_bitset<> *>(&(*pos));
-    return ptr;
+template <typename T>
+T HashSetLabelIterator<T>::operator->() {
+    return *pos;
 }
 
-LabelIterator& steiner::HashSetLabelIterator::operator++() {
+template <typename T>
+LabelIterator<T>& steiner::HashSetLabelIterator<T>::operator++() {
     pos++;
     findNext();
     return *this;
 }
 // TODO: Change everything possible to references and use const where possible
 // TODO: Store a pointer to the costs, so we can immediately deliver the costs?
-void HashSetLabelIterator::findNext() {
+template <typename T>
+void HashSetLabelIterator<T>::findNext() {
     while(pos != end) {
-        bool disjoint = true;
-        for (size_t i = 0; i < target->num_blocks(); ++i) {
-            if ((target->m_bits[i] & pos->m_bits[i]) > 0) {
-                disjoint = false;
-                break;
-            }
-        }
-
-        if (disjoint)
+        if ((target & pos) == 0)
             break;
         pos++;
     }
 }
 
-bool HashSetLabelIterator::hasNext() {
+template <typename T>
+bool HashSetLabelIterator<T>::hasNext() {
     return pos != end;
 }

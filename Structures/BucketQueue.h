@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 2/5/20.
+// Created on 2/5/20.
 //
 
 #ifndef STEINER_BUCKETQUEUE_H

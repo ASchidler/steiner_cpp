@@ -1,17 +1,18 @@
 //
-// Created by aschidler on 1/23/20.
+// Created on 1/23/20.
 //
 
 #include "MstHeuristic.h"
 
 using namespace steiner;
 
-cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub) {
+template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
+cost_id MstHeuristic<T, T2>::calculate(node_id n, const T label, const cost_id ub) {
     //Special case where only root left
-    if (label->all())
+    if (label == maxTerminal_)
         return instance_->getGraph()->getDistances()[root_][n];
 
-    auto result = cache_.find(*label);
+    auto result = cache_.find(label);
 
     cost_id cost = 0;
     if (result != cache_.end())
@@ -23,7 +24,9 @@ cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label, const 
     // two closest distances between n and terminals outside the current sub-solution
     auto closest = (NodeWithCost*) instance_->getClosestTerminals(n);
     for(int j=0; j < 2 ;) {
-        if(closest->node == root_ || !label->test(closest->node)) {
+        T test = 1;
+        test <<= closest->node;
+        if(closest->node == root_ || (label & test) == 0) {
             cost += closest->cost;
             j++;
         }
@@ -33,14 +36,17 @@ cost_id MstHeuristic::calculate(node_id n, const dynamic_bitset<> *label, const 
     return cost / 2;
 }
 
-cost_id MstHeuristic::calcMst(const dynamic_bitset<> *label) {
+template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
+cost_id MstHeuristic<T, T2>::calcMst(const T label) {
     // Find terminals outside sub-solution
     auto ts = std::vector<node_id>();
     ts.push_back(root_);
+    T test = 1;
     for (node_id t=0; t < nTerminals_; t++) {
-        if(!label->test(t)) {
+        if((label & test) == 0) {
             ts.push_back(t);
         }
+        test <<= 1;
     }
 
     // Calculate mst of distance graph
@@ -80,7 +86,7 @@ cost_id MstHeuristic::calcMst(const dynamic_bitset<> *label) {
         }
     }
 
-    cache_.insert(pair<dynamic_bitset<>, cost_id>(*label, sumEdges));
+    cache_.insert(pair<dynamic_bitset<>, cost_id>(label, sumEdges));
 
     return sumEdges;
 }

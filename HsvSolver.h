@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #ifndef STEINER_HSVSOLVER_H
@@ -23,6 +23,7 @@ using namespace std;
 
 // TODO: Since all bitsets have the same size, can't we do this more statically?
 namespace steiner {
+    template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
     class HsvSolver {
     public:
         HsvSolver(SteinerInstance *instance, node_id dualAscentLimit);
@@ -37,21 +38,21 @@ namespace steiner {
 
     private:
         SteinerInstance *instance_;
-        LabelStore* store_;
+        LabelStore<T>* store_;
         node_id root_;
         node_id nTerminals_;
         node_id dualAscentLimit_;
 
         struct QueueEntry {
-            QueueEntry(cost_id cost, cost_id originalCost, node_id node, dynamic_bitset<> label) : cost(cost), node(node),
-                                                                                       label(std::move(label)), originalCost(originalCost) {
+            QueueEntry(cost_id cost, cost_id originalCost, node_id node, T label) : cost(cost), node(node),
+                                                                                       label(label), originalCost(originalCost) {
 
             }
 
             cost_id cost;
             cost_id originalCost;
             node_id node;
-            dynamic_bitset<> label;
+            T label;
             bool operator<(const QueueEntry& p2) const
             {
                 return cost > p2.cost || (cost == p2.cost &&
@@ -72,7 +73,7 @@ namespace steiner {
 
         union Predecessor {
             node_id node;
-            const dynamic_bitset<> *label;
+            const T label;
         };
 
         struct CostInfo {
@@ -85,10 +86,10 @@ namespace steiner {
         };
 
         struct PruneBoundEntry {
-            PruneBoundEntry(cost_id pcost, dynamic_bitset<> plabel) : cost(pcost), label(std::move(plabel)) {
+            PruneBoundEntry(cost_id pcost, T plabel) : cost(pcost), label(plabel) {
             }
             cost_id cost;
-            dynamic_bitset<> label;
+            T label;
         };
 
         struct PruneDistEntry {
@@ -99,22 +100,23 @@ namespace steiner {
             node_id terminal;
         };
 
-        unordered_map<dynamic_bitset<>, CostInfo>* costs_;
-        unordered_map<dynamic_bitset<>, PruneBoundEntry> pruneBoundCache;
-        unordered_map<dynamic_bitset<>, PruneDistEntry> pruneDistCache;
-        SteinerHeuristic* heuristic_;
+        unordered_map<T, CostInfo>* costs_;
+        unordered_map<T, PruneBoundEntry> pruneBoundCache;
+        unordered_map<T, PruneDistEntry> pruneDistCache;
+        SteinerHeuristic<T>* heuristic_;
+        T maxTerminal_;
 
-        inline void process_neighbors(node_id n, const dynamic_bitset<> *label, cost_id cost);
-        inline void process_labels(node_id n, const dynamic_bitset<> *label, cost_id cost);
+        inline void process_neighbors(node_id n, const T label, cost_id cost);
+        inline void process_labels(node_id n, const T label, cost_id cost);
 
-        bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label);
-        bool prune(node_id n, cost_id cost, const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<>* combined);
-        inline void prune_check_bound(node_id n, cost_id cost, const dynamic_bitset<>* label);
-        inline unordered_map<dynamic_bitset<>, PruneDistEntry>::iterator prune_compute_dist(const dynamic_bitset<>* label);
-        inline cost_id prune_combine(const dynamic_bitset<>* label1, const dynamic_bitset<>* label2, dynamic_bitset<> *combined);
+        bool prune(node_id n, cost_id cost, const T label);
+        bool prune(node_id n, cost_id cost, const T label1, const T label2, T combined);
+        inline void prune_check_bound(node_id n, cost_id cost, const T label);
+        inline typename unordered_map<T, PruneDistEntry>::iterator prune_compute_dist(const T label);
+        inline cost_id prune_combine(const T label1, const T label2, T combined);
 
         SteinerResult* backTrack();
-        void backTrackSub(node_id n, const dynamic_bitset<>* label, SteinerResult* result);
+        void backTrackSub(node_id n, const T label, SteinerResult* result);
     };
 }
 

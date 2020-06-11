@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/23/20.
+// Created on 1/23/20.
 //
 
 #ifndef STEINER_LABELITERATOR_H
@@ -10,11 +10,12 @@
 using namespace boost;
 
 namespace steiner {
+    template <typename T>
     class LabelIterator {
     public:
         virtual ~LabelIterator() {}
-        virtual const dynamic_bitset<> &operator*() = 0;
-        virtual dynamic_bitset<> *operator->() = 0;
+        virtual const T operator*() = 0;
+        virtual T *operator->() = 0;
         virtual LabelIterator &operator++() = 0;
         virtual bool hasNext() = 0;
         //virtual const ConstLabelIterator operator++(int) = 0;

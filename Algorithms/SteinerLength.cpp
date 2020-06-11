@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/28/20.
+// Created on 1/28/20.
 //
 
 #include "SteinerLength.h"

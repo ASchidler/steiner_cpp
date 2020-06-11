@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #include "Graph.h"
@@ -124,8 +124,23 @@ int main(int argc, char* argv[]) {
     }
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
-    auto solver = HsvSolver(s, dualAscentLimit);
-    auto tree = solver.solve();
+    SteinerResult* tree = nullptr;
+    if (s->getNumTerminals() < 16) {
+        auto solver = HsvSolver<uint16_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else if (s->getNumTerminals() < 32) {
+        auto solver = HsvSolver<uint32_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    }  else if (s->getNumTerminals() < 64) {
+        auto solver = HsvSolver<uint64_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else if (s->getNumTerminals() < 128) {
+        auto solver = HsvSolver<uint128_type>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else {
+        cout << "Too many terminals" << endl;
+        exit(2);
+    }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
     cout << duration.count() / 1000000.0 << endl;

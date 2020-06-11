@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #include "Graph.h"

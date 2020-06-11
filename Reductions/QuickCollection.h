@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/30/20.
+// Created on 1/30/20.
 //
 
 #ifndef STEINER_QUICKCOLLECTION_H

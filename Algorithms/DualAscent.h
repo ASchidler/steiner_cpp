@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/24/20.
+// Created on 1/24/20.
 //
 
 #ifndef STEINER_DUALASCENT_H
@@ -8,6 +8,8 @@
 #include "../Graph.h"
 #include "../SteinerInstance.h"
 #include "../Steiner.h"
+#include <boost/dynamic_bitset.hpp>
+#include "../Structures/Queue.h"
 
 namespace steiner {
     struct DualAscentEdge {
@@ -20,11 +22,15 @@ namespace steiner {
 
     class DualAscent {
     public:
+        template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
+        static SteinerResult* calculate(Graph* g, node_id root, T ts, node_id nTerminals, node_id nNodes);
         static SteinerResult* calculate(Graph* g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes);
         inline static cost_id findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals);
         static bool hasRun;
         static node_id bestRoot;
         static cost_id bestResult;
+
+        static SteinerResult* calculate(Graph *g, node_id root, Queue<NodeWithCost>& q,  bool* active, bool** cut, vector<DualAscentEdge>* edges, node_id nTerminals);
     };
 }
 

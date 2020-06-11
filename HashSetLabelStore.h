@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #ifndef STEINER_HASHSETLABELSTORE_H
@@ -15,31 +15,33 @@ using namespace steiner;
 
 
 namespace steiner {
-    class HashSetLabelIterator : public LabelIterator {
+    template <typename T>
+    class HashSetLabelIterator : public LabelIterator<T> {
     public:
         explicit HashSetLabelIterator(unordered_set<dynamic_bitset<>>::iterator start,
-                unordered_set<dynamic_bitset<>>::iterator end, const dynamic_bitset<>* target) :
+                typename unordered_set<T>::iterator end, const T target) :
                 pos(start), end(end), target(target) {
             findNext();
         }
-        const dynamic_bitset<>& operator*() override;
-        dynamic_bitset<>* operator->() override;
-        LabelIterator& operator++() override;
+        T operator*() override;
+        T operator->() override;
+        LabelIterator<T>& operator++() override;
         bool hasNext() override;
     private:
-        unordered_set<dynamic_bitset<>>::iterator pos;
-        unordered_set<dynamic_bitset<>>::iterator end;
-        const dynamic_bitset<>* target;
+        typename unordered_set<T>::iterator pos;
+        typename unordered_set<T>::iterator end;
+        const T target;
         void findNext();
     };
 
-    class HashSetLabelStore : public LabelStore {
+    template <typename T>
+    class HashSetLabelStore : public LabelStore<T> {
     public:
-        HashSetLabelStore(node_id width, node_id nNodes) : LabelStore(width, nNodes) {
-            this->labels_ = new unordered_set<dynamic_bitset<>>[nNodes];
+        HashSetLabelStore(node_id width, node_id nNodes) : LabelStore<T>(width, nNodes) {
+            this->labels_ = new unordered_set<T>[nNodes];
 
             for (size_t i = 0; i < nNodes; i++) {
-                this->labels_[i] = unordered_set<dynamic_bitset<>>();
+                this->labels_[i] = unordered_set<T>();
             }
         }
 
@@ -47,9 +49,9 @@ namespace steiner {
             delete[] this->labels_;
         }
 
-        void addLabel(node_id node, const dynamic_bitset<> *newLabel) override;
+        void addLabel(node_id node, const T newLabel) override;
 
-        HashSetLabelIterator* findLabels(node_id node, const dynamic_bitset<> *target) override;
+        HashSetLabelIterator<T>* findLabels(node_id node, const T target) override;
 
     //private:
         unordered_set<dynamic_bitset<>> *labels_;
