@@ -20,16 +20,6 @@ typedef uint32_t cost_id; // TODO: 32 or 64 bit?
 //#define MAXCOST (__UINT64_C(18446744073709551615))
 #define MAXCOST 4294967295U
 
-//namespace std {
-//    /**
-//     * Allows the use of dynamic bitsets in hashed structures (set, map)
-//     */
-//    template <typename Block, typename Alloc> struct hash<boost::dynamic_bitset<Block, Alloc> > {
-//        size_t operator()(boost::dynamic_bitset<Block, Alloc> const& bs) const {
-//            return boost::hash_value(bs.m_bits);
-//        }
-//    };
-//};
 class NodeIdHash
 {
     public:

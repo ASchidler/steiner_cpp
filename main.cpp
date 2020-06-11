@@ -25,6 +25,7 @@
 #include "Reductions/QuickCollection.h"
 #include <chrono>
 #include "Algorithms/LocalOptimization.h"
+#include "dynamic/HsvSolver.h"
 
 using namespace steiner;
 using namespace chrono;
@@ -138,8 +139,8 @@ int main(int argc, char* argv[]) {
         auto solver = HsvSolver<uint128_type>(s, dualAscentLimit);
         tree = solver.solve();
     } else {
-        cout << "Too many terminals" << endl;
-        exit(2);
+        auto solver = DynamicHsvSolver(s, dualAscentLimit);
+        tree = solver.solve();
     }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
