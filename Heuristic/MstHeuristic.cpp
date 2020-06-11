@@ -6,8 +6,8 @@
 
 using namespace steiner;
 
-template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
-cost_id MstHeuristic<T, T2>::calculate(node_id n, const T label, const cost_id ub) {
+template <typename T>
+cost_id MstHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {
     //Special case where only root left
     if (label == maxTerminal_)
         return instance_->getGraph()->getDistances()[root_][n];
@@ -36,8 +36,8 @@ cost_id MstHeuristic<T, T2>::calculate(node_id n, const T label, const cost_id u
     return cost / 2;
 }
 
-template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
-cost_id MstHeuristic<T, T2>::calcMst(const T label) {
+template <typename T>
+cost_id MstHeuristic<T>::calcMst(const T label) {
     // Find terminals outside sub-solution
     auto ts = std::vector<node_id>();
     ts.push_back(root_);
@@ -86,7 +86,12 @@ cost_id MstHeuristic<T, T2>::calcMst(const T label) {
         }
     }
 
-    cache_.insert(pair<dynamic_bitset<>, cost_id>(label, sumEdges));
+    cache_.insert(pair<T, cost_id>(label, sumEdges));
 
     return sumEdges;
 }
+
+template class steiner::MstHeuristic<uint16_t>;
+template class steiner::MstHeuristic<uint32_t>;
+template class steiner::MstHeuristic<uint64_t>;
+template class steiner::MstHeuristic<uint128_type>;

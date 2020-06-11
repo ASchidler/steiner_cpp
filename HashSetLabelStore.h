@@ -18,13 +18,13 @@ namespace steiner {
     template <typename T>
     class HashSetLabelIterator : public LabelIterator<T> {
     public:
-        explicit HashSetLabelIterator(unordered_set<dynamic_bitset<>>::iterator start,
+        explicit HashSetLabelIterator(typename unordered_set<T>::iterator start,
                 typename unordered_set<T>::iterator end, const T target) :
                 pos(start), end(end), target(target) {
             findNext();
         }
-        T operator*() override;
-        T operator->() override;
+        const T operator*() override;
+        const T operator->() override;
         LabelIterator<T>& operator++() override;
         bool hasNext() override;
     private:
@@ -54,7 +54,7 @@ namespace steiner {
         HashSetLabelIterator<T>* findLabels(node_id node, const T target) override;
 
     //private:
-        unordered_set<dynamic_bitset<>> *labels_;
+        unordered_set<T> *labels_;
     };
 }
 

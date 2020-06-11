@@ -13,7 +13,7 @@ using namespace steiner;
 using namespace boost;
 
 namespace steiner {
-    template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
+    template <typename T>
     class DualAscentHeuristic : public SteinerHeuristic<T> {
     public:
         DualAscentHeuristic(SteinerInstance* instance, node_id root, node_id nTerminals, node_id numNodes, T maxTerminal)
@@ -32,7 +32,7 @@ namespace steiner {
     private:
         SteinerInstance* instance_;
         node_id root_;
-        unordered_map<dynamic_bitset<>, cost_id*> cache_;
+        unordered_map<T, cost_id*> cache_;
         node_id nTerminals_;
         node_id nNodes_;
         T maxTerminal_;

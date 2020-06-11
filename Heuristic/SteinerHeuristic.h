@@ -8,7 +8,7 @@
 using namespace boost;
 
 namespace steiner {
-    template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
+    template <typename T>
     class SteinerHeuristic {
     public:
         virtual ~SteinerHeuristic() {}

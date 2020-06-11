@@ -22,8 +22,8 @@ namespace steiner {
 
     class DualAscent {
     public:
-        template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
-        static SteinerResult* calculate(Graph* g, node_id root, T ts, node_id nTerminals, node_id nNodes);
+        template <typename T>
+        static SteinerResult* calculateInt(Graph* g, node_id root, T ts, node_id nTerminals, node_id nNodes);
         static SteinerResult* calculate(Graph* g, node_id root, const dynamic_bitset<>* ts, node_id nTerminals, node_id nNodes);
         inline static cost_id findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals);
         static bool hasRun;

@@ -7,8 +7,8 @@
 
 using namespace steiner;
 
-template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
-cost_id DualAscentHeuristic<T, T2>::calculate(node_id n, const T label, const cost_id ub) {
+template <typename T>
+cost_id DualAscentHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {
     //Special case where only on terminal left...
     if (label == maxTerminal_)
         return instance_->getGraph()->getDistances()[root_][n];
@@ -25,11 +25,11 @@ cost_id DualAscentHeuristic<T, T2>::calculate(node_id n, const T label, const co
     return values[n];
 }
 
-template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
-cost_id* DualAscentHeuristic<T, T2>::precalculate(const T label, const cost_id ub) {
+template <typename T>
+cost_id* DualAscentHeuristic<T>::precalculate(const T label, const cost_id ub) {
     //TODO: The test and choice for method is missing, i.e. implement multiple methods...
 
-    auto result = DualAscent::calculate<T>(instance_->getGraph(), root_, label, nTerminals_+1, nNodes_);
+    auto result = DualAscent::calculateInt<T>(instance_->getGraph(), root_, label, nTerminals_+1, nNodes_);
     result->g->findDistances(root_, ub);
     auto nodeBounds = new cost_id[instance_->getGraph()->getMaxNode()];
     for(auto i : instance_->getGraph()->getNodes()) {
@@ -40,3 +40,8 @@ cost_id* DualAscentHeuristic<T, T2>::precalculate(const T label, const cost_id u
 
     return nodeBounds;
 }
+
+template class steiner::DualAscentHeuristic<uint16_t>;
+template class steiner::DualAscentHeuristic<uint32_t>;
+template class steiner::DualAscentHeuristic<uint64_t>;
+template class steiner::DualAscentHeuristic<uint128_type>;

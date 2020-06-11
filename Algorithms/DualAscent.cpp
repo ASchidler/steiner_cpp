@@ -15,6 +15,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
     bool active[nTerminals];
     bool* cut[nTerminals];
     vector<DualAscentEdge> edges[nTerminals];
+    auto dg = new Graph(*g, false);
 
     // Initialize active components and queue
     for(node_id t=0; t < nTerminals; t++) {
@@ -22,12 +23,12 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
         if (ts == nullptr || t == root || !ts->test(t)) {
             active[t] = true;
             if (t != root) {
-                q.emplace(g->nb[t].size(), t, g->nb[t].size());
+                q.emplace(dg->nb[t].size(), t, dg->nb[t].size());
                 cut[t] = new bool[nNodes];
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
-                for(auto& nb: g->nb[t]) {
-                    edges[t].emplace_back(nb.first, t, &(g->nb[nb.first][t]));
+                for(auto& nb: dg->nb[t]) {
+                    edges[t].emplace_back(nb.first, t, &(dg->nb[nb.first][t]));
                 }
 
                 cut[t][t] = true;
@@ -37,7 +38,7 @@ SteinerResult* steiner::DualAscent::calculate(Graph *g, node_id root, const dyna
         }
     }
 
-    return calculate(g, root, q, active, cut, edges, nTerminals);
+    return calculate(dg, root, q, active, cut, edges, nTerminals);
 }
 
 cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscentEdge>& edges, bool* cut, node_id nTerminals) {
@@ -98,25 +99,26 @@ cost_id DualAscent::findCut(Graph& dg, node_id n, bool* active, vector<DualAscen
     return minCost;
 }
 
-template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2>
-SteinerResult *DualAscent::calculate(Graph *g, node_id root, T ts, node_id nTerminals, node_id nNodes) {
+template <typename T>
+SteinerResult *DualAscent::calculateInt(Graph *g, node_id root, T ts, node_id nTerminals, node_id nNodes) {
     auto q = Queue<NodeWithCost>(g->getOriginalNumEdges());
     bool active[nTerminals];
     bool* cut[nTerminals];
     vector<DualAscentEdge> edges[nTerminals];
+    auto dg = new Graph(*g, false);
 
     T test = 1;
     for(node_id t=0; t < nTerminals; t++) {
         cut[t] = nullptr;
-        if (ts == nullptr || t == root || (t & test) == 0) {
+        if (ts == 0 || t == root || (ts & test) == 0) {
             active[t] = true;
             if (t != root) {
-                q.emplace(g->nb[t].size(), t, g->nb[t].size());
+                q.emplace(dg->nb[t].size(), t, dg->nb[t].size());
                 cut[t] = new bool[nNodes];
                 for(node_id i=0; i < nNodes; i++)
                     cut[t][i] = false;
-                for(auto& nb: g->nb[t]) {
-                    edges[t].emplace_back(nb.first, t, &(g->nb[nb.first][t]));
+                for(auto& nb: dg->nb[t]) {
+                    edges[t].emplace_back(nb.first, t, &(dg->nb[nb.first][t]));
                 }
 
                 cut[t][t] = true;
@@ -127,12 +129,11 @@ SteinerResult *DualAscent::calculate(Graph *g, node_id root, T ts, node_id nTerm
         test <<= 1;
     }
 
-    return calculate(g, root, q, active, cut, edges, nTerminals);
+    return calculate(dg, root, q, active, cut, edges, nTerminals);
 }
 
-SteinerResult *DualAscent::calculate(Graph *g, node_id root, Queue<NodeWithCost> &q, bool *active, bool **cut,
+SteinerResult *DualAscent::calculate(Graph *dg, node_id root, Queue<NodeWithCost> &q, bool *active, bool **cut,
                                      vector<DualAscentEdge>* edges, node_id nTerminals) {
-    auto dg = new Graph(*g, false);
     unsigned int bound = 0;
 
     // run until not active components
@@ -191,3 +192,7 @@ SteinerResult *DualAscent::calculate(Graph *g, node_id root, Queue<NodeWithCost>
     return new SteinerResult(bound, dg, root);
 }
 
+template SteinerResult *DualAscent::calculateInt<uint16_t>(Graph*, node_id, uint16_t, node_id, node_id);
+template SteinerResult *DualAscent::calculateInt<uint32_t>(Graph*, node_id, uint32_t, node_id, node_id);
+template SteinerResult *DualAscent::calculateInt<uint64_t>(Graph*, node_id, uint64_t, node_id, node_id);
+template SteinerResult *DualAscent::calculateInt<uint128_type>(Graph*, node_id, uint128_type, node_id, node_id);

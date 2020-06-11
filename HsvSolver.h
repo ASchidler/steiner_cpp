@@ -23,7 +23,14 @@ using namespace std;
 
 // TODO: Since all bitsets have the same size, can't we do this more statically?
 namespace steiner {
-    template <typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* T2 = nullptr>
+    template<typename T2>
+    union Predecessor {
+        node_id node;
+        T2 label;
+    };
+
+
+    template <typename T>
     class HsvSolver {
     public:
         HsvSolver(SteinerInstance *instance, node_id dualAscentLimit);
@@ -71,17 +78,12 @@ namespace steiner {
 
         Queue<QueueEntry> queue_;
 
-        union Predecessor {
-            node_id node;
-            const T label;
-        };
-
         struct CostInfo {
-            CostInfo(unsigned int cost, Predecessor prev, bool merge) : cost(cost), prev(prev), merge(merge) {
+            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge) : cost(cost), prev(prev), merge(merge) {
             }
             CostInfo() = default;
             cost_id cost = 0;
-            Predecessor prev = Predecessor();
+            Predecessor<T> prev = Predecessor<T>();
             bool merge = false;
         };
 

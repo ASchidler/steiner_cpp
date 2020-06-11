@@ -15,7 +15,7 @@ namespace steiner {
     public:
         virtual ~LabelIterator() {}
         virtual const T operator*() = 0;
-        virtual T *operator->() = 0;
+        virtual const T operator->() = 0;
         virtual LabelIterator &operator++() = 0;
         virtual bool hasNext() = 0;
         //virtual const ConstLabelIterator operator++(int) = 0;
