@@ -75,7 +75,7 @@ namespace steiner {
             nb.resize(nNodes);
         }
 
-        Graph(Graph& g, bool copyMapping) : nb(vector<unordered_map<node_id, cost_id, NodeIdHash>>(g.nb)), nodes_(g.nodes_) {
+        Graph(Graph& g, bool copyMapping) : nb(vector<map<node_id, cost_id, NodeIdHash>>(g.nb)), nodes_(g.nodes_) {
             if (copyMapping) {
                 nodeMap_ = g.nodeMap_;
                 nodeReverseMap_ = g.nodeReverseMap_;
@@ -84,7 +84,7 @@ namespace steiner {
 
         class EdgeIterator {
         public:
-            explicit EdgeIterator(unordered_set<node_id>* nodes, vector<unordered_map<node_id, cost_id, NodeIdHash>>* nb) : nodes_(nodes), nb_(nb){
+            explicit EdgeIterator(set<node_id>* nodes, vector<map<node_id, cost_id, NodeIdHash>>* nb) : nodes_(nodes), nb_(nb){
                 nodeState = nodes->begin();
                 nbState = (*nb)[*nodeState].begin();
                 findNext();
@@ -106,10 +106,10 @@ namespace steiner {
 
         private:
             friend class Graph;
-            unordered_set<node_id>::iterator nodeState;
-            unordered_map<node_id, cost_id, NodeIdHash>::iterator nbState;
-            unordered_set<node_id>* nodes_;
-            vector<unordered_map<node_id, cost_id, NodeIdHash>>* nb_;
+            set<node_id>::iterator nodeState;
+            map<node_id, cost_id, NodeIdHash>::iterator nbState;
+            set<node_id>* nodes_;
+            vector<map<node_id, cost_id, NodeIdHash>>* nb_;
             void findNext() {
                 while(nodeState != nodes_->end()) {
                     while(nbState != (*nb_)[*nodeState].end()) {
@@ -144,11 +144,11 @@ namespace steiner {
             return this->nodes_.size();
         }
 
-        unordered_set<node_id>& getNodes(){
+        set<node_id>& getNodes(){
             return nodes_;
         }
 
-        vector<unordered_map<node_id, cost_id, NodeIdHash>> nb;
+        vector<map<node_id, cost_id, NodeIdHash>> nb;
 
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
@@ -165,13 +165,13 @@ namespace steiner {
 
         bool shrink();
 
-        unordered_set<node_id>::iterator removeNode(node_id u);
-        unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
+        set<node_id>::iterator removeNode(node_id u);
+        set<node_id>::iterator removeNode(set<node_id>::iterator u);
         bool adaptWeight(node_id up, node_id vp, cost_id original, cost_id modified);
         void removeEdge(node_id u, node_id v);
         EdgeIterator removeEdge(EdgeIterator);
         // TODO: This is really ugly (result)
-        unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
         EdgeIterator findEdges() {
             return EdgeIterator(&nodes_, &nb);
         }
@@ -215,7 +215,7 @@ namespace steiner {
         }
 
     private:
-        unordered_set<node_id> nodes_;
+        set<node_id> nodes_;
         unordered_map<node_id, node_id> nodeMap_;
         unordered_map<node_id, node_id> nodeReverseMap_;
         cost_id** distances_ = nullptr;
@@ -245,7 +245,7 @@ namespace steiner {
             return cost < p2.cost;
         }
         static bool cmp(SteinerResult* r1, SteinerResult* r2) {
-            return r1->cost < r2->cost;
+            return r1->cost < r2->cost || (r1->cost == r2->cost && r1->root < r2->root);
         }
     };
 }

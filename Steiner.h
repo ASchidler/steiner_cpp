@@ -27,6 +27,10 @@ class NodeIdHash
     {
         return key;
     }
+
+    bool operator()(const node_id & k1, const node_id & k2) const {
+        return k1 > k2;
+    }
 };
 
 

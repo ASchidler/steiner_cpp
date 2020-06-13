@@ -30,7 +30,7 @@ namespace steiner {
         static node_id bestRoot;
         static cost_id bestResult;
 
-        static SteinerResult* calculate(Graph *g, node_id root, Queue<NodeWithCost>& q,  bool* active, bool** cut, vector<DualAscentEdge>* edges, node_id nTerminals);
+        static SteinerResult* calculate(Graph *dg, node_id root, Queue<NodeWithCost>& q,  bool* active, bool** cut, vector<DualAscentEdge>* edges, node_id nTerminals);
     };
 }
 

@@ -28,12 +28,12 @@ namespace steiner {
         }
 
         bool addEdge(node_id u, node_id v, cost_id c);
-        unordered_set<node_id>::iterator removeNode(node_id u);
-        unordered_set<node_id>::iterator removeNode(unordered_set<node_id>::iterator u);
+        set<node_id>::iterator removeNode(node_id u);
+        set<node_id>::iterator removeNode(set<node_id>::iterator u);
         void removeEdge(node_id u, node_id v);
         Graph::EdgeIterator removeEdge(Graph::EdgeIterator);
-        unordered_set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
-        unordered_set<node_id>::iterator contractEdge(unordered_set<node_id>::iterator target, node_id remove, vector<ContractedEdge>* result);
+        set<node_id>::iterator contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result);
+        set<node_id>::iterator contractEdge(set<node_id>::iterator target, node_id remove, vector<ContractedEdge>* result);
         NodeWithCost* getClosestTerminals(node_id n);
         cost_id getDistance(node_id n1, node_id n2);
         void moveTerminal(node_id t, node_id target);
@@ -62,6 +62,7 @@ namespace steiner {
         void setDistanceState(ValueState s) {
             if (distanceState_ == invalid)
                 return;
+
             if (distanceState_ == exact)
                 distanceState_ = s;
             else if ((distanceState_ == lower && s == higher) || (distanceState_ == higher && s == lower))

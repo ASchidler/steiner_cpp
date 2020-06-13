@@ -161,7 +161,7 @@ SteinerResult *DualAscent::calculate(Graph *dg, node_id root, Queue<NodeWithCost
 
             // Update edge costs and estimate new weight, i.e. number of incoming edges
             for(auto& ce: edges[elem.node]) {
-                if ((*ce.c -= minCost) == 0) { // subtract and check if traversable
+                if ((*ce.c -= minCost) == 0) { // subtract and check if traversible
                     cost++;
                     if (ce.u < nTerminals && active[ce.u]) {
                         active[elem.node] = false;

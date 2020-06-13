@@ -26,17 +26,20 @@
 #include <chrono>
 #include "Algorithms/LocalOptimization.h"
 #include "dynamic/HsvSolver.h"
+#include <random>
 
 using namespace steiner;
 using namespace chrono;
 // TODO: Voronoi bound reductions could be used for large instances...
 int main(int argc, char* argv[]) {
+    // Make reproducible
+    std::srand(0);
     bool useReductions = true;
     int dualAscentLimit = 10000;
 
     if (argc == 1) {
         cerr << "Usage: steiner <filename>" << endl
-            << "The following paramaters are available:" << endl
+            << "The following parameters are available:" << endl
              << "-r Use no reductions" << endl
              << "-d <number> sets the edge limit for dual ascent. Default is 10 000, 0 disables dual ascent" << endl;
         return 1;
@@ -104,7 +107,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new NtdkReduction(s, 2000, true, 4));
     reductions.push_back(new SdcReduction(s, 2000));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new Degree3Reduction(s));
+    //reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new NtdkReduction(s, 2000, false, 4));
     reductions.push_back(new DegreeReduction(s, false));

@@ -241,14 +241,18 @@ void steiner::DualAscentReduction::prune(steiner::SteinerResult *r) {
 
     // Now periodically lower the upper bound and apply bound based reduction
     unsigned int cnt = 0;
-    instance->getApproximation().addToPool(p.approximate(true, r->root));
+    auto fResult = p.approximate(r->root);
+    p.unreduce(fResult);
+    instance->getApproximation().addToPool(fResult);
 
     do {
         p.reduce();
 
         //TODO: Make number of roots configurable?
         for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-            instance->getApproximation().addToPool(p.approximate(true, random() % s.getNumTerminals()));
+            auto cResult = p.approximate(random() % s.getNumTerminals());
+            p.unreduce(cResult);
+            instance->getApproximation().addToPool(cResult);
         }
 
         // TODO: Make number of pruning cycles configurable
@@ -307,7 +311,7 @@ void DualAscentReduction::pruneAscent(SteinerResult **results, node_id numSoluti
 
                 //TODO: Make number of roots configurable?
                 for(auto t=0; t < s.getNumTerminals() && t < 5; t++) {
-                    auto cResult = p.approximate(false, random() % s.getNumTerminals());
+                    auto cResult = p.approximate(random() % s.getNumTerminals());
                     auto edgeItA = cResult->g->findEdges();
                     while(edgeItA.hasElement()) {
                         auto e = *edgeItA;

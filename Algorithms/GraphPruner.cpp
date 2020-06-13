@@ -41,17 +41,9 @@ bool GraphPruner::prune() {
     return instance_.getGraph()->checkConnectedness(instance_.getNumTerminals(), true);
 }
 
-std::shared_ptr<SteinerResult> GraphPruner::approximate(bool unreduce, node_id rt) {
+std::shared_ptr<SteinerResult> GraphPruner::approximate(node_id rt) {
     auto result = ShortestPath::calculate(rt, *instance_.getGraph(), instance_.getNumTerminals());
     ShortestPath::optimizeSolution(*instance_.getGraph(), result, instance_.getNumTerminals());
-    if (unreduce) {
-        result->g->remap(*instance_.getGraph());
-        reducer_.reset();
-        reducer_.unreduce(result.get());
-
-        if (lastResult_ == nullptr || lastResult_->cost > result->cost)
-            lastResult_ = result;
-    }
 
     return result;
 }
