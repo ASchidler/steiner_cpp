@@ -172,11 +172,8 @@ namespace steiner {
             // Derive bound
             if (issep(label, q, seen, knodes)) {
                 cost_id mCost = 0;
-//                for(auto& cN: instance_->getGraph()->getNodes()) {
-//                    if (knodes[cN]) {
-//                        mCost = max(mCost, costs_[cN][label].cost);
-//                    }
-//                }
+
+                // Find roots and their costs
                 vector<pair<cost_id, node_id>> cList;
                 for(auto& cN: instance_->getGraph()->getNodes()) {
                     if (knodes[cN]) {
