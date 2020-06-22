@@ -85,7 +85,7 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         if (cost < entry.originalCost) {
             continue;
         }
-        if (cost > check_sep(entry.label, entry.node)) {
+        if (check_sep(entry.label, entry.node, cost)) {
             continue;
         }
         // Checking pruning again does not really eliminate cases

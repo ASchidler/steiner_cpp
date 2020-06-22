@@ -115,9 +115,22 @@ namespace steiner {
         SteinerResult* backTrack();
         void backTrackSub(node_id n, const T label, SteinerResult* result);
 
-        unordered_map<T, node_id*> known_nodes;
-        unordered_map<T, cost_id> known_bounds;
+        struct SepEntry {
+            SepEntry(cost_id cost, cost_id twoPath, node_id node) : cost(cost), twoPath(twoPath), node(node) {}
 
+            cost_id cost;
+            cost_id twoPath;
+            node_id node;
+
+            bool operator<(const SepEntry& p2) const
+            {
+                return cost > p2.cost || (cost == p2.cost && twoPath > p2.twoPath);
+            }
+        };
+        unordered_map<T, node_id*> known_nodes;
+        unordered_map<T, vector<SepEntry>> known_bounds;
+
+        bool test = true;
         inline bool issep(T label, vector<node_id>& q, bool* seen, node_id* knodes) {
             while (! q.empty()) {
                 auto u = q.back();
@@ -140,11 +153,29 @@ namespace steiner {
             return false;
         }
 
-        inline cost_id check_sep(T label, node_id n) {
+        inline bool check_sep(T label, node_id n, cost_id cost) {
+            if (test) {
+                test = false;
+                for (auto& u : instance_->getGraph()->getNodes()) {
+                    instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
+                }
+            }
             // Check if bound is known
             auto bound = known_bounds.find(label);
             if (bound != known_bounds.end()) {
-                return (*bound).second;
+                auto& lst = (*bound).second;
+                auto ndist = instance_->getGraph()->getDistances()[n];
+
+                for(auto& cSepEntry: lst) {
+                    // Bigger than the rest of the entries
+                    if (cost > cSepEntry.cost) {
+                        return true;
+                    }
+                    if (ndist[cSepEntry.twoPath] <= cSepEntry.twoPath) {
+                        return false;
+                    }
+                }
+                return false;
             }
 
             // Check if list exists
@@ -178,10 +209,12 @@ namespace steiner {
                 cost_id mCost = 0;
 
                 // Find roots and their costs
-                vector<pair<cost_id, node_id>> cList;
+                vector<SepEntry> cList;
                 for(auto& cN: instance_->getGraph()->getNodes()) {
                     if (knodes[cN]) {
-                        cList.emplace_back(costs_[cN][label].cost, cN);
+                        auto& cEntry = costs_[cN][label];
+                        // Is caching really best? Not caching would yield more current values...
+                        cList.emplace_back(cEntry.cost, cEntry.twoPath, cN);
                     }
                 }
                 sort(cList.begin(), cList.end());
@@ -191,7 +224,7 @@ namespace steiner {
                 while(improved) {
                     improved = false;
                     // try highest costing vertex
-                    node_id cN = cList.back().second;
+                    node_id cN = cList.back().node;
                     seen[cN] = true;
                     q.emplace_back(cN);
 
@@ -200,14 +233,12 @@ namespace steiner {
                         cList.pop_back();
                     }
                 }
-
-                // Due to sorting highest cost is at the end
-                mCost = cList.back().first;
-
-                known_bounds.emplace(label, mCost);
-                return mCost;
+                std::reverse(cList.begin(), cList.end());
+                known_bounds.emplace(std::make_pair(label, cList));
+                // Since the current node was necessary, cannot be not in the separator
+                return false;
             }
-            return MAXCOST;
+            return false;
         }
 
         inline void process_neighbors(QueueEntry& q) {
@@ -401,8 +432,6 @@ namespace steiner {
 
             return cost;
         }
-
-
     };
 
 
