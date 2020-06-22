@@ -51,8 +51,8 @@ namespace steiner {
         node_id dualAscentLimit_;
 
         struct QueueEntry {
-            QueueEntry(cost_id cost, cost_id originalCost, node_id node, T label, cost_id cTwoPath, cost_id maxTwoPath) :
-                cost(cost), node(node), label(label), originalCost(originalCost), cTwoPath(cTwoPath), maxTwoPath(maxTwoPath) {
+            QueueEntry(cost_id cost, cost_id originalCost, node_id node, T label) :
+                cost(cost), node(node), label(label), originalCost(originalCost) {
 
             }
 
@@ -60,8 +60,6 @@ namespace steiner {
             cost_id originalCost;
             node_id node;
             T label;
-            cost_id cTwoPath;
-            cost_id maxTwoPath;
 
             bool operator<(const QueueEntry& p2) const
             {
@@ -82,13 +80,12 @@ namespace steiner {
         Queue<QueueEntry> queue_;
 
         struct CostInfo {
-            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge, cost_id twoPath) : cost(cost), prev(prev), merge(merge), twoPath(twoPath) {
+            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge) : cost(cost), prev(prev), merge(merge) {
             }
             CostInfo() = default;
             cost_id cost = 0;
             Predecessor<T> prev = Predecessor<T>();
             bool merge = false;
-            cost_id twoPath = 0;
         };
 
         struct PruneBoundEntry {
@@ -116,15 +113,14 @@ namespace steiner {
         void backTrackSub(node_id n, const T label, SteinerResult* result);
 
         struct SepEntry {
-            SepEntry(cost_id cost, cost_id twoPath, node_id node) : cost(cost), twoPath(twoPath), node(node) {}
+            SepEntry(cost_id cost, node_id node) : cost(cost), node(node) {}
 
             cost_id cost;
-            cost_id twoPath;
             node_id node;
 
             bool operator<(const SepEntry& p2) const
             {
-                return cost > p2.cost || (cost == p2.cost && twoPath > p2.twoPath);
+                return cost > p2.cost;
             }
         };
         unordered_map<T, node_id*> known_nodes;
@@ -224,7 +220,7 @@ namespace steiner {
                     if (knodes[cN]) {
                         auto& cEntry = costs_[cN][label];
                         // Is caching really best? Not caching would yield more current values...
-                        cList.emplace_back(cEntry.cost, cEntry.twoPath, cN);
+                        cList.emplace_back(cEntry.cost, cN);
                     }
                 }
                 sort(cList.begin(), cList.end());
@@ -259,22 +255,19 @@ namespace steiner {
 
                 auto nbc = costs_[nb.first].find(q.label);
                 if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
-                    cost_id tp = q.cTwoPath + nb.second;
-                    cost_id tpMax = max(q.maxTwoPath, tp);
                     if (newCost <= instance_->getUpperBound() && ! prune(q.node, newCost, q.label)) {
                         if (nbc == costs_[nb.first].end()) {
                             auto pred = Predecessor<T>();
                             pred.node = q.node;
-                            costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(q.label), std::forward_as_tuple(newCost, pred, false, tpMax));
+                            costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(q.label), std::forward_as_tuple(newCost, pred, false));
                         } else {
                             nbc->second.cost = newCost;
                             nbc->second.prev.node = q.node;
                             nbc->second.merge = false;
-                            nbc->second.twoPath = tpMax;
                         }
                         auto newTotal = newCost + heuristic_->calculate( nb.first, q.label, instance_->getUpperBound());
                         if (newTotal <= instance_->getUpperBound())
-                            queue_.emplace(newTotal, newTotal, newCost, nb.first, q.label, tp, tpMax);
+                            queue_.emplace(newTotal, newTotal, newCost, nb.first, q.label);
                     }
                 }
             }
@@ -289,22 +282,20 @@ namespace steiner {
 
                 auto nbc = costs_[q.node].find(combined);
                 if (nbc == costs_[q.node].end() || nbc->second.cost > newCost) {
-                    cost_id tp = max(otherEntry.twoPath, q.maxTwoPath);
                     if (newCost <= instance_->getUpperBound() && ! prune(q.node, newCost, q.label, **other_set, combined)) {
                         if (nbc == costs_[q.node].end()) {
                             auto pred = Predecessor<T>();
                             pred.label = **other_set;
-                            costs_[q.node].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true, tp));
+                            costs_[q.node].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true));
                         } else {
                             nbc->second.merge = true;
                             nbc->second.cost = newCost;
                             nbc->second.prev.label = **other_set;
-                            nbc->second.twoPath = tp;
                         }
 
                         auto newTotal = newCost +  heuristic_->calculate(q.node, combined, instance_->getUpperBound());
                         if (newTotal <= instance_->getUpperBound())
-                            queue_.emplace(newTotal, newTotal, newCost, q.node, combined, 0, tp);
+                            queue_.emplace(newTotal, newTotal, newCost, q.node, combined);
                     }
                 }
             }

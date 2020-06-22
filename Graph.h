@@ -129,6 +129,10 @@ namespace steiner {
             if (nodes_.insert(u).second) {
                 nodeMap_[u] = u;
                 nodeReverseMap_[u] = u;
+
+                if (u >= nb.size()) {
+                    nb.resize(u+1);
+                }
             }
         }
         bool addMappedEdge(node_id u, node_id v, cost_id cost);

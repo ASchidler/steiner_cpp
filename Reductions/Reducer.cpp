@@ -11,7 +11,7 @@ void steiner::Reducer::reduce() {
     unsigned int runs = 0;
     while(changed && runs < limit_) {
         for(auto reduction: reductions_) {
-            if (reduction->enabled) {
+            if (reduction->enabled && instance_->getGraph()->getNumNodes() > 1) {
                 auto result = reduction->reduce(cnt, prevCnt);
                 cnt += result;
                 if (! silent_)

@@ -67,8 +67,8 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         label <<= t; // Do this in two steps to avoid overflow errors
         auto pred = steiner::Predecessor<T>();
         pred.label = 0;
-        costs_[t].emplace(label, CostInfo(0, pred, true, 0));
-        queue_.emplace(0, 0, 0, t, label, 0, 0);
+        costs_[t].emplace(label, CostInfo(0, pred, true));
+        queue_.emplace(0, 0, 0, t, label);
     }
 
     while (not queue_.empty()) {
