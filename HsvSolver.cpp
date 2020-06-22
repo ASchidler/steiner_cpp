@@ -85,6 +85,9 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         if (cost < entry.originalCost) {
             continue;
         }
+        if (cost > check_sep(entry.label, entry.node)) {
+            continue;
+        }
         // Checking pruning again does not really eliminate cases
 
         store_->addLabel(entry.node, entry.label);
@@ -93,201 +96,6 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
     }
 
     return nullptr;
-}
-
-template <typename T>
-void steiner::HsvSolver<T>::process_neighbors(node_id n, const T label, cost_id cost) {
-    // TODO: Are these getter calls expensive? Maybe retrieve graph once..
-    for (auto nb: instance_->getGraph()->nb[n]) {
-        auto newCost = cost + nb.second;
-        // TODO: Maybe do not copy label all the time?
-
-        auto nbc = costs_[nb.first].find(label);
-        if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
-            if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label)) {
-                if (nbc == costs_[nb.first].end()) {
-                    auto pred = Predecessor<T>();
-                    pred.node = n;
-                    costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(label), std::forward_as_tuple(newCost, pred, false));
-                } else {
-                    nbc->second.cost = newCost;
-                    nbc->second.prev.node = n;
-                    nbc->second.merge = false;
-                }
-                auto newTotal = newCost + heuristic_->calculate( nb.first, label, instance_->getUpperBound());
-                if (newTotal <= instance_->getUpperBound())
-                    queue_.emplace(newTotal, newTotal, newCost, nb.first, label);
-            }
-        }
-    }
-}
-
-template <typename T>
-void steiner::HsvSolver<T>::process_labels(node_id n, const T label, cost_id cost) {
-    auto other_set = store_->findLabels(n, label);
-    for (; other_set->hasNext(); ++(*other_set)) {
-        auto combined = label | **other_set;
-        // TODO: At least store the pointer to the costs with the label
-        // TODO: Maybe run a cleanup in between, where entries according to prune are removed from P...
-        auto newCost = cost + costs_[n][**other_set].cost;
-
-        auto nbc = costs_[n].find(combined);
-        if (nbc == costs_[n].end() || nbc->second.cost > newCost) {
-            if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label, **other_set, combined)) {
-                if (nbc == costs_[n].end()) {
-                    auto pred = Predecessor<T>();
-                    pred.label = **other_set;
-                    costs_[n].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true));
-                } else {
-                    nbc->second.merge = true;
-                    nbc->second.cost = newCost;
-                    nbc->second.prev.label = **other_set;
-                }
-
-                auto newTotal = newCost +  heuristic_->calculate(n, combined, instance_->getUpperBound());
-                if (newTotal <= instance_->getUpperBound())
-                    queue_.emplace(newTotal, newTotal, newCost, n, combined);
-            }
-        }
-    }
-    delete other_set;
-}
-
-template <typename T>
-bool HsvSolver<T>::prune(node_id n, cost_id cost, const T label) {
-    auto result = pruneBoundCache.find(label);
-    if (result != pruneBoundCache.end()) {
-        if (cost > result->second.cost)
-            return true;
-    }
-
-    prune_check_bound(n, cost, label);
-
-    return false;
-}
-
-template <typename T>
-bool HsvSolver<T>::prune(node_id n, cost_id cost, const T label1, const T label2,
-                      T combined){
-    auto result = pruneBoundCache.find(combined);
-    if (result != pruneBoundCache.end()) {
-        if (cost > result->second.cost)
-            return true;
-    }
-    if (prune_combine(label1, label2, combined) < cost)
-        return true;
-
-    prune_check_bound(n, cost, combined);
-    return false;
-}
-
-template <typename T>
-void HsvSolver<T>::prune_check_bound(node_id n, cost_id cost, const T label) {
-    // find minimum distance between n and any terminal not in the label (including root)
-    auto dist_c = MAXCOST;
-    node_id dist_t = 0;
-
-    // Distance to terminals outside the label
-    // Since we know there is at least the root outside
-    auto closest = instance_->getClosestTerminals(n);
-    while (true) {
-        T test = 1;
-        test <<= closest->node;
-        if (closest->node == root_ || (label & test) == 0) {
-            if (dist_c > closest->cost) {
-                dist_c = closest->cost;
-                dist_t = closest->node;
-            }
-            break;
-        }
-        ++closest;
-        assert(closest <= instance_->getClosestTerminals(n) + nTerminals_);
-    }
-
-    // Check if we have a cached entry, otherwise compute it
-    auto result = pruneDistCache.find(label);
-    // If yes, just check distances to vertex
-    if (result == pruneDistCache.end())
-        result = prune_compute_dist(label);
-
-    if (result->second.cost < dist_c) {
-        dist_c = result->second.cost;
-        dist_t = result->second.terminal;
-    }
-
-    // Store in cache
-    auto existing = pruneBoundCache.find(label);
-    if (existing == pruneBoundCache.end()) {
-        T newBs = 1;
-        newBs <<= dist_t;
-        pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(label), forward_as_tuple(dist_c + cost, newBs));
-    } else {
-        if (dist_c + cost < existing->second.cost) {
-            existing->second.cost = dist_c + cost;
-            existing->second.label = 1;
-            existing->second.label <<= dist_t;
-        }
-    }
-}
-
-template <typename T>
-typename unordered_map<T, typename HsvSolver<T>::PruneDistEntry>::iterator HsvSolver<T>::prune_compute_dist(const T label) {
-    PruneDistEntry entry(MAXCOST, 0);
-
-    T test = 1;
-    for(int t=0; t < nTerminals_; t++){
-        // Terminal is in the label, root guaranteed to not be...
-        if ((label & test) > 0) {
-            auto closest = instance_->getClosestTerminals(t);
-            ++closest; // First one is always the terminal with dist 0, which is in the label, so skip
-            while (true) {
-                T test2 = 1;
-                test2 <<= closest->node;
-                if (closest->node == root_ || (label & test2) == 0) {
-                    if (entry.cost > closest->cost) {
-                        entry.cost = closest->cost;
-                        entry.terminal = closest->node;
-                    }
-                    break;
-                }
-                ++closest;
-                assert(closest <= instance_->getClosestTerminals(t) + nTerminals_);
-            }
-        }
-        test <<= 1;
-    }
-
-    // Cache value
-    auto result = pruneDistCache.emplace(label, entry);
-
-    return result.first;
-}
-
-template <typename T>
-cost_id HsvSolver<T>::prune_combine(const T label1, const T label2, T combined) {
-    auto result1 = pruneBoundCache.find(label1);
-    if (result1 == pruneBoundCache.end())
-        return MAXCOST;
-    auto result2 = pruneBoundCache.find(label2);
-    if (result2 == pruneBoundCache.end())
-        return MAXCOST;
-
-    // At least one set must be disjoint...
-    if ((label1 & result2->second.label) > 0 && (label2 & result1->second.label) > 0)
-        return MAXCOST;
-
-    // Was this auto s = (result1->second.label | result2->second.label) & ~(l1 | l2);
-    T l = 1;
-    l <<= nTerminals_; // Set bit for root
-    // Add negated
-    l |= (label1 | label2) ^ maxTerminal_;
-
-    T s = (result1->second.label | result2->second.label);
-    s &= l;
-    auto cost = result1->second.cost + result2->second.cost;
-    pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(cost, s));
-
-    return cost;
 }
 
 template <typename T>
@@ -319,6 +127,7 @@ void HsvSolver<T>::backTrackSub(node_id n, const T label, SteinerResult* result)
         backTrackSub(n2, label, result);
     }
 }
+
 
 template class steiner::HsvSolver<uint16_t>;
 template class steiner::HsvSolver<uint32_t>;
