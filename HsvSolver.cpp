@@ -67,8 +67,8 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         label <<= t; // Do this in two steps to avoid overflow errors
         auto pred = steiner::Predecessor<T>();
         pred.label = 0;
-        costs_[t].emplace(label, CostInfo(0, pred, true));
-        queue_.emplace(0, 0, 0, t, label);
+        costs_[t].emplace(label, CostInfo(0, pred, true, 0));
+        queue_.emplace(0, 0, 0, t, label, 0, 0);
     }
 
     while (not queue_.empty()) {
@@ -91,8 +91,8 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         // Checking pruning again does not really eliminate cases
 
         store_->addLabel(entry.node, entry.label);
-        process_neighbors(entry.node, entry.label, cost);
-        process_labels(entry.node, entry.label, cost);
+        process_neighbors(entry);
+        process_labels(entry);
     }
 
     return nullptr;

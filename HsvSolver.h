@@ -51,8 +51,8 @@ namespace steiner {
         node_id dualAscentLimit_;
 
         struct QueueEntry {
-            QueueEntry(cost_id cost, cost_id originalCost, node_id node, T label) : cost(cost), node(node),
-                                                                                       label(label), originalCost(originalCost) {
+            QueueEntry(cost_id cost, cost_id originalCost, node_id node, T label, cost_id cTwoPath, cost_id maxTwoPath) :
+                cost(cost), node(node), label(label), originalCost(originalCost), cTwoPath(cTwoPath), maxTwoPath(maxTwoPath) {
 
             }
 
@@ -60,6 +60,9 @@ namespace steiner {
             cost_id originalCost;
             node_id node;
             T label;
+            cost_id cTwoPath;
+            cost_id maxTwoPath;
+
             bool operator<(const QueueEntry& p2) const
             {
                 return cost > p2.cost || (cost == p2.cost &&
@@ -79,12 +82,13 @@ namespace steiner {
         Queue<QueueEntry> queue_;
 
         struct CostInfo {
-            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge) : cost(cost), prev(prev), merge(merge) {
+            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge, cost_id twoPath) : cost(cost), prev(prev), merge(merge), twoPath(twoPath) {
             }
             CostInfo() = default;
             cost_id cost = 0;
             Predecessor<T> prev = Predecessor<T>();
             bool merge = false;
+            cost_id twoPath = 0;
         };
 
         struct PruneBoundEntry {
@@ -206,56 +210,60 @@ namespace steiner {
             return MAXCOST;
         }
 
-        inline void process_neighbors(node_id n, const T label, cost_id cost) {
+        inline void process_neighbors(QueueEntry& q) {
             // TODO: Are these getter calls expensive? Maybe retrieve graph once..
-            for (auto nb: instance_->getGraph()->nb[n]) {
-                auto newCost = cost + nb.second;
+            for (auto nb: instance_->getGraph()->nb[q.node]) {
+                auto newCost = q.originalCost + nb.second;
                 // TODO: Maybe do not copy label all the time?
 
-                auto nbc = costs_[nb.first].find(label);
+                auto nbc = costs_[nb.first].find(q.label);
                 if (nbc == costs_[nb.first].end() || nbc->second.cost > newCost) {
-                    if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label)) {
+                    cost_id tp = q.cTwoPath + nb.second;
+                    cost_id tpMax = max(q.maxTwoPath, tp);
+                    if (newCost <= instance_->getUpperBound() && ! prune(q.node, newCost, q.label)) {
                         if (nbc == costs_[nb.first].end()) {
                             auto pred = Predecessor<T>();
-                            pred.node = n;
-                            costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(label), std::forward_as_tuple(newCost, pred, false));
+                            pred.node = q.node;
+                            costs_[nb.first].emplace(std::piecewise_construct, std::forward_as_tuple(q.label), std::forward_as_tuple(newCost, pred, false, tpMax));
                         } else {
                             nbc->second.cost = newCost;
-                            nbc->second.prev.node = n;
+                            nbc->second.prev.node = q.node;
                             nbc->second.merge = false;
+                            nbc->second.twoPath = tpMax;
                         }
-                        auto newTotal = newCost + heuristic_->calculate( nb.first, label, instance_->getUpperBound());
+                        auto newTotal = newCost + heuristic_->calculate( nb.first, q.label, instance_->getUpperBound());
                         if (newTotal <= instance_->getUpperBound())
-                            queue_.emplace(newTotal, newTotal, newCost, nb.first, label);
+                            queue_.emplace(newTotal, newTotal, newCost, nb.first, q.label, tp, tpMax);
                     }
                 }
             }
         }
 
-        inline void process_labels(node_id n, const T label, cost_id cost) {
-            auto other_set = store_->findLabels(n, label);
+        inline void process_labels(QueueEntry& q) {
+            auto other_set = store_->findLabels(q.node, q.label);
             for (; other_set->hasNext(); ++(*other_set)) {
-                auto combined = label | **other_set;
-                // TODO: At least store the pointer to the costs with the label
-                // TODO: Maybe run a cleanup in between, where entries according to prune are removed from P...
-                auto newCost = cost + costs_[n][**other_set].cost;
+                auto combined = q.label | **other_set;
+                auto& otherEntry = costs_[q.node][**other_set];
+                auto newCost = q.originalCost + otherEntry.cost;
 
-                auto nbc = costs_[n].find(combined);
-                if (nbc == costs_[n].end() || nbc->second.cost > newCost) {
-                    if (newCost <= instance_->getUpperBound() && ! prune(n, newCost, label, **other_set, combined)) {
-                        if (nbc == costs_[n].end()) {
+                auto nbc = costs_[q.node].find(combined);
+                if (nbc == costs_[q.node].end() || nbc->second.cost > newCost) {
+                    cost_id tp = max(otherEntry.twoPath, q.maxTwoPath);
+                    if (newCost <= instance_->getUpperBound() && ! prune(q.node, newCost, q.label, **other_set, combined)) {
+                        if (nbc == costs_[q.node].end()) {
                             auto pred = Predecessor<T>();
                             pred.label = **other_set;
-                            costs_[n].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true));
+                            costs_[q.node].emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(newCost, pred, true, tp));
                         } else {
                             nbc->second.merge = true;
                             nbc->second.cost = newCost;
                             nbc->second.prev.label = **other_set;
+                            nbc->second.twoPath = tp;
                         }
 
-                        auto newTotal = newCost +  heuristic_->calculate(n, combined, instance_->getUpperBound());
+                        auto newTotal = newCost +  heuristic_->calculate(q.node, combined, instance_->getUpperBound());
                         if (newTotal <= instance_->getUpperBound())
-                            queue_.emplace(newTotal, newTotal, newCost, n, combined);
+                            queue_.emplace(newTotal, newTotal, newCost, q.node, combined, 0, tp);
                     }
                 }
             }
