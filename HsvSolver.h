@@ -128,7 +128,7 @@ namespace steiner {
             }
         };
         unordered_map<T, node_id*> known_nodes;
-        unordered_map<T, vector<SepEntry>> known_bounds;
+        unordered_map<T, cost_id> known_bounds;
 
         bool test = true;
         inline bool issep(T label, vector<node_id>& q, bool* seen, node_id* knodes) {
@@ -163,19 +163,31 @@ namespace steiner {
             // Check if bound is known
             auto bound = known_bounds.find(label);
             if (bound != known_bounds.end()) {
-                auto& lst = (*bound).second;
-                auto ndist = instance_->getGraph()->getDistances()[n];
+                if (cost > (*bound).second)
+                    return true;
 
-                for(auto& cSepEntry: lst) {
-                    // Bigger than the rest of the entries
-                    if (cost > cSepEntry.cost) {
-                        return true;
-                    }
-                    if (ndist[cSepEntry.twoPath] <= cSepEntry.twoPath) {
-                        return false;
+                unordered_map<node_id, cost_id> costs;
+                twoPathDist(n, label, costs);
+
+                auto entry = known_nodes[label];
+                // Ordering would help to stop early...
+                for (auto u: instance_->getGraph()->getNodes()) {
+                    if (entry[u]) {
+                        if (costs_[u][label].cost >= cost) {
+                            auto dists = instance_->getGraph()->getDistances()[u];
+                            bool foundAny = false;
+                            for(auto& tn: costs) {
+                                if (dists[tn.first] < tn.second) {
+                                    foundAny = true;
+                                    break;
+                                }
+                            }
+                            if (! foundAny)
+                                return false;
+                        }
                     }
                 }
-                return false;
+                return true;
             }
 
             // Check if list exists
@@ -206,8 +218,6 @@ namespace steiner {
 
             // Derive bound
             if (issep(label, q, seen, knodes)) {
-                cost_id mCost = 0;
-
                 // Find roots and their costs
                 vector<SepEntry> cList;
                 for(auto& cN: instance_->getGraph()->getNodes()) {
@@ -230,11 +240,11 @@ namespace steiner {
 
                     if (issep(label, q, seen, knodes)) {
                         improved = true;
+                        knodes[cN] = false;
                         cList.pop_back();
                     }
                 }
-                std::reverse(cList.begin(), cList.end());
-                known_bounds.emplace(std::make_pair(label, cList));
+                known_bounds.emplace(std::make_pair(label, cList.back().cost));
                 // Since the current node was necessary, cannot be not in the separator
                 return false;
             }
@@ -431,6 +441,33 @@ namespace steiner {
             pruneBoundCache.emplace(std::piecewise_construct, std::forward_as_tuple(combined), std::forward_as_tuple(cost, s));
 
             return cost;
+        }
+
+
+        inline void twoPathDist(node_id r, const T label, unordered_map<node_id, cost_id>& costs) {
+            costs.emplace(r, 0u);
+            twoPathDistSub(r, label, 0, 0, costs);
+        }
+
+        inline void twoPathDistSub(node_id r, const T label, cost_id cCost, cost_id maxCost, unordered_map<node_id, cost_id>& costs) {
+            auto c = costs_[r].find(label)->second;
+            if (c.merge) {
+                // Found a leaf
+                if (c.prev.label == 0)
+                    return;
+
+                twoPathDistSub(r, c.prev.label, 0, maxCost, costs);
+                auto inverse = label ^ c.prev.label;
+                twoPathDistSub(r, inverse, 0, maxCost, costs);
+            } else {
+                auto n2 = c.prev.node;
+                auto cn = instance_->getGraph()->nb[r][n2];
+                cCost += cn;
+                maxCost = max(maxCost, cCost);
+                costs.emplace(n2, maxCost);
+
+                twoPathDistSub(n2, label, cCost, maxCost, costs);
+            }
         }
     };
 
