@@ -253,6 +253,7 @@ namespace steiner {
             return false;
         }
 
+        // TODO: Copying adjacency into vector may speed up iteration over neighbors
         inline void process_neighbors(QueueEntry& q) {
             // TODO: Are these getter calls expensive? Maybe retrieve graph once..
             for (auto nb: instance_->getGraph()->nb[q.node]) {

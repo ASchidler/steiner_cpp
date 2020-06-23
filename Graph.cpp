@@ -489,7 +489,7 @@ void Graph::remap(Graph& g) {
         assert(g.nodeReverseMap_.count(n) > 0);
         maxNode = max(maxNode, g.nodeReverseMap_[n]);
     }
-    vector<map<node_id, cost_id, NodeIdHash>> newNb;
+    vector<unordered_map<node_id, cost_id, NodeIdHash>> newNb;
     newNb.resize(maxNode + 1);
     set<node_id> newNodes;
 

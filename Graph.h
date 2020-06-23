@@ -75,7 +75,7 @@ namespace steiner {
             nb.resize(nNodes);
         }
 
-        Graph(Graph& g, bool copyMapping) : nb(vector<map<node_id, cost_id, NodeIdHash>>(g.nb)), nodes_(g.nodes_) {
+        Graph(Graph& g, bool copyMapping) : nb(vector<unordered_map<node_id, cost_id, NodeIdHash>>(g.nb)), nodes_(g.nodes_) {
             if (copyMapping) {
                 nodeMap_ = g.nodeMap_;
                 nodeReverseMap_ = g.nodeReverseMap_;
@@ -84,7 +84,7 @@ namespace steiner {
 
         class EdgeIterator {
         public:
-            explicit EdgeIterator(set<node_id>* nodes, vector<map<node_id, cost_id, NodeIdHash>>* nb) : nodes_(nodes), nb_(nb){
+            explicit EdgeIterator(set<node_id>* nodes, vector<unordered_map<node_id, cost_id, NodeIdHash>>* nb) : nodes_(nodes), nb_(nb){
                 nodeState = nodes->begin();
                 nbState = (*nb)[*nodeState].begin();
                 findNext();
@@ -107,9 +107,9 @@ namespace steiner {
         private:
             friend class Graph;
             set<node_id>::iterator nodeState;
-            map<node_id, cost_id, NodeIdHash>::iterator nbState;
+            unordered_map<node_id, cost_id, NodeIdHash>::iterator nbState;
             set<node_id>* nodes_;
-            vector<map<node_id, cost_id, NodeIdHash>>* nb_;
+            vector<unordered_map<node_id, cost_id, NodeIdHash>>* nb_;
             void findNext() {
                 while(nodeState != nodes_->end()) {
                     while(nbState != (*nb_)[*nodeState].end()) {
@@ -152,7 +152,7 @@ namespace steiner {
             return nodes_;
         }
 
-        vector<map<node_id, cost_id, NodeIdHash>> nb;
+        vector<unordered_map<node_id, cost_id, NodeIdHash>> nb;
 
         node_id getNodeMapping(node_id externalId);
         node_id getReverseMapping(node_id internal);
