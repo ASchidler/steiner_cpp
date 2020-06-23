@@ -120,14 +120,15 @@ namespace steiner {
 
             bool operator<(const SepEntry& p2) const
             {
-                return cost > p2.cost;
+                return cost < p2.cost;
             }
         };
         unordered_map<T, node_id*> known_nodes;
         unordered_map<T, cost_id> known_bounds;
 
         bool test = true;
-        inline bool issep(T label, vector<node_id>& q, bool* seen, node_id* knodes) {
+        __attribute__((noinline))
+        bool issep(T label, vector<node_id>& q, bool* seen, node_id* knodes) {
             while (! q.empty()) {
                 auto u = q.back();
                 q.pop_back();
@@ -149,6 +150,32 @@ namespace steiner {
             return false;
         }
 
+        __attribute__((noinline))
+        bool test_sep(T label, node_id n, cost_id cost) {
+            unordered_map<node_id, cost_id> costs;
+            twoPathDist(n, label, costs);
+
+            auto entry = known_nodes[label];
+            // Ordering would help to stop early...
+            for (auto u: instance_->getGraph()->getNodes()) {
+                if (entry[u]) {
+                    if (costs_[u][label].cost >= cost) {
+                        auto dists = instance_->getGraph()->getDistances()[u];
+                        bool foundAny = false;
+                        for(auto& tn: costs) {
+                            if (dists[tn.first] < tn.second) {
+                                foundAny = true;
+                                break;
+                            }
+                        }
+                        if (! foundAny)
+                            return false;
+                    }
+                }
+            }
+            return true;
+        }
+        __attribute__((noinline))
         inline bool check_sep(T label, node_id n, cost_id cost) {
             if (test) {
                 test = false;
@@ -162,28 +189,7 @@ namespace steiner {
                 if (cost > (*bound).second)
                     return true;
 
-                unordered_map<node_id, cost_id> costs;
-                twoPathDist(n, label, costs);
-
-                auto entry = known_nodes[label];
-                // Ordering would help to stop early...
-                for (auto u: instance_->getGraph()->getNodes()) {
-                    if (entry[u]) {
-                        if (costs_[u][label].cost >= cost) {
-                            auto dists = instance_->getGraph()->getDistances()[u];
-                            bool foundAny = false;
-                            for(auto& tn: costs) {
-                                if (dists[tn.first] < tn.second) {
-                                    foundAny = true;
-                                    break;
-                                }
-                            }
-                            if (! foundAny)
-                                return false;
-                        }
-                    }
-                }
-                return true;
+                return test_sep(label, n, cost);
             }
 
             // Check if list exists

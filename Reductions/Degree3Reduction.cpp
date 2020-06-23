@@ -57,7 +57,7 @@ node_id steiner::Degree3Reduction::reduce(node_id currCount, node_id prevCount) 
                     // See if we can find another way by using a path instead of an age
                 }
                 else {
-                    break;
+                    //break;
                     bool del = false;
                     vector<node_id> distInput{x, y};
                     auto dd = new Degree3Distances(instance, distInput, ignoreNodes);

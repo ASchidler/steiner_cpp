@@ -50,7 +50,7 @@ namespace steiner {
             reductions.push_back(new SdcReduction(s, 200));
             reductions.push_back(new DegreeReduction(s, false));
             // This causes problems in rare cases
-            // reductions.push_back(new Degree3Reduction(s));
+            //reductions.push_back(new Degree3Reduction(s));
             reductions.push_back(new DegreeReduction(s, false));
             reductions.push_back(new NtdkReduction(s, 200, false, 4));
             reductions.push_back(new QuickCollection(s, useSl));
