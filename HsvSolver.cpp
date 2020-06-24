@@ -56,12 +56,12 @@ steiner::HsvSolver<T>::HsvSolver(SteinerInstance* instance, node_id dualAscentLi
 
 template <typename T>
 SteinerResult* steiner::HsvSolver<T>::solve() {
-    if (test) {
-        test = false;
-        for (auto& u : instance_->getGraph()->getNodes()) {
-            instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
-        }
-    }
+//    if (test) {
+//        test = false;
+//        for (auto& u : instance_->getGraph()->getNodes()) {
+//            instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
+//        }
+//    }
 
     // Special case, only root
     if (nTerminals_ == 0) {
@@ -81,21 +81,21 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
     while (not queue_.empty()) {
         auto entry = queue_.dequeue();
 
-        auto cost = costs_[entry.node][entry.label].cost;
+        auto& cost = costs_[entry.node][entry.label];
         if (entry.node == root_ ) {
             if(entry.label == maxTerminal_) {
-                cout << cost << endl;
+                cout << cost.cost << endl;
                 return backTrack();
             }
         }
 
-        if (cost < entry.originalCost) {
+        if (cost.cost < entry.originalCost) {
             continue;
         }
-//        if (check_sep(entry.label, entry.node, cost)) {
-//            continue;
-//        }
-        propagateUb(entry.node, entry.label, cost);
+        if (check_sep(entry.label, entry.node, cost.cost, cost)) {
+            continue;
+        }
+        //propagateUb(entry.node, entry.label, cost);
         // Checking pruning again does not really eliminate cases
 
         store_->addLabel(entry.node, entry.label);

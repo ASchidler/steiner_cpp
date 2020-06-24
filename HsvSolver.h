@@ -114,34 +114,16 @@ namespace steiner {
         SteinerResult* backTrack();
         void backTrackSub(node_id n, const T label, SteinerResult* result);
 
-        struct SepEntry {
-            SepEntry(cost_id cost, node_id node) : cost(cost), node(node) {}
+        unordered_map<T, CostInfo**> known_nodes;
 
-            cost_id cost;
-            node_id node;
-
-            bool operator<(const SepEntry& p2) const
-            {
-                return cost < p2.cost;
-            }
-
-            bool operator>(const SepEntry& p2) const
-            {
-                return cost > p2.cost;
-            }
-        };
-        unordered_map<T, node_id*> known_nodes;
-        unordered_map<T, cost_id> known_bounds;
-
-        bool test = true;
         __attribute__((noinline))
-        bool issep(T label, vector<node_id>& q, bool* seen, node_id* knodes) {
+        bool issep(T label, vector<node_id>& q, bool* seen, const bool* sep) {
             while (! q.empty()) {
                 auto u = q.back();
                 q.pop_back();
 
                 for(const auto& v : instance_->getGraph()->nb[u]) {
-                    if (! seen[v.first] && !knodes[v.first]) {
+                    if (! seen[v.first] && !sep[v.first]) {
                         seen[v.first] = true;
                         q.emplace_back(v.first);
                     }
@@ -158,68 +140,39 @@ namespace steiner {
         }
 
         __attribute__((noinline))
-        bool test_sep(T label, node_id n, cost_id cost) {
-            unordered_map<node_id, cost_id> costs;
-            twoPathDist(n, label, costs);
-
-            auto entry = known_nodes[label];
-            // Ordering would help to stop early...
-            for (auto u: instance_->getGraph()->getNodes()) {
-                if (entry[u]) {
-                    if (costs_[u][label].cost >= cost) {
-                        auto dists = instance_->getGraph()->getDistances()[u];
-                        bool foundAny = false;
-                        for(auto& tn: costs) {
-                            if (dists[tn.first] < tn.second) {
-                                foundAny = true;
-                                break;
-                            }
-                        }
-                        if (! foundAny)
-                            return false;
-                    }
-                }
-            }
-            return true;
-        }
-        __attribute__((noinline))
-        inline bool check_sep(T label, node_id n, cost_id cost) {
-            // Check if bound is known
-            auto bound = known_bounds.find(label);
-            if (bound != known_bounds.end()) {
-                if (cost > (*bound).second)
-                    return true;
-
-                return test_sep(label, n, cost);
-            }
-
-            // Check if list exists
-            auto entry = known_nodes.find(label);
-            node_id* knodes;
-            if (entry == known_nodes.end()) {
-                knodes = new node_id[instance_->getGraph()->getMaxNode()] {};
-                known_nodes.emplace(label, knodes);
-            } else {
-                knodes = (*entry).second;
-            }
-            knodes[n] = true;
-
+        inline bool check_sep(T label, node_id n, cost_id cost, CostInfo& cinfo) {
             // Other terminal is a separator in itself
+            // TODO: Maybe set global upper bound once this case occurred
             if (n <= this->nTerminals_) {
                 T mask = 1;
                 mask <<= n;
                 if ((mask & label) == 0) {
-                    for(size_t i=0; i < instance_->getGraph()->getMaxNode(); i++) {
-                        knodes[i] = false;
-                    }
-                    knodes[n] = true;
-                    known_bounds.emplace(std::make_pair(label, cost));
                     return false;
                 }
             }
 
+            // Check if list exists
+            auto entry = known_nodes.find(label);
+            CostInfo** knodes;
+            if (entry == known_nodes.end()) {
+                knodes = new CostInfo*[instance_->getGraph()->getMaxNode()] {nullptr};
+                known_nodes.emplace(label, knodes);
+            } else {
+                knodes = (*entry).second;
+            }
+
+            knodes[n] = &cinfo;
+
             // Check connectivity
             bool seen[instance_->getGraph()->getMaxNode()] = {};
+            bool ignore[instance_->getGraph()->getMaxNode()] = {};
+            findTree(n, label, ignore);
+
+            for(size_t i=0; i < instance_->getGraph()->getMaxNode(); i++) {
+                if(knodes[i] != nullptr && knodes[i]->cost < cost)
+                    ignore[i] = true;
+            }
+
             vector<node_id> q;
             T cLabel = 1;
 
@@ -233,49 +186,7 @@ namespace steiner {
                 cLabel <<= 1u;
             }
 
-            // Derive bound
-            if (issep(label, q, seen, knodes)) {
-                // Find roots and their costs
-                vector<SepEntry> cList;
-                for(auto& cN: instance_->getGraph()->getNodes()) {
-                    if (knodes[cN]) {
-                        auto& cEntry = costs_[cN][label];
-                        // Is caching really best? Not caching would yield more current values...
-                        cList.emplace_back(cEntry.cost, cN);
-                    }
-                }
-                sort(cList.begin(), cList.end(), std::greater<SepEntry>());
-
-                bool seenBak[instance_->getGraph()->getMaxNode()];
-                std::copy(seen, seen + instance_->getGraph()->getMaxNode(), seenBak);
-
-                bool isStart = true;
-                cost_id maxCost;
-
-                for(auto& cSep: cList) {
-                    seen[cSep.node] = true;
-                    q.emplace_back(cSep.node);
-
-                    if (issep(label, q, seen, knodes)) {
-                        std::copy(seen, seen + instance_->getGraph()->getMaxNode(), seenBak);
-                        knodes[cSep.node] = false;
-                        if (cSep.node != n && isStart) {
-                            store_->removeLabel(cSep.node, label);
-                        }
-                    } else {
-                        std::copy(seenBak, seenBak + instance_->getGraph()->getMaxNode(), seen);
-                        if (isStart) {
-                            maxCost = cSep.cost;
-                            isStart = false;
-                        }
-                    }
-                }
-
-                known_bounds.emplace(std::make_pair(label, maxCost));
-                // Since the current node was necessary, cannot be not in the separator
-                return false;
-            }
-            return false;
+            return issep(label, q, seen, ignore);
         }
 
         // TODO: Copying adjacency into vector may speed up iteration over neighbors
@@ -537,6 +448,33 @@ namespace steiner {
                         nbc->second.cost = cn;
                         nbc->second.prev.label = 0;
                     }
+
+                    q.emplace_back(n2, cEntry.second);
+                }
+            }
+        }
+
+        inline void findTree(const node_id r, const T label, bool* vertices) {
+            vector<pair<node_id, T>> q;
+            q.emplace_back(r, label);
+            //vertices[r] = true;
+
+            while(! q.empty()) {
+                auto cEntry = q.back();
+                q.pop_back();
+
+                auto& c = costs_[cEntry.first].find(cEntry.second)->second;
+
+                if (c.merge) {
+                    // Is not a leaf
+                    if (c.prev.label != 0) {
+                        q.emplace_back(cEntry.first, c.prev.label);
+                        auto inverse = cEntry.second ^c.prev.label;
+                        q.emplace_back(cEntry.first, inverse);
+                    }
+                } else {
+                    auto n2 = c.prev.node;
+                    vertices[n2] = true;
 
                     q.emplace_back(n2, cEntry.second);
                 }
