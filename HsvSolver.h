@@ -166,7 +166,31 @@ namespace steiner {
             // Check connectivity
             bool seen[instance_->getGraph()->getMaxNode()] = {};
             bool ignore[instance_->getGraph()->getMaxNode()] = {};
-            findTree(n, label, ignore);
+            unordered_map<node_id, cost_id> costs;
+            //findTree(n, label, ignore);
+            auto max_nodes = twoPathDist(n, label, costs, ignore);
+            Queue<NodeWithCost> qu(max_nodes + 1);
+            for(size_t i=0; i < instance_->getGraph()->getMaxNode(); i++) {
+                if (ignore[i]) {
+                    qu.emplace(max_nodes - costs[i], i, max_nodes - costs[i]);
+                }
+            }
+
+            while(! qu.empty()) {
+                auto nc = qu.dequeue();
+                if (ignore[nc.node])
+                    continue;
+
+                ignore[nc.node] = true;
+
+                for(const auto& v : instance_->getGraph()->nb[nc.node]) {
+                    if (! ignore[v.first]) {
+                        if (v.second < nc.cost) {
+                            qu.emplace(nc.cost-v.second, nc.node, nc.cost-v.second);
+                        }
+                    }
+                }
+            }
 
             for(size_t i=0; i < instance_->getGraph()->getMaxNode(); i++) {
                 if(knodes[i] != nullptr && knodes[i]->cost < cost)
@@ -385,7 +409,8 @@ namespace steiner {
             cost_id maxCost;
         };
 
-        inline void twoPathDist(node_id r, const T label, unordered_map<node_id, cost_id>& costs) {
+        inline cost_id twoPathDist(node_id r, const T label, unordered_map<node_id, cost_id>& costs, bool* vertices) {
+            cost_id maxCost = 0;
             costs.emplace(r, 0u);
             vector<TwoPathEntry> q;
             q.emplace_back(r, label, 0, 0);
@@ -409,10 +434,14 @@ namespace steiner {
                     cEntry.cCost += cn;
                     cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
                     costs.emplace(n2, cEntry.maxCost);
+                    maxCost = max(maxCost, cEntry.maxCost);
+                    vertices[n2] = true;
 
                     q.emplace_back(n2, cEntry.label, cEntry.cCost, cEntry.maxCost);
                 }
             }
+
+            return maxCost;
         }
 
         inline void propagateUb(const node_id r, const T label, const cost_id costs) {
