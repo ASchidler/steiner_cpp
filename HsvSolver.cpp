@@ -56,6 +56,13 @@ steiner::HsvSolver<T>::HsvSolver(SteinerInstance* instance, node_id dualAscentLi
 
 template <typename T>
 SteinerResult* steiner::HsvSolver<T>::solve() {
+    if (test) {
+        test = false;
+        for (auto& u : instance_->getGraph()->getNodes()) {
+            instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
+        }
+    }
+
     // Special case, only root
     if (nTerminals_ == 0) {
         auto result = new SteinerResult(0, new Graph(), instance_->getGraph()->getReverseMapping(root_));
@@ -85,9 +92,10 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         if (cost < entry.originalCost) {
             continue;
         }
-        if (check_sep(entry.label, entry.node, cost)) {
-            continue;
-        }
+//        if (check_sep(entry.label, entry.node, cost)) {
+//            continue;
+//        }
+        propagateUb(entry.node, entry.label, cost);
         // Checking pruning again does not really eliminate cases
 
         store_->addLabel(entry.node, entry.label);

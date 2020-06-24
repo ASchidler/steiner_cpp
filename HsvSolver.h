@@ -184,12 +184,6 @@ namespace steiner {
         }
         __attribute__((noinline))
         inline bool check_sep(T label, node_id n, cost_id cost) {
-            if (test) {
-                test = false;
-                for (auto& u : instance_->getGraph()->getNodes()) {
-                    instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
-                }
-            }
             // Check if bound is known
             auto bound = known_bounds.find(label);
             if (bound != known_bounds.end()) {
@@ -510,52 +504,41 @@ namespace steiner {
             }
         }
 
-        inline void twoPathDistSub(node_id r, const T label, cost_id cCost, cost_id maxCost, unordered_map<node_id, cost_id>& costs) {
-            auto c = costs_[r].find(label)->second;
-            if (c.merge) {
-                // Found a leaf
-                if (c.prev.label == 0)
-                    return;
-
-                twoPathDistSub(r, c.prev.label, 0, maxCost, costs);
-                auto inverse = label ^ c.prev.label;
-                twoPathDistSub(r, inverse, 0, maxCost, costs);
-            } else {
-                auto n2 = c.prev.node;
-                auto cn = instance_->getGraph()->nb[r][n2];
-                cCost += cn;
-                maxCost = max(maxCost, cCost);
-                costs.emplace(n2, maxCost);
-
-                twoPathDistSub(n2, label, cCost, maxCost, costs);
-            }
-        }
-
-        inline void propagateUb(node_id r, const T label, cost_id costs) {
-            vector<TwoPathEntry> q;
-            q.emplace_back(r, label, 0, 0);
+        inline void propagateUb(const node_id r, const T label, const cost_id costs) {
+            vector<pair<node_id, T>> q;
+            q.emplace_back(r, label);
+            auto dists = instance_->getGraph()->getDistances()[r];
+            auto pred = steiner::Predecessor<T>();
+            pred.label = 0;
 
             while(! q.empty()) {
                 auto cEntry = q.back();
                 q.pop_back();
 
-                auto& c = costs_[cEntry.r].find(cEntry.label)->second;
+                auto& c = costs_[cEntry.first].find(cEntry.second)->second;
 
                 if (c.merge) {
-                    // Found a leaf
-                    if (c.prev.label == 0)
-                        return;
-
-                    q.emplace_back(r, c.prev.label, 0, cEntry.maxCost);
-                    auto inverse = label ^ c.prev.label;
-                    q.emplace_back(r, inverse, 0, cEntry.maxCost);
+                    // Is not a leaf
+                    if (c.prev.label != 0) {
+                        q.emplace_back(cEntry.first, c.prev.label);
+                        auto inverse = cEntry.second ^c.prev.label;
+                        q.emplace_back(cEntry.first, inverse);
+                    }
                 } else {
                     auto n2 = c.prev.node;
-                    auto cn = instance_->getGraph()->nb[r][n2];
-                    cEntry.cCost += cn;
-                    cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
+                    // Using dists is not even necessary, as we could just sum the edges in the queue
+                    auto cn = costs + dists[n2];
 
-                    q.emplace_back(n2, label, cEntry.cCost, cEntry.maxCost);
+                    auto nbc = costs_[n2].find(cEntry.second);
+                    if (nbc == costs_[n2].end()) {
+                        costs_[n2].emplace(std::piecewise_construct, std::forward_as_tuple(cEntry.second), std::forward_as_tuple(cn, pred, true));
+                    } else if (cn < nbc->second.cost) {
+                        nbc->second.merge = true;
+                        nbc->second.cost = cn;
+                        nbc->second.prev.label = 0;
+                    }
+
+                    q.emplace_back(n2, cEntry.second);
                 }
             }
         }
