@@ -14,6 +14,11 @@ HashSetLabelIterator<T>* steiner::HashSetLabelStore<T>::findLabels(node_id node,
     return new HashSetLabelIterator<T>(labels_[node].begin(), labels_[node].end(), target);
 }
 
+template<typename T>
+void HashSetLabelStore<T>::removeLabel(node_id node, const T newLabel) {
+    this->labels_[node].erase(newLabel);
+}
+
 // TODO: Create labels centrally and then just link to them? Would that be feasible... (how to identify them...)
 // TODO: Create datastructures that are cache aware for iterating through the values...
 template <typename T>

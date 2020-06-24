@@ -50,6 +50,7 @@ namespace steiner {
         }
 
         void addLabel(node_id node, const T newLabel) override;
+        void removeLabel(node_id node, const T newLabel) override;
 
         HashSetLabelIterator<T>* findLabels(node_id node, const T target) override;
 

@@ -19,6 +19,7 @@ namespace steiner {
         virtual ~LabelStore() {}
         LabelStore(node_id width, node_id nNodes) : width(width), nNodes(nNodes) {}
         virtual void addLabel(node_id node, const T newLabel) = 0;
+        virtual void removeLabel(node_id node, const T newLabel) = 0;
         virtual LabelIterator<T>* findLabels(node_id node, const T target) = 0;
     protected:
         unsigned int width;

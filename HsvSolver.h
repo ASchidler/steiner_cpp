@@ -18,6 +18,8 @@
 #include "Steiner.h"
 #include "SteinerTree.h"
 #include "Structures/Queue.h"
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
@@ -122,6 +124,11 @@ namespace steiner {
             {
                 return cost < p2.cost;
             }
+
+            bool operator>(const SepEntry& p2) const
+            {
+                return cost > p2.cost;
+            }
         };
         unordered_map<T, node_id*> known_nodes;
         unordered_map<T, cost_id> known_bounds;
@@ -203,6 +210,20 @@ namespace steiner {
             }
             knodes[n] = true;
 
+            // Other terminal is a separator in itself
+            if (n <= this->nTerminals_) {
+                T mask = 1;
+                mask <<= n;
+                if ((mask & label) == 0) {
+                    for(size_t i=0; i < instance_->getGraph()->getMaxNode(); i++) {
+                        knodes[i] = false;
+                    }
+                    knodes[n] = true;
+                    known_bounds.emplace(std::make_pair(label, cost));
+                    return false;
+                }
+            }
+
             // Check connectivity
             bool seen[instance_->getGraph()->getMaxNode()] = {};
             vector<node_id> q;
@@ -229,24 +250,34 @@ namespace steiner {
                         cList.emplace_back(cEntry.cost, cN);
                     }
                 }
-                sort(cList.begin(), cList.end());
+                sort(cList.begin(), cList.end(), std::greater<SepEntry>());
 
-                // Try to minimize separator based on cost
-                bool improved = true;
-                while(improved) {
-                    improved = false;
-                    // try highest costing vertex
-                    node_id cN = cList.back().node;
-                    seen[cN] = true;
-                    q.emplace_back(cN);
+                bool seenBak[instance_->getGraph()->getMaxNode()];
+                std::copy(seen, seen + instance_->getGraph()->getMaxNode(), seenBak);
+
+                bool isStart = true;
+                cost_id maxCost;
+
+                for(auto& cSep: cList) {
+                    seen[cSep.node] = true;
+                    q.emplace_back(cSep.node);
 
                     if (issep(label, q, seen, knodes)) {
-                        improved = true;
-                        knodes[cN] = false;
-                        cList.pop_back();
+                        std::copy(seen, seen + instance_->getGraph()->getMaxNode(), seenBak);
+                        knodes[cSep.node] = false;
+                        if (cSep.node != n && isStart) {
+                            store_->removeLabel(cSep.node, label);
+                        }
+                    } else {
+                        std::copy(seenBak, seenBak + instance_->getGraph()->getMaxNode(), seen);
+                        if (isStart) {
+                            maxCost = cSep.cost;
+                            isStart = false;
+                        }
                     }
                 }
-                known_bounds.emplace(std::make_pair(label, cList.back().cost));
+
+                known_bounds.emplace(std::make_pair(label, maxCost));
                 // Since the current node was necessary, cannot be not in the separator
                 return false;
             }
