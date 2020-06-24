@@ -472,10 +472,42 @@ namespace steiner {
             return cost;
         }
 
+        struct TwoPathEntry {
+            TwoPathEntry(node_id r, T label, cost_id cCost, cost_id maxCost) : r(r), label(label), cCost(cCost), maxCost(maxCost) {}
+            const node_id r;
+            const T label;
+            cost_id cCost;
+            cost_id maxCost;
+        };
 
         inline void twoPathDist(node_id r, const T label, unordered_map<node_id, cost_id>& costs) {
             costs.emplace(r, 0u);
-            twoPathDistSub(r, label, 0, 0, costs);
+            vector<TwoPathEntry> q;
+            q.emplace_back(r, label, 0, 0);
+
+            while(! q.empty()) {
+                auto cEntry = q.back();
+                q.pop_back();
+
+                auto& c = costs_[cEntry.r].find(cEntry.label)->second;
+
+                if (c.merge) {
+                    // Is not a leaf
+                    if (c.prev.label != 0) {
+                        q.emplace_back(cEntry.r, c.prev.label, 0, cEntry.maxCost);
+                        auto inverse = cEntry.label ^c.prev.label;
+                        q.emplace_back(cEntry.r, inverse, 0, cEntry.maxCost);
+                    }
+                } else {
+                    auto n2 = c.prev.node;
+                    auto cn = instance_->getGraph()->nb[cEntry.r][n2];
+                    cEntry.cCost += cn;
+                    cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
+                    costs.emplace(n2, cEntry.maxCost);
+
+                    q.emplace_back(n2, cEntry.label, cEntry.cCost, cEntry.maxCost);
+                }
+            }
         }
 
         inline void twoPathDistSub(node_id r, const T label, cost_id cCost, cost_id maxCost, unordered_map<node_id, cost_id>& costs) {
@@ -496,6 +528,35 @@ namespace steiner {
                 costs.emplace(n2, maxCost);
 
                 twoPathDistSub(n2, label, cCost, maxCost, costs);
+            }
+        }
+
+        inline void propagateUb(node_id r, const T label, cost_id costs) {
+            vector<TwoPathEntry> q;
+            q.emplace_back(r, label, 0, 0);
+
+            while(! q.empty()) {
+                auto cEntry = q.back();
+                q.pop_back();
+
+                auto& c = costs_[cEntry.r].find(cEntry.label)->second;
+
+                if (c.merge) {
+                    // Found a leaf
+                    if (c.prev.label == 0)
+                        return;
+
+                    q.emplace_back(r, c.prev.label, 0, cEntry.maxCost);
+                    auto inverse = label ^ c.prev.label;
+                    q.emplace_back(r, inverse, 0, cEntry.maxCost);
+                } else {
+                    auto n2 = c.prev.node;
+                    auto cn = instance_->getGraph()->nb[r][n2];
+                    cEntry.cCost += cn;
+                    cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
+
+                    q.emplace_back(n2, label, cEntry.cCost, cEntry.maxCost);
+                }
             }
         }
     };
