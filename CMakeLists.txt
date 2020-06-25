@@ -1,6 +1,6 @@
 project(steiner LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 
 option(STEINER_BUILD_STATIC       "whether or not to link statically (if supported)" OFF)
 
@@ -22,5 +22,5 @@ add_executable(steiner Graph.h LabelStore.h SteinerInstance.h main.cpp Graph.cpp
         dynamic/Steiner.h dynamic/SteinerHeuristic.h dynamic/DualAscentHeuristic.h dynamic/DualAscentHeuristic.cpp dynamic/LabelStore.h
         dynamic/LabelIterator.h dynamic/HashSetLabelStore.h dynamic/HashSetLabelStore.cpp dynamic/HsvSolver.h dynamic/HsvSolver.cpp
         dynamic/MstHeuristic.h dynamic/MstHeuristic.cpp
-        )
+        HybridSolver.h)
 SET_TARGET_PROPERTIES(steiner PROPERTIES LINKER_LANGUAGE CXX)

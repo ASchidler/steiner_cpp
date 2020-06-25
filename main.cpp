@@ -27,6 +27,7 @@
 #include "Algorithms/LocalOptimization.h"
 #include "dynamic/HsvSolver.h"
 #include <random>
+#include "HybridSolver.h"
 
 using namespace steiner;
 using namespace chrono;
@@ -145,16 +146,18 @@ int main(int argc, char* argv[]) {
         auto solver = DynamicHsvSolver(s, dualAscentLimit);
         tree = solver.solve();
     }
+    HybridSolver<uint128_type> slv;
+    slv.solve(*s);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
     cout << duration.count() / 1000000.0 << endl;
-
-    assert(tree != nullptr);
-
-    if (useReductions)
-        reducer.unreduce(tree);
-
-    cout << tree->cost << endl;
+//
+//    assert(tree != nullptr);
+//
+//    if (useReductions)
+//        reducer.unreduce(tree);
+//
+//    cout << tree->cost << endl;
     delete s;
 
     return 0;
