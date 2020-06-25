@@ -20,6 +20,8 @@
 #include "Structures/Queue.h"
 #include <algorithm>
 #include <iterator>
+#include <bit>
+#include <bitset>
 
 using namespace std;
 
@@ -117,32 +119,42 @@ namespace steiner {
         unordered_map<T, CostInfo**> known_nodes;
 
         __attribute__((noinline))
-        bool issep(T label, vector<node_id>& q, bool* seen, const bool* sep) {
+        bool issep(T label, node_id n, bool* seen, const bool* sep) {
+            vector<node_id> q;
+
+            // Start from the root
+            q.emplace_back(root_);
+            seen[root_] = true;
+            auto target = nTerminals_ - std::popcount(label);
+            if (target == 0)
+                return false;
+
+            // Now perform DFS
             while (! q.empty()) {
                 auto u = q.back();
                 q.pop_back();
 
                 for(const auto& v : instance_->getGraph()->nb[u]) {
                     if (! seen[v.first] && !sep[v.first]) {
+                        if (v.first <= nTerminals_ && v.first != n) { // n might not be in the separator, other terminals must be
+                            if(--target == 0)
+                                return false;
+                        }
+
                         seen[v.first] = true;
                         q.emplace_back(v.first);
                     }
                 }
             }
-            T cLabel = 1;
-            for(node_id t=0; t <= this->nTerminals_; t++) {
-                if ((label & cLabel) == 0 && !seen[t]) {
-                    return true;
-                }
-                cLabel <<= 1u;
-            }
-            return false;
+
+            return true;
         }
 
         __attribute__((noinline))
         inline bool check_sep(T label, node_id n, cost_id cost, CostInfo& cinfo) {
             // Other terminal is a separator in itself
             // TODO: Maybe set global upper bound once this case occurred
+            // With the other pruning, this should only occur for the closest terminal
             if (n <= this->nTerminals_) {
                 T mask = 1;
                 mask <<= n;
@@ -166,6 +178,7 @@ namespace steiner {
             // Check connectivity
             bool seen[instance_->getGraph()->getMaxNode()] = {};
             bool ignore[instance_->getGraph()->getMaxNode()] = {};
+
             unordered_map<node_id, cost_id> costs;
             //findTree(n, label, ignore);
             auto max_nodes = twoPathDist(n, label, costs, ignore);
@@ -185,6 +198,7 @@ namespace steiner {
 
                 for(const auto& v : instance_->getGraph()->nb[nc.node]) {
                     if (! ignore[v.first]) {
+                        // TODO: Check for terminal, would immediately make it a separator
                         if (v.second < nc.cost) {
                             qu.emplace(nc.cost-v.second, nc.node, nc.cost-v.second);
                         }
@@ -197,20 +211,7 @@ namespace steiner {
                     ignore[i] = true;
             }
 
-            vector<node_id> q;
-            T cLabel = 1;
-
-            // Find initial terminal
-            for(node_id t=0; t <= this->nTerminals_; t++) {
-                if ((label & cLabel) == 0) {
-                    q.emplace_back(t);
-                    seen[t] = true;
-                    break;
-                }
-                cLabel <<= 1u;
-            }
-
-            return issep(label, q, seen, ignore);
+            return issep(label, n, seen, ignore);
         }
 
         // TODO: Copying adjacency into vector may speed up iteration over neighbors
@@ -444,7 +445,15 @@ namespace steiner {
             return maxCost;
         }
 
+        bool nonDistance = true;
         inline void propagateUb(const node_id r, const T label, const cost_id costs) {
+            if (nonDistance) {
+                nonDistance = false;
+                for(auto u: instance_->getGraph()->getNodes()) {
+                    instance_->getGraph()->findDistances(u, instance_->getGraph()->getMaxKnownDistance());
+                }
+            }
+
             vector<pair<node_id, T>> q;
             q.emplace_back(r, label);
             auto dists = instance_->getGraph()->getDistances()[r];

@@ -95,7 +95,7 @@ SteinerResult* steiner::HsvSolver<T>::solve() {
         if (check_sep(entry.label, entry.node, cost.cost, cost)) {
             continue;
         }
-        //propagateUb(entry.node, entry.label, cost);
+        //propagateUb(entry.node, entry.label, cost.cost);
         // Checking pruning again does not really eliminate cases
 
         store_->addLabel(entry.node, entry.label);
