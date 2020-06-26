@@ -92,7 +92,7 @@ namespace steiner{
             }
         }
 
-        void merge(unordered_map<T, uint16_t>& labels, T label, unordered_map<T, CostInfo*>& costs, Queue<QueueEntry>& q, cost_id ub, SteinerInstance& instance) {
+        void merge(unordered_map<T, uint16_t>& labels, T label, unordered_map<T, CostInfo*>& costs, Queue<QueueEntry>& q, cost_id ub, SteinerInstance& instance, unordered_map<T, cost_id>& mins) {
             auto& ecosts = costs.at(label);
             for(auto& otherLabel: labels) {
                 if ((label & otherLabel.first) == 0) {
@@ -106,12 +106,15 @@ namespace steiner{
                     auto& ocost = costs.at(otherLabel.first);
 
                     CostInfo* ncost = nullptr;
+                    cost_id minCost = MAXCOST;
                     auto it = costs.find(newLabel);
-                    if (it != costs.end())
+                    if (it != costs.end()) {
                         ncost = it->second;
+                        minCost = mins[label];
+                    }
 
                     // merge costs
-                    cost_id minCost = MAXCOST;
+
                     bool change = false;
                     for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                         if (ecosts[i].valid && ocost[i].valid) {
@@ -134,8 +137,9 @@ namespace steiner{
                         }
                     }
                     if (change) {
+                        mins[label] = minCost;
                         // TODO: In case of consistency, re-adding is probably not necessary
-                        q.emplace(minCost, newLabel, minCost, revision);
+                        q.emplace(std::popcount(newLabel), newLabel, minCost, revision);
                     }
                 }
             }
@@ -145,6 +149,7 @@ namespace steiner{
             // TODO: If we shrink the graph at the beginning, we can just iterate over the nodes, without getnodes?
             unordered_map<T, uint16_t> labels;
             unordered_map<T, CostInfo*> costs;
+            unordered_map<T, cost_id> knownMinimum;
             cost_id ub = instance.getUpperBound(); // Shorthand
             Queue<QueueEntry> q(ub+1);
 
@@ -163,7 +168,7 @@ namespace steiner{
                 // Increment
                 targetLabel <<= 1u;
             }
-            // TODO: Cost table for labels to check if re-evaluation is necessary
+
             targetLabel -= 1; // Target label now contains the label for all terminals
 
             while(! q.empty()) {
@@ -247,11 +252,22 @@ namespace steiner{
                 node_id target = instance.getNumTerminals() - std::popcount(qe.label);
                 cost_id overallLimit = MAXCOST;
                 bool ran = false;
+
                 for(auto& cse: localCosts) {
-                    if (target == 0)
+                    T cLabel = 1;
+                    node_id tcount = 0;
+                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
+                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
+                            tcount++;
+                        cLabel <<= 1u;
+                    }
+                    if (tcount == instance.getNumTerminals())
                         break;
+//                    if (target == 0)
+//                        break;
 
                     // Part of the separator
+                    // TODO: Could be > 0?
                     if (state[cse.second].sep == 1)
                         continue;
 
@@ -296,7 +312,7 @@ namespace steiner{
                 }
 
                 // Merge
-                merge(labels, qe.label, costs, q, ub, instance);
+                merge(labels, qe.label, costs, q, ub, instance, knownMinimum);
             }
 
             cout << "Done" << endl;
@@ -354,10 +370,11 @@ namespace steiner{
                 } else {
                     auto n2 = c.prev.node;
                     // TODO: Theoretically we could store the transition cost, would avoid nb lookup...
+                    // TODO: Actually it is just the diff between the previous and these costs
                     auto cn = instance.getGraph()->nb[cEntry.r][n2];
                     cEntry.cCost += cn;
                     cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
-
+                    // TODO: Create queue vector once for class, this way the allocation takes place only once
                     if (isValid) {
                         state[n2].tp = min(state[n2].tp, cEntry.maxCost);
                         maxCost = max(maxCost, cEntry.maxCost);

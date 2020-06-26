@@ -129,6 +129,8 @@ int main(int argc, char* argv[]) {
     }
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
+    HybridSolver<uint64_t> slv;
+    slv.solve(*s);
     SteinerResult* tree = nullptr;
     if (s->getNumTerminals() < 16) {
         auto solver = HsvSolver<uint16_t>(s, dualAscentLimit);
@@ -146,8 +148,6 @@ int main(int argc, char* argv[]) {
         auto solver = DynamicHsvSolver(s, dualAscentLimit);
         tree = solver.solve();
     }
-    HybridSolver<uint64_t> slv;
-    slv.solve(*s);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
     cout << duration.count() / 1000000.0 << endl;
