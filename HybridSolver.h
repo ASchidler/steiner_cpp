@@ -189,13 +189,6 @@ namespace steiner{
                     break;
                 }
 
-                Queue<NodeWithCost> sq(ub+1);
-                for (node_id i=0; i < instance.getGraph()->getMaxNode(); i++) {
-                    if (ecosts[i].cost <= ub)
-                        sq.emplace(ecosts[i].cost, i, ecosts[i].cost);
-                }
-                propagate(instance, sq, ub, ecosts);
-
                 // Sort costs
                 vector<pair<CostInfo*, node_id>> localCosts;
                 for (node_id i=0; i < instance.getGraph()->getMaxNode(); i++) {
@@ -203,11 +196,9 @@ namespace steiner{
                 }
                 std::sort(localCosts.begin(), localCosts.end(), CostInfo::comparePairPtr);
 
-                // Compare
                 PruneState state[instance.getGraph()->getMaxNode()];
                 cost_id maxC = 0;
                 node_id cnt = 0;
-
                 for(auto& entry: localCosts) {
                     if (entry.first->valid) {
                         cnt++;
@@ -215,9 +206,16 @@ namespace steiner{
                     }
                 }
 
-                Queue<NodeWithCost> qu(maxC);
+                // Propagate costs and invalid flag
+                Queue<NodeWithCost> sq(ub+1);
+                for (node_id i=0; i < instance.getGraph()->getMaxNode(); i++) {
+                    if (ecosts[i].cost <= ub)
+                        sq.emplace(ecosts[i].cost, i, ecosts[i].cost);
+                }
+                propagate(instance, sq, ub, ecosts);
 
-                // Add all nodes present in all trees
+                // Propagate two path costs
+                Queue<NodeWithCost> qu(maxC);
                 for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                     if (state[i].occurance == cnt) {
                         qu.emplace(maxC - state[i].tp, i, maxC - state[i].tp);
