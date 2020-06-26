@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
         auto solver = DynamicHsvSolver(s, dualAscentLimit);
         tree = solver.solve();
     }
-    HybridSolver<uint128_type> slv;
+    HybridSolver<uint64_t> slv;
     slv.solve(*s);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
