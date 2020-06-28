@@ -62,14 +62,16 @@ namespace steiner{
         };
 
         struct PruneState {
+            enum NodeState {nfound, found, naddeed, seperator};
             PruneState() = default;
 
             cost_id tp = MAXCOST;
             node_id occurance = 0;
-            char sep = 0;
+            NodeState sep = naddeed;
         };
     private:
         vector<TwoPathEntry> twoPathQueue_;
+        vector<node_id> nodeQueue_;
 
     public:
 
@@ -232,89 +234,10 @@ namespace steiner{
                 }
                 propagate(instance, sq, ub, ecosts);
 
-                // Propagate two path costs
-                Queue<NodeWithCost> qu(maxC);
-                for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
-                    if (state[i].occurance == cnt) {
-                        qu.emplace(maxC - state[i].tp, i, maxC - state[i].tp);
-                        state[i].sep = 1;
-                    }
-                }
-
-                // Find separator candidate (N) based on two path
-                while(! qu.empty()) {
-                    auto nc = qu.dequeue();
-                    if (state[nc.node].sep == 1)
-                        continue;
-
-                    state[nc.node].sep = 1;
-
-                    for(const auto& v : instance.getGraph()->nb[nc.node]) {
-                        if (state[v.first].sep == 0) {
-                            if (v.second < nc.cost) {
-                                qu.emplace(nc.cost-v.second, nc.node, nc.cost-v.second);
-                            }
-                        }
-                    }
-                }
+                propagateTwoPath(state, maxC, cnt, instance);
 
                 // Extend the candidate, until it is a separator
-                std::sort(localCosts.begin(), localCosts.end(), CostInfo::comparePairPtrT);
-
-                vector<node_id> cq;
-                node_id target = instance.getNumTerminals() - std::popcount(qe.label);
-                cost_id overallLimit = MAXCOST;
-                bool ran = false;
-
-                for(auto& cse: localCosts) {
-//                    T cLabel = 1;
-//                    node_id tcount = 0;
-//                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
-//                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
-//                            tcount++;
-//                        cLabel <<= 1u;
-//                    }
-//                    if (tcount == instance.getNumTerminals())
-//                        break;
-                    if (target == 0)
-                        break;
-
-                    // Part of the separator
-                    if (state[cse.second].sep == 1)
-                        continue;
-
-                    overallLimit = cse.first->cost;
-
-                    state[cse.second].sep = 2;
-                    if (ran) {
-                        for(const auto& v : instance.getGraph()->nb[cse.second]) {
-                            if (state[v.first].sep == 2)
-                                cq.emplace_back(v.first);
-                        }
-                    } else {
-                        cq.emplace_back(cse.second);
-                        ran = true;
-                    }
-
-                    while (! cq.empty()) {
-                        auto cqe = cq.back();
-                        cq.pop_back();
-
-                        for(const auto& v : instance.getGraph()->nb[cqe]) {
-                            if (state[v.first].sep == 2) {
-                                if (v.first < instance.getNumTerminals()) {
-                                    T mask = 1; // This construct avoids an overflow if 128 bits are used
-                                    mask <<= v.first;
-                                    if((mask & qe.label) == 0)
-                                        target--;
-                                }
-
-                                state[v.first].sep = 3;
-                                cq.emplace_back(v.first);
-                            }
-                        }
-                    }
-                }
+                cost_id overallLimit = findSeparatorBound(localCosts, qe.label, instance, state);
 
                 for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                     if (ecosts[i].cost > overallLimit || ecosts[i].dummy) {
@@ -331,7 +254,114 @@ namespace steiner{
             exit(3);
         }
 
+        inline cost_id findSeparatorBound(vector<pair<CostInfo*, node_id>> localCosts, T label, SteinerInstance& instance, PruneState* state) {
+            std::sort(localCosts.begin(), localCosts.end(), CostInfo::comparePairPtrT);
 
+            node_id target = instance.getNumTerminals() - std::popcount(label);
+            node_id target2 = target;
+            cost_id overallLimit = MAXCOST;
+            nodeQueue_.clear();
+
+            // First add all nodes, until all the sought after terminals have been added
+            auto it = localCosts.begin();
+            while(it != localCosts.end() && target > 0) {
+                state[it->second].sep = PruneState::nfound;
+                overallLimit = it->first->cost;
+
+                if (it->second < instance.getNumTerminals()) {
+                    T mask = 1; // This construct avoids an overflow if 128 bits are used
+                    mask <<= it->second;
+                    if((mask & label) == 0) {
+                        target--;
+                        if (nodeQueue_.empty())
+                            nodeQueue_.emplace_back(it->second);
+                    }
+                }
+                ++it;
+            }
+
+            // Now all terminals have been added, we can check if they are connected and add vertices if necessary
+            while(it != localCosts.end() && target2 > 0) {
+                // Check connectivity
+                while (! nodeQueue_.empty() && target2 > 0) {
+                    auto cqe = nodeQueue_.back();
+                    nodeQueue_.pop_back();
+
+                    if (state[cqe].sep != PruneState::nfound)
+                        continue;
+                    state[cqe].sep = PruneState::found;
+
+                    if (cqe < instance.getNumTerminals()) {
+                        T mask = 1; // This construct avoids an overflow if 128 bits are used
+                        mask <<= cqe;
+                        if((mask & label) == 0)
+                            target2--;
+                    }
+
+                    for(const auto& v : instance.getGraph()->nb[cqe]) {
+                        if (state[v.first].sep == PruneState::nfound) {
+                            nodeQueue_.emplace_back(v.first);
+                        }
+                    }
+                }
+
+                // Connected?
+                if (target2 == 0)
+                    break;
+
+                // Extend graph
+                bool found = false;
+                while(it != localCosts.end() && !found) {
+                    // If the node is part of the separator, skip
+                    if (state[it->second].sep != PruneState::seperator) {
+                        // The upper bound is it least the current cost
+                        overallLimit = it->first->cost;
+                        state[it->second].sep = PruneState::nfound;
+
+                        // Check if any neighbor is connected
+
+                        for (const auto &v : instance.getGraph()->nb[it->second]) {
+                            if (state[v.first].sep == PruneState::found) {
+                                nodeQueue_.emplace_back(it->second);
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    ++it;
+                }
+            }
+
+            return overallLimit;
+        }
+
+        inline void propagateTwoPath(PruneState* state, cost_id maxCost, node_id cnt, SteinerInstance& instance) {
+            // Propagate two path costs, whenever a vertex exists in all trees
+            Queue<NodeWithCost> qu(maxCost);
+            for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
+                if (state[i].occurance == cnt && state[i].tp > 0) {
+                    qu.emplace(maxCost - state[i].tp, i, maxCost - state[i].tp);
+                    state[i].sep = PruneState::seperator;
+                }
+            }
+
+            // Find separator candidate (N) based on two path
+            while(! qu.empty()) {
+                auto nc = qu.dequeue();
+                if (state[nc.node].sep == PruneState::seperator)
+                    continue;
+
+                state[nc.node].sep = PruneState::seperator;
+
+                for(const auto& v : instance.getGraph()->nb[nc.node]) {
+                    if (state[v.first].sep == 0) {
+                        if (v.second < nc.cost) {
+                            qu.emplace(nc.cost-v.second, v.first, nc.cost-v.second);
+                        }
+                    }
+                }
+            }
+        }
 
         inline cost_id twoPathDist(node_id r, const T label, unordered_map<T,
                 CostInfo*>& costs, cost_id cost, SteinerInstance& instance, PruneState* state) {
