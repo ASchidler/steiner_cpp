@@ -130,24 +130,27 @@ int main(int argc, char* argv[]) {
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
     HybridSolver<uint128_type> slv;
-    slv.solve(*s);
-    SteinerResult* tree = nullptr;
-    if (s->getNumTerminals() < 16) {
-        auto solver = HsvSolver<uint16_t>(s, dualAscentLimit);
-        tree = solver.solve();
-    } else if (s->getNumTerminals() < 32) {
-        auto solver = HsvSolver<uint32_t>(s, dualAscentLimit);
-        tree = solver.solve();
-    }  else if (s->getNumTerminals() < 64) {
-        auto solver = HsvSolver<uint64_t>(s, dualAscentLimit);
-        tree = solver.solve();
-    } else if (s->getNumTerminals() < 128) {
-        auto solver = HsvSolver<uint128_type>(s, dualAscentLimit);
-        tree = solver.solve();
-    } else {
-        auto solver = DynamicHsvSolver(s, dualAscentLimit);
-        tree = solver.solve();
-    }
+    if (s->getNumTerminals() < 128)
+        slv.solve(*s);
+    else
+        exit(4);
+//    SteinerResult* tree = nullptr;
+//    if (s->getNumTerminals() < 16) {
+//        auto solver = HsvSolver<uint16_t>(s, dualAscentLimit);
+//        tree = solver.solve();
+//    } else if (s->getNumTerminals() < 32) {
+//        auto solver = HsvSolver<uint32_t>(s, dualAscentLimit);
+//        tree = solver.solve();
+//    }  else if (s->getNumTerminals() < 64) {
+//        auto solver = HsvSolver<uint64_t>(s, dualAscentLimit);
+//        tree = solver.solve();
+//    } else if (s->getNumTerminals() < 128) {
+//        auto solver = HsvSolver<uint128_type>(s, dualAscentLimit);
+//        tree = solver.solve();
+//    } else {
+//        auto solver = DynamicHsvSolver(s, dualAscentLimit);
+//        tree = solver.solve();
+//    }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
     cout << duration.count() / 1000000.0 << endl;

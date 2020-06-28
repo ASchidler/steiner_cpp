@@ -203,7 +203,8 @@ namespace steiner{
                         ecosts++;
 
                     cout << ecosts->cost << endl;
-                    break;
+                    cout << "Done";
+                    return;
                 }
 
                 // Sort costs
@@ -266,17 +267,17 @@ namespace steiner{
                 bool ran = false;
 
                 for(auto& cse: localCosts) {
-                    T cLabel = 1;
-                    node_id tcount = 0;
-                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
-                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
-                            tcount++;
-                        cLabel <<= 1u;
-                    }
-                    if (tcount == instance.getNumTerminals())
-                        break;
-//                    if (target == 0)
+//                    T cLabel = 1;
+//                    node_id tcount = 0;
+//                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
+//                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
+//                            tcount++;
+//                        cLabel <<= 1u;
+//                    }
+//                    if (tcount == instance.getNumTerminals())
 //                        break;
+                    if (target == 0)
+                        break;
 
                     // Part of the separator
                     if (state[cse.second].sep == 1)
@@ -326,7 +327,8 @@ namespace steiner{
                 merge(labels, qe.label, costs, q, ub, instance);
             }
 
-            cout << "Done" << endl;
+            cout << "No result" << endl;
+            exit(3);
         }
 
 
