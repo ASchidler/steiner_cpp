@@ -21,6 +21,7 @@ namespace steiner{
             Predecessor<T> prev = Predecessor<T>();
             bool merge = false;
             bool valid = false;
+            bool dummy = false;
 
             static bool comparePtr(CostInfo* a, CostInfo* b) { return (a->cost < b->cost); }
 
@@ -76,7 +77,7 @@ namespace steiner{
             while(! pq.empty()) {
                 auto pqe = pq.dequeue();
 
-                if (costs[pqe.node].cost < pqe.cost)
+                if (costs[pqe.node].cost < pqe.cost || !costs[pqe.node].valid)
                     continue;
 
                 // Expand
@@ -86,10 +87,13 @@ namespace steiner{
                         costs[v.first].cost = nc;
                         costs[v.first].prev.node = pqe.node;
                         costs[v.first].merge = false;
+                        costs[v.first].valid = true;
+
                         // TODO: This probably causes a cache miss
                         // TODO: Other pruning goes here
                         // TODO: Check lower bound for bound transgression?
-                        costs[v.first].valid = costs[pqe.node].valid;
+
+                        costs[v.first].dummy = costs[pqe.node].dummy;
                         if (nc > ub) {
                             costs[v.first].cost = ub + 1;
                             costs[v.first].valid = false;
@@ -138,6 +142,7 @@ namespace steiner{
                                     change = true;
                                     ncost[i].cost = nc;
                                     ncost[i].valid = true;
+                                    ncost[i].dummy = false;
                                     ncost[i].prev.label = otherLabel.first;
                                     ncost[i].merge = true;
                                 }
@@ -221,7 +226,7 @@ namespace steiner{
                 // Propagate costs and invalid flag
                 Queue<NodeWithCost> sq(ub+1);
                 for (node_id i=0; i < instance.getGraph()->getMaxNode(); i++) {
-                    if (ecosts[i].cost <= ub)
+                    if (ecosts[i].cost <= ub && ecosts[i].valid)
                         sq.emplace(ecosts[i].cost, i, ecosts[i].cost);
                 }
                 propagate(instance, sq, ub, ecosts);
@@ -311,7 +316,7 @@ namespace steiner{
                 }
 
                 for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
-                    if (ecosts[i].cost > overallLimit) {
+                    if (ecosts[i].cost > overallLimit || ecosts[i].dummy) {
                         ecosts[i].valid = false;
                         ecosts[i].cost = overallLimit + 1;
                     }
@@ -344,7 +349,7 @@ namespace steiner{
                 twoPathQueue_.pop_back();
 
                 if(mainCosts[cEntry.r].cost > cost) {
-                    mainCosts[cEntry.r].valid = false;
+                    mainCosts[cEntry.r].dummy = true;
                     mainCosts[cEntry.r].cost = cost;
                 }
 
