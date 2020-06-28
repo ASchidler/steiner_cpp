@@ -146,8 +146,8 @@ namespace steiner{
                     }
                     if (change) {
                         // TODO: In case of consistency, re-adding is probably not necessary
-                        //q.emplace(std::popcount(newLabel), newLabel, std::popcount(newLabel), revision);
-                        q.emplace(minCost, newLabel, minCost, revision);
+                        q.emplace(std::popcount(newLabel), newLabel, std::popcount(newLabel), revision);
+                        //q.emplace(minCost, newLabel, minCost, revision);
                     }
                 }
             }
@@ -261,20 +261,19 @@ namespace steiner{
                 bool ran = false;
 
                 for(auto& cse: localCosts) {
-//                    T cLabel = 1;
-//                    node_id tcount = 0;
-//                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
-//                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
-//                            tcount++;
-//                        cLabel <<= 1u;
-//                    }
-//                    if (tcount == instance.getNumTerminals())
-//                        break;
-                    if (target == 0)
+                    T cLabel = 1;
+                    node_id tcount = 0;
+                    for(node_id t=0; t < instance.getNumTerminals(); t++) {
+                        if ((cLabel & qe.label) > 0 || state[t].sep == 3 || state[t].sep == 1)
+                            tcount++;
+                        cLabel <<= 1u;
+                    }
+                    if (tcount == instance.getNumTerminals())
                         break;
+//                    if (target == 0)
+//                        break;
 
                     // Part of the separator
-                    // TODO: Could be > 0?
                     if (state[cse.second].sep == 1)
                         continue;
 
@@ -338,10 +337,7 @@ namespace steiner{
             CostInfo* cCosts = mainCosts;
             auto cLabel = label;
 
-            bool isValid = mainCosts[r].valid;
-
-            if (isValid)
-                state[r].tp = 0;
+            state[r].tp = 0;
 
             while(! twoPathQueue_.empty()) {
                 auto cEntry = twoPathQueue_.back();
@@ -374,10 +370,10 @@ namespace steiner{
                     cEntry.cCost += cn;
                     cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
                     // TODO: Create queue vector once for class, this way the allocation takes place only once
-                    if (isValid) {
-                        state[n2].tp = min(state[n2].tp, cEntry.maxCost);
-                        maxCost = max(maxCost, cEntry.maxCost);
-                    }
+
+                    state[n2].tp = min(state[n2].tp, cEntry.maxCost);
+                    maxCost = max(maxCost, cEntry.maxCost);
+
                     state[n2].occurance += 1;
 
                     twoPathQueue_.emplace_back(n2, cEntry.label, cEntry.cCost, cEntry.maxCost);

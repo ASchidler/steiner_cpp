@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
     }
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
-    HybridSolver<uint64_t> slv;
+    HybridSolver<uint128_type> slv;
     slv.solve(*s);
     SteinerResult* tree = nullptr;
     if (s->getNumTerminals() < 16) {
