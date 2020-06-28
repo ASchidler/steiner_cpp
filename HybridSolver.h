@@ -248,6 +248,8 @@ namespace steiner{
 
                 // Merge
                 merge(labels, qe.label, costs, q, ub, instance);
+
+                // TODO: If nothing valid, we could remove and only if not add to label
             }
 
             cout << "No result" << endl;
