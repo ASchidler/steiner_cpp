@@ -205,7 +205,7 @@ namespace steiner{
                         ecosts++;
 
                     cout << ecosts->cost << endl;
-                    cout << "Done";
+                    cout << "Done" << endl;
                     return;
                 }
 
@@ -220,7 +220,7 @@ namespace steiner{
                 cost_id maxC = 0;
                 node_id cnt = 0;
                 for(auto& entry: localCosts) {
-                    if (entry.first->valid) {
+                    if (entry.first->valid && !entry.first->dummy) {
                         cnt++;
                         maxC = max(maxC, twoPathDist(entry.second, qe.label, costs, entry.first->cost, instance, state));
                     }
@@ -239,17 +239,23 @@ namespace steiner{
                 // Extend the candidate, until it is a separator
                 cost_id overallLimit = findSeparatorBound(localCosts, qe.label, instance, state);
 
+                bool anyValid = false;
                 for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                     if (ecosts[i].cost > overallLimit || ecosts[i].dummy) {
                         ecosts[i].valid = false;
                         ecosts[i].cost = overallLimit + 1;
+                    } else {
+                        anyValid = true;
                     }
                 }
 
-                // Merge
-                merge(labels, qe.label, costs, q, ub, instance);
-
-                // TODO: If nothing valid, we could remove and only if not add to label
+                if (anyValid) {
+                    // Merge
+                    merge(labels, qe.label, costs, q, ub, instance);
+                } else {
+                    costs.erase(qe.label);
+                    labels.erase(qe.label);
+                }
             }
 
             cout << "No result" << endl;
@@ -263,6 +269,7 @@ namespace steiner{
             node_id target2 = target;
             cost_id overallLimit = MAXCOST;
             nodeQueue_.clear();
+            int cnt2 = 0;
 
             // First add all nodes, until all the sought after terminals have been added
             auto it = localCosts.begin();
@@ -338,12 +345,15 @@ namespace steiner{
         }
 
         inline void propagateTwoPath(PruneState* state, cost_id maxCost, node_id cnt, SteinerInstance& instance) {
-            // Propagate two path costs, whenever a vertex exists in all trees
+            /*  Propagate two path costs, whenever a vertex exists in all trees
+                This works a little bit different than usual Dijkstra. The goal here is to mark all vertices within
+                range of tp. We therefore take the distance to the maximum cost, as this way the priority queue
+                works as intended (otherwise we'd need to reverse prioritization order)
+                */
             Queue<NodeWithCost> qu(maxCost);
             for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                 if (state[i].occurance == cnt && state[i].tp > 0) {
                     qu.emplace(maxCost - state[i].tp, i, maxCost - state[i].tp);
-                    state[i].sep = PruneState::seperator;
                 }
             }
 
@@ -357,8 +367,8 @@ namespace steiner{
 
                 for(const auto& v : instance.getGraph()->nb[nc.node]) {
                     if (state[v.first].sep == 0) {
-                        if (v.second < nc.cost) {
-                            qu.emplace(nc.cost-v.second, v.first, nc.cost-v.second);
+                        if (v.second + nc.cost < maxCost) {
+                            qu.emplace(nc.cost + v.second, v.first, nc.cost + v.second);
                         }
                     }
                 }
@@ -411,10 +421,9 @@ namespace steiner{
                     // TODO: Create queue vector once for class, this way the allocation takes place only once
 
                     state[n2].tp = min(state[n2].tp, cEntry.maxCost);
-                    maxCost = max(maxCost, cEntry.maxCost);
-
                     state[n2].occurance += 1;
 
+                    maxCost = max(maxCost, cEntry.maxCost);
                     twoPathQueue_.emplace_back(n2, cEntry.label, cEntry.cCost, cEntry.maxCost);
                 }
             }

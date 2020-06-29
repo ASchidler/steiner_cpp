@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new NtdkReduction(s, 2000, true, 4));
     reductions.push_back(new SdcReduction(s, 2000));
     reductions.push_back(new DegreeReduction(s, false));
-    // reductions.push_back(new Degree3Reduction(s));
+    //reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new NtdkReduction(s, 2000, false, 4));
     reductions.push_back(new DegreeReduction(s, false));
