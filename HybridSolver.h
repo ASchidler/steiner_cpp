@@ -14,11 +14,11 @@ namespace steiner{
     template <typename T>
     class HybridSolver {
         struct CostInfo {
-            CostInfo(unsigned int cost, Predecessor<T> prev, bool merge) : cost(cost), prev(prev), merge(merge), valid(true) {
+            CostInfo(unsigned int cost, T prev, bool merge) : cost(cost), prev(prev), merge(merge), valid(true) {
             }
             CostInfo() = default;
             cost_id cost = MAXCOST;
-            Predecessor<T> prev = Predecessor<T>();
+            T prev = 0;
             bool merge = false;
             bool valid = false;
             bool dummy = false;
@@ -36,11 +36,12 @@ namespace steiner{
         };
 
         struct MinimalCostInfo {
-            MinimalCostInfo(cost_id cost, Predecessor<T> prev, bool merge) : cost(cost), prev(prev), merge(merge) {}
+            MinimalCostInfo(cost_id cost, T prev, bool merge, T label) : cost(cost), prev(prev), merge(merge), label(label) {}
 
             cost_id cost;
-            Predecessor<T> prev;
+            T prev;
             bool merge;
+            T label;
         };
 
         struct QueueEntry {
@@ -92,7 +93,7 @@ namespace steiner{
                     cost_id nc = pqe.cost + v.second;
                     if (costs[v.first].cost > nc) {
                         costs[v.first].cost = nc;
-                        costs[v.first].prev.node = pqe.node;
+                        costs[v.first].prev = pqe.node;
                         costs[v.first].merge = false;
                         costs[v.first].valid = true;
 
@@ -137,15 +138,15 @@ namespace steiner{
                                 if (ncost == nullptr) {
                                     ncost = new CostInfo[instance.getGraph()->getMaxNode()];
                                     costs.emplace(newLabel, ncost);
-                                    auto lit = labels.find(newLabel);
-                                    if (lit != labels.end()) {
-                                        for(auto& lentry: lit->second) {
-                                            ncost[lentry.first].valid = true;
-                                            ncost[lentry.first].prev = lentry.second.prev;
-                                            ncost[lentry.first].cost = lentry.second.cost;
-                                            ncost[lentry.first].merge = lentry.second.merge;
-                                        }
-                                    }
+//                                    auto lit = labels.find(newLabel);
+//                                    if (lit != labels.end()) {
+//                                        for(auto& lentry: lit->second) {
+//                                            ncost[lentry.first].valid = true;
+//                                            ncost[lentry.first].prev = lentry.second.prev;
+//                                            ncost[lentry.first].cost = lentry.second.cost;
+//                                            ncost[lentry.first].merge = lentry.second.merge;
+//                                        }
+//                                    }
                                 }
 
                                 if (ncost[oentry.first].cost > nc) {
@@ -153,7 +154,7 @@ namespace steiner{
                                     ncost[oentry.first].cost = nc;
                                     ncost[oentry.first].valid = true;
                                     ncost[oentry.first].dummy = false;
-                                    ncost[oentry.first].prev.label = otherLabel.first;
+                                    ncost[oentry.first].prev = otherLabel.first;
                                     ncost[oentry.first].merge = true;
                                 }
                             }
@@ -185,7 +186,7 @@ namespace steiner{
                 newCosts[t].merge = true;
                 newCosts[t].valid = true;
                 newCosts[t].cost = 0;
-                newCosts[t].prev.label = 0;
+                newCosts[t].prev = 0;
 
                 // Increment
                 targetLabel <<= 1u;
@@ -253,7 +254,7 @@ namespace steiner{
                         }
                         labelEntry->emplace(std::piecewise_construct,
                                             std::forward_as_tuple(i),
-                                            std::forward_as_tuple(ecosts[i].cost, ecosts[i].prev, ecosts[i].merge));
+                                            std::forward_as_tuple(ecosts[i].cost, ecosts[i].prev, ecosts[i].merge, qe.label));
                     } else {
                         ecosts[i].valid = false;
                     }
@@ -273,7 +274,7 @@ namespace steiner{
             exit(3);
         }
 
-        inline cost_id findSeparatorBound(vector<pair<CostInfo*, node_id>> localCosts, T label, SteinerInstance& instance, PruneState* state) {
+        cost_id findSeparatorBound(vector<pair<CostInfo*, node_id>> localCosts, T label, SteinerInstance& instance, PruneState* state) {
             std::sort(localCosts.begin(), localCosts.end(), CostInfo::comparePairPtrT);
 
             node_id target = instance.getNumTerminals() - std::popcount(label);
@@ -355,7 +356,7 @@ namespace steiner{
             return overallLimit;
         }
 
-        inline void propagateTwoPath(PruneState* state, cost_id maxCost, node_id cnt, SteinerInstance& instance) {
+        void propagateTwoPath(PruneState* state, cost_id maxCost, node_id cnt, SteinerInstance& instance) {
             /*  Propagate two path costs, whenever a vertex exists in all trees
                 This works a little bit different than usual Dijkstra. The goal here is to mark all vertices within
                 range of tp. We therefore take the distance to the maximum cost, as this way the priority queue
@@ -386,20 +387,19 @@ namespace steiner{
             }
         }
 
-        inline cost_id twoPathDist(node_id r, const T label, CostInfo* mainCosts, unordered_map<T,
+        cost_id twoPathDist(node_id r, const T label, CostInfo* mainCosts, unordered_map<T,
                 unordered_map<node_id, MinimalCostInfo>>& labels, cost_id cost, SteinerInstance& instance, PruneState* state) {
             cost_id maxCost = 0;
 
             state[r].occurance += 1;
             twoPathQueue_.emplace_back(r, label, 0, 0);
 
-            unordered_map<node_id, MinimalCostInfo>* cCosts = nullptr;
+            //unordered_map<node_id, MinimalCostInfo>* cCosts = nullptr;
             auto cLabel = 0;
 
             state[r].tp = 0;
             bool merge;
-            T entryLabel;
-            node_id entryNode;
+            T prev;
 
             while(! twoPathQueue_.empty()) {
                 auto cEntry = twoPathQueue_.back();
@@ -412,45 +412,39 @@ namespace steiner{
 
                 if (cEntry.label == label) {
                     merge = mainCosts[cEntry.r].merge;
-                    if (merge) {
-                        entryLabel = mainCosts[cEntry.r].prev.label;
-                    } else {
-                        entryNode = mainCosts[cEntry.r].prev.node;
-                    }
+                    prev = mainCosts[cEntry.r].prev;
                 } else {
-                    if (cEntry.label != cLabel) {
-                        cCosts = &(labels.at(cEntry.label));
-                        cLabel = cEntry.label;
-                    }
-
-                    auto &c = cCosts->at(cEntry.r);
+//                    if (cEntry.label != cLabel) {
+//                        cCosts = &(labels.at(cEntry.label));
+//                        cLabel = cEntry.label;
+//                    }
+//
+//                    auto &c = cCosts->at(cEntry.r);
+                    auto &c = labels.at(cEntry.label).at(cEntry.r);
                     merge = c.merge;
-                    if (merge) {
-                        entryLabel = c.prev.label;
-                    } else {
-                        entryNode = c.prev.node;
-                    }
+                    prev = c.prev;
                 }
 
                 if (merge) {
                     // Is not a leaf
-                    if (entryLabel != 0) {
-                        twoPathQueue_.emplace_back(cEntry.r, entryLabel, 0, cEntry.maxCost);
-                        auto inverse = cEntry.label ^ entryLabel;
+                    if (prev != 0) {
+                        twoPathQueue_.emplace_back(cEntry.r, prev, 0, cEntry.maxCost);
+                        auto inverse = cEntry.label ^ prev;
                         twoPathQueue_.emplace_back(cEntry.r, inverse, 0, cEntry.maxCost);
                     }
                 } else {
                     // TODO: Theoretically we could store the transition cost, would avoid nb lookup...
                     // TODO: Actually it is just the diff between the previous and these costs
-                    auto cn = instance.getGraph()->nb[cEntry.r][entryNode];
+                    auto cn = instance.getGraph()->nb[cEntry.r][prev];
                     cEntry.cCost += cn;
                     cEntry.maxCost = max(cEntry.maxCost, cEntry.cCost);
 
-                    state[entryNode].tp = min(state[entryNode].tp, cEntry.maxCost);
-                    state[entryNode].occurance += 1;
+                    //TODO: We do not need to emplace, we can change...
+                    state[prev].tp = min(state[prev].tp, cEntry.maxCost);
+                    state[prev].occurance += 1;
 
                     maxCost = max(maxCost, cEntry.maxCost);
-                    twoPathQueue_.emplace_back(entryNode, cEntry.label, cEntry.cCost, cEntry.maxCost);
+                    twoPathQueue_.emplace_back(prev, cEntry.label, cEntry.cCost, cEntry.maxCost);
                 }
             }
 

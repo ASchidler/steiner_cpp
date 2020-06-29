@@ -29,8 +29,8 @@ using namespace std;
 namespace steiner {
     template<typename T2>
     union Predecessor {
-        node_id node;
         T2 label;
+        node_id node;
     };
 
 
