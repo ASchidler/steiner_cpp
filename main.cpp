@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
     }
 
     cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
-    HybridSolver<uint128_type> slv;
+    HybridSolver<uint128_type> slv(*s);
     if (s->getNumTerminals() < 128)
         slv.solve(*s);
     else
