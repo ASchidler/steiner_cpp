@@ -119,8 +119,6 @@ namespace steiner{
                 if ((label & otherLabel.first) == 0) {
                     T newLabel = label | otherLabel.first;
 
-                    Queue<NodeWithCost> sq(ub + 1);
-
                     CostInfo* ncost = nullptr;
                     cost_id minCost = MAXCOST;
                     auto it = costs.find(newLabel);
