@@ -6,6 +6,8 @@
 #include "../Structures/Queue.h"
 
 void steiner::LocalOptimization::vertexInsertion(Graph* dg, SteinerResult& tr, node_id nTerminals) {
+    if (tr.g->getNumNodes() < 3)
+        return;
     for(auto n: dg->getNodes()) {
         if (tr.g->getNodes().count(n) == 0) {
             // Find neighbors that are in the solution
@@ -255,6 +257,9 @@ void steiner::LocalOptimization::pathExchange(Graph& g, SteinerResult& tr, node_
 }
 
 void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, node_id nTerminals) {
+    if (tr.g->getNumNodes() < 3)
+        return;
+
     // Find predecessors for common ancestor finding by performing a DFS traversal
     NodeWithCost p[g.getMaxNode()];
     p[tr.root] = NodeWithCost(tr.root, 0);
@@ -299,6 +304,7 @@ void steiner::LocalOptimization::keyVertexDeletion(Graph& g, SteinerResult& tr, 
     auto it = g.findEdges();
     while(it.hasElement()) {
         auto e = *it;
+
         auto t1 =  vor.getClosest(e.u);
         auto t2 = vor.getClosest(e.v);
 

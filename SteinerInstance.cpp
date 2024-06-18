@@ -17,7 +17,7 @@ SteinerInstance::SteinerInstance(Graph *g, vector<node_id> *terminals) : g_(g) {
     closest_terminals_ = nullptr;
 }
 
-unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+set<node_id>::iterator SteinerInstance::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
     node_id oldRemove = remove;
     remove = removeNode_(remove);
     if (remove < nTerminals)
@@ -30,8 +30,8 @@ unordered_set<node_id>::iterator SteinerInstance::contractEdge(node_id target, n
     return g_->contractEdge(target, remove, result);
 }
 
-unordered_set<node_id>::iterator
-SteinerInstance::contractEdge(unordered_set<node_id>::iterator target, node_id remove, vector<ContractedEdge> *result) {
+set<node_id>::iterator
+SteinerInstance::contractEdge(set<node_id>::iterator target, node_id remove, vector<ContractedEdge> *result) {
     node_id oldRemove = remove;
     remove = removeNode_(remove);
 
@@ -76,13 +76,13 @@ node_id SteinerInstance::removeNode_(node_id u) {
     return u;
 }
 
-unordered_set<node_id>::iterator SteinerInstance::removeNode(node_id u) {
+set<node_id>::iterator SteinerInstance::removeNode(node_id u) {
     u = removeNode_(u);
     return g_->removeNode(u);
 }
-unordered_set<node_id>::iterator SteinerInstance::removeNode(unordered_set<node_id>::iterator u) {
+set<node_id>::iterator SteinerInstance::removeNode(set<node_id>::iterator u) {
     auto n = removeNode_(*u);
-    unordered_set<node_id>::iterator result;
+    set<node_id>::iterator result;
     if (n == *u)
         result = g_->removeNode(u);
     else

@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/30/20.
+// Created on 1/30/20.
 //
 
 #include "HeavyEdgeReduction.h"
@@ -33,7 +33,7 @@ node_id steiner::HeavyEdgeReduction::reduce(node_id currCount, node_id prevCount
             for(auto& n2: nb) {
                 if (n1.first < n2.first) {
                     auto sl =SteinerLength::calculateSteinerLength(n1.first, n2.first, instance->getGraph(), c, limit_, false, instance->getNumTerminals(), instance->getGraph()->getMaxNode());
-                    maxDist = max(maxDist, sl);
+                    maxDist = std::max(maxDist, sl);
                 }
             }
         }

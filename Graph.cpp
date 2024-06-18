@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #include "Graph.h"
@@ -123,7 +123,7 @@ void steiner::Graph::findDistances(node_id u, cost_id ub) {
     }
 }
 
-unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
+set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
     for(auto elem: nb[u]) {
         nb[elem.first].erase(u);
     }
@@ -135,7 +135,7 @@ unordered_set<node_id>::iterator steiner::Graph::removeNode(node_id u) {
     return it;
 }
 
-unordered_set<node_id>::iterator steiner::Graph::removeNode(unordered_set<node_id>::iterator u) {
+set<node_id>::iterator steiner::Graph::removeNode(set<node_id>::iterator u) {
     for(const auto& elem: nb[*u]) {
         nb[elem.first].erase(*u);
     }
@@ -179,7 +179,7 @@ Graph::EdgeIterator Graph::removeEdge(Graph::EdgeIterator it) {
 }
 
 
-unordered_set<node_id>::iterator Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
+set<node_id>::iterator Graph::contractEdge(node_id target, node_id remove, vector<ContractedEdge>* result) {
     vector<Edge> ret;
     for(const auto& n: nb[remove]) {
         if (n.first != target) {
@@ -491,7 +491,7 @@ void Graph::remap(Graph& g) {
     }
     vector<unordered_map<node_id, cost_id, NodeIdHash>> newNb;
     newNb.resize(maxNode + 1);
-    unordered_set<node_id> newNodes;
+    set<node_id> newNodes;
 
     // Copy datastructures mapped
     for(auto n: nodes_) {

@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/24/20.
+// Created on 1/24/20.
 //
 
 #include "ShortestPath.h"
@@ -12,6 +12,11 @@ node_id steiner::ShortestPath::bestRoot = 0;
 cost_id steiner::ShortestPath::bestResult = MAXCOST;
 
 std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id root, Graph& g, node_id nTerminals) {
+    if (g.getNumNodes() == 1) {
+        auto* miniTr = new Graph(g.getMaxNode());
+        miniTr->addUnmappedNode(root);
+        return make_shared<SteinerResult>(0, miniTr, root);
+    }
     Graph tr(g.getMaxNode());
     tr.addUnmappedNode(root);
 
@@ -80,6 +85,9 @@ std::shared_ptr<steiner::SteinerResult> steiner::ShortestPath::calculate(node_id
             }
         }
     }
+
+    if (nRemaining > 0)
+        return nullptr;
 
     auto* mst = tr.mst();
     bool changed = true;
@@ -184,7 +192,8 @@ void steiner::ShortestPath::findAndAdd(steiner::Graph &g, node_id nTerminals, no
 
     for(auto r: roots) {
         auto result = ShortestPath::calculate(r, g, nTerminals);
-        addToPool(result);
+        if (result != nullptr)
+            addToPool(result);
     }
 }
 
@@ -315,6 +324,7 @@ void steiner::ShortestPath::recombine(node_id nSolutions, node_id nTerminals) {
                 counter[cNode] = 0;
 
             Graph g;
+            g.addUnmappedNode(0);
             for (auto s: solutionIndices) {
                 for (auto n: resultPool_[s]->g->getNodes()) {
                     for (auto &nb: resultPool_[s]->g->nb[n]) {

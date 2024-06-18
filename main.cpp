@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/22/20.
+// Created on 1/22/20.
 //
 
 #include "Graph.h"
@@ -25,17 +25,22 @@
 #include "Reductions/QuickCollection.h"
 #include <chrono>
 #include "Algorithms/LocalOptimization.h"
+#include "dynamic/HsvSolver.h"
+#include <random>
+#include "HybridSolver.h"
 
 using namespace steiner;
 using namespace chrono;
 // TODO: Voronoi bound reductions could be used for large instances...
 int main(int argc, char* argv[]) {
+    // Make reproducible
+    std::srand(0);
     bool useReductions = true;
     int dualAscentLimit = 10000;
 
     if (argc == 1) {
         cerr << "Usage: steiner <filename>" << endl
-            << "The following paramaters are available:" << endl
+            << "The following parameters are available:" << endl
              << "-r Use no reductions" << endl
              << "-d <number> sets the edge limit for dual ascent. Default is 10 000, 0 disables dual ascent" << endl;
         return 1;
@@ -103,7 +108,7 @@ int main(int argc, char* argv[]) {
     reductions.push_back(new NtdkReduction(s, 2000, true, 4));
     reductions.push_back(new SdcReduction(s, 2000));
     reductions.push_back(new DegreeReduction(s, false));
-    reductions.push_back(new Degree3Reduction(s));
+    //reductions.push_back(new Degree3Reduction(s));
     reductions.push_back(new DegreeReduction(s, false));
     reductions.push_back(new NtdkReduction(s, 2000, false, 4));
     reductions.push_back(new DegreeReduction(s, false));
@@ -123,9 +128,29 @@ int main(int argc, char* argv[]) {
         s->checkGraphIntegrity();
     }
 
-    cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
-    auto solver = HsvSolver(s, dualAscentLimit);
-    auto tree = solver.solve();
+//    cout << "Solving " << s->getGraph()->getNumNodes() << " nodes and " << s->getNumTerminals() << " terminals"<< endl;
+//    HybridSolver<uint128_type> slv(*s);
+//    if (s->getNumTerminals() < 128)
+//        slv.solve(*s);
+//    else
+//        exit(4);
+    SteinerResult* tree = nullptr;
+    if (s->getNumTerminals() < 16) {
+        auto solver = HsvSolver<uint16_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else if (s->getNumTerminals() < 32) {
+        auto solver = HsvSolver<uint32_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    }  else if (s->getNumTerminals() < 64) {
+        auto solver = HsvSolver<uint64_t>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else if (s->getNumTerminals() < 128) {
+        auto solver = HsvSolver<uint128_type>(s, dualAscentLimit);
+        tree = solver.solve();
+    } else {
+        auto solver = DynamicHsvSolver(s, dualAscentLimit);
+        tree = solver.solve();
+    }
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>((stop - start));
     cout << duration.count() / 1000000.0 << endl;

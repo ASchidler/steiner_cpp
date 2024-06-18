@@ -1,19 +1,17 @@
 //
-// Created on 1/23/20.
+// Created by aschidler on 1/23/20.
 //
 
 #include "MstHeuristic.h"
 
 using namespace steiner;
-using std::pair;
 
-template <typename T>
-cost_id MstHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {
+cost_id DynamicMstHeuristic::calculate(node_id n, const dynamic_bitset<> *label, const cost_id ub) {
     //Special case where only root left
-    if (label == maxTerminal_)
+    if (label->all())
         return instance_->getGraph()->getDistances()[root_][n];
 
-    auto result = cache_.find(label);
+    auto result = cache_.find(*label);
 
     cost_id cost = 0;
     if (result != cache_.end())
@@ -25,9 +23,7 @@ cost_id MstHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {
     // two closest distances between n and terminals outside the current sub-solution
     auto closest = (NodeWithCost*) instance_->getClosestTerminals(n);
     for(int j=0; j < 2 ;) {
-        T test = 1;
-        test <<= closest->node;
-        if(closest->node == root_ || (label & test) == 0) {
+        if(closest->node == root_ || !label->test(closest->node)) {
             cost += closest->cost;
             j++;
         }
@@ -37,17 +33,14 @@ cost_id MstHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {
     return cost / 2;
 }
 
-template <typename T>
-cost_id MstHeuristic<T>::calcMst(const T label) {
+cost_id DynamicMstHeuristic::calcMst(const dynamic_bitset<> *label) {
     // Find terminals outside sub-solution
     auto ts = std::vector<node_id>();
     ts.push_back(root_);
-    T test = 1;
     for (node_id t=0; t < nTerminals_; t++) {
-        if((label & test) == 0) {
+        if(!label->test(t)) {
             ts.push_back(t);
         }
-        test <<= 1;
     }
 
     // Calculate mst of distance graph
@@ -87,12 +80,7 @@ cost_id MstHeuristic<T>::calcMst(const T label) {
         }
     }
 
-    cache_.insert(pair<T, cost_id>(label, sumEdges));
+    cache_.insert(std::pair<dynamic_bitset<>, cost_id>(*label, sumEdges));
 
     return sumEdges;
 }
-
-template class steiner::MstHeuristic<uint16_t>;
-template class steiner::MstHeuristic<uint32_t>;
-template class steiner::MstHeuristic<uint64_t>;
-template class steiner::MstHeuristic<uint128_type>;

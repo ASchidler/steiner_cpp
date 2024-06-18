@@ -7,8 +7,6 @@
 #include "Steiner.h"
 #include "Graph.h"
 
-using namespace std;
-
 namespace steiner {
     class SteinerTree {
     public:

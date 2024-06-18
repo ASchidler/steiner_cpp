@@ -22,7 +22,7 @@ namespace steiner {
 
         bool prune();
         void reduce();
-        std::shared_ptr<SteinerResult> approximate(bool unreduce, node_id rt);
+        std::shared_ptr<SteinerResult> approximate(node_id rt);
         void unreduce(const std::shared_ptr<SteinerResult>& result);
         SteinerInstance& getInstance() {
             return instance_;

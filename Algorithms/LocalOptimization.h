@@ -6,6 +6,8 @@
 #define STEINER_LOCALOPTIMIZATION_H
 #include "../Graph.h"
 
+using std::unordered_set;
+
 namespace steiner {
     struct ClosestEntry {
         ClosestEntry(node_id t, NodeWithCost& costEntry) : t(t), costEntry(costEntry) {

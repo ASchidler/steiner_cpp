@@ -8,6 +8,8 @@
 #include "Reduction.h"
 #include "../Graph.h"
 
+using std::string;
+
 namespace steiner {
     class DegreeReduction : public Reduction {
     public:

@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/29/20.
+// Created on 1/29/20.
 //
 
 #ifndef STEINER_DEGREE3REDUCTION_H

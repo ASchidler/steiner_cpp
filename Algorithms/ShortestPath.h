@@ -1,11 +1,13 @@
 //
-// Created by aschidler on 1/24/20.
+// Created on 1/24/20.
 //
 
 #ifndef STEINER_SHORTESTPATH_H
 #define STEINER_SHORTESTPATH_H
 
 #include "../SteinerTree.h"
+
+using std::unordered_set;
 
 namespace steiner {
     // TODO: Add local improvement

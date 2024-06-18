@@ -1,5 +1,5 @@
 //
-// Created by aschidler on 1/29/20.
+// Created on 1/29/20.
 //
 
 #include "TerminalDistanceReduction.h"
@@ -25,7 +25,7 @@ node_id steiner::TerminalDistanceReduction::reduce(node_id currCount, node_id pr
     cost_id newMax = 0;
     while(ei.hasElement()) {
         auto ce = *ei;
-        newMax = max(newMax, ce.cost);
+        newMax = std::max(newMax, ce.cost);
         ++ei;
     }
 

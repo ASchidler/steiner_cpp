@@ -1,8 +1,9 @@
 //
-// Created by aschidler on 1/30/20.
+// Created on 1/30/20.
 //
 
 #include "NearestVertexPreselection.h"
+using std::swap;
 
 node_id steiner::NearestVertexPreselection::reduce(node_id currCount, node_id prevCount) {
     if (instance->getNumTerminals() <= 2)
