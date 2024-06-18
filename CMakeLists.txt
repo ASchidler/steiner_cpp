@@ -12,6 +12,7 @@ if (STEINER_BUILD_STATIC)
 endif()
 
 find_package(Boost REQUIRED)
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O3")
 
 add_executable(steiner Graph.h LabelStore.h SteinerInstance.h main.cpp Graph.cpp HsvSolver.cpp HsvSolver.h HashSetLabelStore.cpp
         HashSetLabelStore.h Parser/SteinerParser.h Parser/DimacsParser.cpp Parser/DimacsParser.h LabelIterator.h
