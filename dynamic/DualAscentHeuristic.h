@@ -10,7 +10,6 @@
 #include "../HashSetLabelStore.h"
 
 using namespace steiner;
-using namespace boost;
 
 namespace steiner {
     class DynamicDualAscentHeuristic : public DynamicSteinerHeuristic {

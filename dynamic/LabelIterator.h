@@ -5,9 +5,7 @@
 #ifndef DYNAMIC_STEINER_LABELITERATOR_H
 #define DYNAMIC_STEINER_LABELITERATOR_H
 
-#include "Steiner.h"
-
-using namespace boost;
+using boost::dynamic_bitset;
 
 namespace steiner {
     class DynamicLabelIterator {

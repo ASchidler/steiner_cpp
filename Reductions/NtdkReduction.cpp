@@ -30,7 +30,7 @@ node_id steiner::NtdkReduction::reduce(node_id currCount, node_id prevCount) {
                 edgeSum += v.second;
             }
             // Sort ids so that the edges have a specific order.
-            sort(ids, ids+nbIdx);
+            std::sort(ids, ids+nbIdx);
 
             // Compute distances between neighbors
             for(int i=0; i < nbIdx; i++) {

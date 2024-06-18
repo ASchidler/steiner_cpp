@@ -10,8 +10,6 @@
 #include "LabelIterator.h"
 #include "Steiner.h"
 
-using namespace boost;
-
 namespace steiner {
     template <typename T>
     class LabelStore {

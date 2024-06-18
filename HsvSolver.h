@@ -23,8 +23,6 @@
 #include <bit>
 #include <bitset>
 
-using namespace std;
-
 // TODO: Since all bitsets have the same size, can't we do this more statically?
 namespace steiner {
     template<typename T2>

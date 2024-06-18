@@ -10,6 +10,7 @@
 #include "../Steiner.h"
 #include <boost/dynamic_bitset.hpp>
 #include "../Structures/Queue.h"
+using boost::dynamic_bitset;
 
 namespace steiner {
     struct DualAscentEdge {

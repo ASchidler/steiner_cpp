@@ -10,6 +10,9 @@
 #include "../SteinerInstance.h"
 // TODO: Maybe implement the STP heuristic computing STP for 2-3 terminals?
 #include "../HashSetLabelStore.h"
+
+using std::unordered_map;
+
 namespace steiner {
     class DynamicMstHeuristic : public DynamicSteinerHeuristic {
     public:

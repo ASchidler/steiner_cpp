@@ -3,6 +3,7 @@
 //
 
 #include "NearestVertexPreselection.h"
+using std::swap;
 
 node_id steiner::NearestVertexPreselection::reduce(node_id currCount, node_id prevCount) {
     if (instance->getNumTerminals() <= 2)

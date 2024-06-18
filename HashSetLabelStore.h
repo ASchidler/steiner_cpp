@@ -9,10 +9,8 @@
 #include "LabelStore.h"
 #include <bits/stdc++.h>
 
-using namespace boost;
-using namespace std;
 using namespace steiner;
-
+using std::unordered_set;
 
 namespace steiner {
     template <typename T>

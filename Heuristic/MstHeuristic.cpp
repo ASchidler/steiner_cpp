@@ -5,6 +5,7 @@
 #include "MstHeuristic.h"
 
 using namespace steiner;
+using std::pair;
 
 template <typename T>
 cost_id MstHeuristic<T>::calculate(node_id n, const T label, const cost_id ub) {

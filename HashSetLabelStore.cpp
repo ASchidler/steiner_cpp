@@ -56,9 +56,9 @@ bool HashSetLabelIterator<T>::hasNext() {
 template class steiner::HashSetLabelStore<uint16_t>;
 template class steiner::HashSetLabelStore<uint32_t>;
 template class steiner::HashSetLabelStore<uint64_t>;
-template class steiner::HashSetLabelStore<uint128_type>;
+template class steiner::HashSetLabelStore<boost::uint128_type>;
 
 template class steiner::HashSetLabelIterator<uint16_t>;
 template class steiner::HashSetLabelIterator<uint32_t>;
 template class steiner::HashSetLabelIterator<uint64_t>;
-template class steiner::HashSetLabelIterator<uint128_type>;
+template class steiner::HashSetLabelIterator<boost::uint128_type>;

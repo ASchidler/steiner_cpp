@@ -7,6 +7,8 @@
 #include "../SteinerInstance.h"
 #include "../Steiner.h"
 #include "../SteinerTree.h"
+using std::string;
+
 namespace steiner {
     class Reduction {
     public:

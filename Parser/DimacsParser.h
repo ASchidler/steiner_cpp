@@ -7,6 +7,7 @@
 
 #include "SteinerParser.h"
 #include "../SteinerInstance.h"
+using std::string;
 
 namespace steiner {
     class DimacsParser : SteinerParser {

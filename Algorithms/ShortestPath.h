@@ -7,6 +7,8 @@
 
 #include "../SteinerTree.h"
 
+using std::unordered_set;
+
 namespace steiner {
     // TODO: Add local improvement
     class ShortestPath {

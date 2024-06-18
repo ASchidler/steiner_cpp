@@ -15,11 +15,9 @@
 #include "../Algorithms/DualAscent.h"
 #include "../Algorithms/ShortestPath.h"
 #include "DualAscentHeuristic.h"
-#include "Steiner.h"
+#include "../Steiner.h"
 #include "../SteinerTree.h"
 #include "../Structures/Queue.h"
-
-using namespace std;
 
 // TODO: Since all bitsets have the same size, can't we do this more statically?
 namespace steiner {

@@ -8,9 +8,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <list>
 #include "LabelIterator.h"
-#include "Steiner.h"
-
-using namespace boost;
+#include "../Steiner.h"
 
 namespace steiner {
     class DynamicLabelStore {

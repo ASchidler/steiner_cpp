@@ -195,4 +195,4 @@ SteinerResult *DualAscent::calculate(Graph *dg, node_id root, Queue<NodeWithCost
 template SteinerResult *DualAscent::calculateInt<uint16_t>(Graph*, node_id, uint16_t, node_id, node_id);
 template SteinerResult *DualAscent::calculateInt<uint32_t>(Graph*, node_id, uint32_t, node_id, node_id);
 template SteinerResult *DualAscent::calculateInt<uint64_t>(Graph*, node_id, uint64_t, node_id, node_id);
-template SteinerResult *DualAscent::calculateInt<uint128_type>(Graph*, node_id, uint128_type, node_id, node_id);
+template SteinerResult *DualAscent::calculateInt<boost::uint128_type>(Graph*, node_id, boost::uint128_type, node_id, node_id);

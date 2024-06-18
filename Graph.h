@@ -8,7 +8,9 @@
 #include <bits/stdc++.h>
 #include "Steiner.h"
 
-using namespace std;
+using std::set;
+using std::unordered_map;
+using std::vector;
 
 namespace steiner {
     struct NodeWithCost {

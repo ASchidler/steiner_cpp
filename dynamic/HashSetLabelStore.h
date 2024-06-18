@@ -5,14 +5,13 @@
 #ifndef DYNAMIC_STEINER_HASHSETLABELSTORE_H
 #define DYNAMIC_STEINER_HASHSETLABELSTORE_H
 
-#include "Steiner.h"
+#include "../Steiner.h"
 #include "LabelStore.h"
 #include <bits/stdc++.h>
 
-using namespace boost;
-using namespace std;
 using namespace steiner;
-
+using std::unordered_set;
+using boost::dynamic_bitset;
 
 namespace steiner {
     class DynamicHashSetLabelIterator : public DynamicLabelIterator {

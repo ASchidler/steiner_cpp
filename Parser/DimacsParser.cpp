@@ -7,6 +7,8 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include "../Steiner.h"
+using std::fstream;
+using std::ios;
 
 steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
     fstream fl;
@@ -30,7 +32,7 @@ steiner::SteinerInstance* steiner::DimacsParser::parse(std::string& file) {
             int token = 0;
 
             if (ln.length() > 0) {
-                istringstream iss(ltrim(ln));
+                std::istringstream iss(ltrim(ln));
                 string tok;
 
                 for (long i = 0; getline(iss, tok, ' '); i++) {

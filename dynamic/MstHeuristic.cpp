@@ -80,7 +80,7 @@ cost_id DynamicMstHeuristic::calcMst(const dynamic_bitset<> *label) {
         }
     }
 
-    cache_.insert(pair<dynamic_bitset<>, cost_id>(*label, sumEdges));
+    cache_.insert(std::pair<dynamic_bitset<>, cost_id>(*label, sumEdges));
 
     return sumEdges;
 }

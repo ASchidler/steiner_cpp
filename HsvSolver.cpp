@@ -5,8 +5,6 @@
 #include "HsvSolver.h"
 #include <chrono>
 
-using namespace std;
-using namespace boost;
 using namespace chrono;
 
 template <typename T>
@@ -140,4 +138,4 @@ void HsvSolver<T>::backTrackSub(node_id n, const T label, SteinerResult* result)
 template class steiner::HsvSolver<uint16_t>;
 template class steiner::HsvSolver<uint32_t>;
 template class steiner::HsvSolver<uint64_t>;
-template class steiner::HsvSolver<uint128_type>;
+template class steiner::HsvSolver<boost::uint128_type>;

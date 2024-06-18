@@ -10,7 +10,8 @@
 #include <utility>
 #include "SteinerTree.h"
 
-using namespace std;
+using std::cout;
+using std::endl;
 
 namespace steiner {
     class SteinerInstance {
