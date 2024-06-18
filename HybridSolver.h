@@ -18,15 +18,39 @@ namespace steiner{
 
         }
 
+        struct MinimalCostInfo {
+            MinimalCostInfo(cost_id cost, MinimalCostInfo* prev, MinimalCostInfo* prev2, node_id node, T label) :
+                    cost(cost), prev1(prev), prev2(prev2), node(node), label(label) {}
+            MinimalCostInfo() = default;
+            cost_id cost = MAXCOST;
+            MinimalCostInfo* prev1 = nullptr;
+            MinimalCostInfo* prev2 = nullptr;
+            node_id node = 0;
+            T label = 0;
+
+            static bool compareNode(MinimalCostInfo& a, MinimalCostInfo& b) {
+                return a.node < b.node;
+            }
+            static bool compareCost(MinimalCostInfo& a, MinimalCostInfo& b) {
+                return a.cost < b.cost;
+            }
+            static bool compareCostReverse(MinimalCostInfo& a, MinimalCostInfo& b) {
+                return a.cost > b.cost;
+            }
+        };
+
         struct CostInfo {
             CostInfo(unsigned int cost, T prev, bool merge) : cost(cost), prev(prev), merge(merge), valid(true) {
             }
             CostInfo() = default;
             cost_id cost = MAXCOST;
             T prev = 0;
+            MinimalCostInfo* prev1;
+            MinimalCostInfo* prev2;
             bool merge = false;
             bool valid = false;
             bool dummy = false;
+            node_id newIdx = 0;
 
             static bool comparePtr(CostInfo* a, CostInfo* b) { return (a->cost < b->cost); }
 
@@ -40,13 +64,7 @@ namespace steiner{
             }
         };
 
-        struct MinimalCostInfo {
-            MinimalCostInfo(cost_id cost, T prev, bool merge) : cost(cost), prev(prev), merge(merge) {}
-            MinimalCostInfo() = default;
-            cost_id cost = MAXCOST;
-            T prev = 0;
-            bool merge = true;
-        };
+
 
         struct QueueEntry {
             QueueEntry(T label, cost_id estimate) : label(label), estimate(estimate) {
@@ -65,8 +83,10 @@ namespace steiner{
         };
         struct TwoPathEntry {
             TwoPathEntry(node_id r, T label, cost_id cCost, cost_id maxCost) : r(r), label(label), cCost(cCost), maxCost(maxCost) {}
+            TwoPathEntry(MinimalCostInfo* ref, cost_id cCost, cost_id maxCost) : ref(ref), cCost(cCost), maxCost(maxCost), r(0), label(0) {}
             const node_id r;
             const T label;
+            MinimalCostInfo* ref = nullptr;
             cost_id cCost;
             cost_id maxCost;
         };
@@ -101,7 +121,8 @@ namespace steiner{
                         costs[v.first].prev = pqe.node;
                         costs[v.first].merge = false;
                         costs[v.first].valid = true;
-
+                        costs[v.first].prev1 = nullptr;
+                        costs[v.first].prev2 = nullptr;
                         // TODO: This probably causes a cache miss
                         // TODO: Other pruning goes here
                         // TODO: Check lower bound for bound transgression?
@@ -118,45 +139,56 @@ namespace steiner{
             }
         }
 
-        void merge(unordered_map<T, unordered_map<node_id, MinimalCostInfo>>& labels, T label,
-                unordered_map<T, unordered_map<node_id, MinimalCostInfo, NodeIdHash>>& costs,
-                Queue<QueueEntry>& q, cost_id ub, SteinerInstance& instance, CostInfo* ecosts) {
+        void merge(unordered_map<T, vector<MinimalCostInfo>>& labels, T label,
+                unordered_map<T, vector<MinimalCostInfo>>& costs,
+                Queue<QueueEntry>& q, cost_id ub, SteinerInstance& instance, vector<MinimalCostInfo> ecosts) {
 
             for(auto& otherLabel: labels) {
                 if ((label & otherLabel.first) == 0) {
                     T newLabel = label | otherLabel.first;
 
-                    unordered_map<node_id, MinimalCostInfo, NodeIdHash>* ncost = nullptr;
                     cost_id minCost = MAXCOST;
 
                     bool change = false;
-                    for(auto& oentry: otherLabel.second) {
-                        if (ecosts[oentry.first].valid) {
-                            cost_id nc = ecosts[oentry.first].cost + oentry.second.cost;
+                    auto it1 = ecosts.begin();
+                    auto it2 = otherLabel.second.begin();
+                    // TODO: Lazy init this
+                    // TODO: This may not work, if costs are revisited, this needs to be initialized
+                    auto& ncost = costs[newLabel];
+                    auto it3 = ncost.begin();
+
+                    while(it1 != ecosts.end() && it2 != otherLabel.second.end()) {
+                        if (it1->node < it2->node)
+                            ++it1;
+                        else if (it2->node > it2->node)
+                            ++it2;
+                        else {
+                            cost_id nc = it1->cost + it2->cost;
                             if (nc <= ub) {
                                 minCost = min(minCost, nc);
+                                change = true;
 
-                                if (ncost == nullptr) {
-                                    auto iit = costs.emplace(make_pair(newLabel, unordered_map<node_id, MinimalCostInfo, NodeIdHash>()));
-                                    ncost = &(iit.first->second);
-//                                    auto lit = labels.find(newLabel);
-//                                    if (lit != labels.end()) {
-//                                        for(auto& lentry: lit->second) {
-//                                            ncost[lentry.first].valid = true;
-//                                            ncost[lentry.first].prev = lentry.second.prev;
-//                                            ncost[lentry.first].cost = lentry.second.cost;
-//                                            ncost[lentry.first].merge = lentry.second.merge;
-//                                        }
-//                                    }
+                                while (it3 != ncost.end() && it3->node < it1->node)
+                                    ++it3;
+
+                                if (it3 == ncost.end()) {
+                                    ncost.emplace_back(nc, &(*it1), &(*it2), it1->node, newLabel);
+                                    it3 = ncost.end(); // May have changed
                                 }
-                                auto& nentry = (*ncost)[oentry.first];
-                                if (nentry.cost > nc) {
-                                    change = true;
-                                    nentry.cost = nc;
-                                    nentry.prev = otherLabel.first;
-                                    nentry.merge = true;
+                                else if (it1->node == it3->node) {
+                                    it3->cost = nc;
+                                    it3->prev1 = &(*it1);
+                                    it3->prev2 = &(*it2);
+                                }
+                                else {
+                                    // TODO: This could be done more efficiently
+                                    it3 = ncost.emplace(it3, nc, &(*it1), &(*it2), it1->node, newLabel);
+                                    // We know that the next item examined does not have the same node
+                                    ++it3;
                                 }
                             }
+                            ++it1;
+                            ++it2;
                         }
                     }
                     if (change) {
@@ -170,8 +202,8 @@ namespace steiner{
 
         void solve(SteinerInstance& instance) {
             // TODO: If we shrink the graph at the beginning, we can just iterate over the nodes, without getnodes?
-            unordered_map<T, unordered_map<node_id, MinimalCostInfo>> labels;
-            unordered_map<T, unordered_map<node_id, MinimalCostInfo, NodeIdHash>> costs;
+            unordered_map<T, vector<MinimalCostInfo>> labels;
+            unordered_map<T, vector<MinimalCostInfo>> costs;
             cost_id ub = instance.getUpperBound(); // Shorthand
             Queue<QueueEntry> q(ub+1);
 
@@ -179,13 +211,9 @@ namespace steiner{
             for(node_id t=0; t < instance.getNumTerminals(); t++) {
                 // Initialize Queue
                 q.emplace(0, targetLabel, 0);
-
                 // Initialize costs
                 auto& newCosts = costs[targetLabel];
-                auto& tEntry = newCosts[t];
-                tEntry.merge = true;
-                tEntry.cost = 0;
-                tEntry.prev = 0;
+                newCosts.emplace_back(0, nullptr, nullptr, t, targetLabel);
 
                 // Increment
                 targetLabel <<= 1u;
@@ -212,11 +240,12 @@ namespace steiner{
                 // Initialize cost array
                 vector<pair<CostInfo*, node_id>> localCosts;
                 for(auto& ce: ecostset) {
-                    ecosts[ce.first].valid = true;
-                    ecosts[ce.first].merge = ce.second.merge;
-                    ecosts[ce.first].prev = ce.second.prev;
-                    ecosts[ce.first].cost = ce.second.cost;
-                    localCosts.emplace_back(ecosts + ce.first, ce.first);
+                    ecosts[ce.node].valid = true;
+                    ecosts[ce.node].cost = ce.cost;
+                    ecosts[ce.node].prev1 = ce.prev1;
+                    ecosts[ce.node].prev2 = ce.prev2;
+                    ecosts[ce.node].prev = ce.node;
+                    localCosts.emplace_back(ecosts + ce.node, ce.node);
                 }
                 std::sort(localCosts.begin(), localCosts.end(), CostInfo::comparePairPtr);
 
@@ -227,7 +256,7 @@ namespace steiner{
                 for(auto& entry: localCosts) {
                     if (entry.first->valid && !entry.first->dummy) {
                         cnt++;
-                        maxC = max(maxC, twoPathDist(entry.second, qe.label, ecosts, labels, entry.first->cost, instance, state));
+                        maxC = max(maxC, twoPathDist(entry.second, qe.label, ecosts, entry.first->cost, instance, state));
                     }
                 }
 
@@ -243,27 +272,41 @@ namespace steiner{
                 // Extend the candidate, until it is a separator
                 cost_id overallLimit = findSeparatorBound(instance, qe.label, state, ecosts);
 
-                unordered_map<node_id, MinimalCostInfo>* labelEntry = nullptr;
+                auto cit = labels.emplace(make_pair(qe.label, vector<MinimalCostInfo>()));
+                auto& labelEntry = cit.first->second;
+                // Clear pre-existing entries
+                if (!cit.second)
+                    labelEntry.clear();
+
+                bool anyUnresolved = false;
                 for(size_t i=0; i < instance.getGraph()->getMaxNode(); i++) {
                     if (ecosts[i].cost <= overallLimit && !ecosts[i].dummy && ecosts[i].valid) {
-                        if (labelEntry == nullptr) {
-                            auto cit = labels.emplace(make_pair(qe.label, unordered_map<node_id, MinimalCostInfo>()));
-                            labelEntry = &(cit.first->second);
-                            // Clear pre-existing entries
-                            if (!cit.second)
-                                labelEntry->clear();
+                        if (ecosts[i].prev1 == nullptr) {
+                            // In this case no pointer is yet known. As the previous node can be higher, second pass is required
+                            labelEntry.emplace_back(ecosts[i].cost, nullptr, nullptr, i, qe.label);
+                            // Use index here, as a pointer may change upon relocation
+                            ecosts[i].newIdx = labelEntry.size() - 1;
+                            anyUnresolved = true;
                         }
-                        labelEntry->emplace(std::piecewise_construct,
-                                            std::forward_as_tuple(i),
-                                            std::forward_as_tuple(ecosts[i].cost, ecosts[i].prev, ecosts[i].merge));
-                    } else {
-                        ecosts[i].valid = false;
+                        else
+                            labelEntry.emplace_back(ecosts[i].cost, ecosts[i].prev1, ecosts[i].prev2, i, qe.label);
                     }
                 }
 
-                if (labelEntry != nullptr) {
+                // This sets the predecessor whenever it is in this vector
+                if (anyUnresolved) {
+                    for(auto& cnEntry: labelEntry) {
+                        if (cnEntry.prev1 == nullptr && ecosts[cnEntry.node].prev != cnEntry.node) {
+                            auto cnIdx = ecosts[ecosts[cnEntry.node].prev].newIdx;
+                            cnEntry.prev1 = &(labelEntry.at(cnIdx));
+                        }
+                    }
+                }
+
+                if (labelEntry.size() > 0) {
                     // Merge
-                    merge(labels, qe.label, costs, q, ub, instance, ecosts);
+                    std::sort(labelEntry.begin(), labelEntry.end(), MinimalCostInfo::compareNode);
+                    merge(labels, qe.label, costs, q, ub, instance, labelEntry);
                 } else {
                     labels.erase(qe.label);
                 }
@@ -391,8 +434,7 @@ namespace steiner{
             }
         }
 
-        cost_id twoPathDist(node_id r, const T label, CostInfo* mainCosts, unordered_map<T,
-                unordered_map<node_id, MinimalCostInfo>>& labels, cost_id cost, SteinerInstance& instance, PruneState* state) {
+        cost_id twoPathDist(node_id r, const T label, CostInfo* mainCosts, cost_id cost, SteinerInstance& instance, PruneState* state) {
             cost_id maxCost = 0;
 
             state[r].occurance += 1;
@@ -408,35 +450,43 @@ namespace steiner{
             while(! twoPathQueue_.empty()) {
                 auto cEntry = twoPathQueue_.back();
                 twoPathQueue_.pop_back();
+                node_id node;
+                node_id prev;
+                bool merge;
 
-                if(mainCosts[cEntry.r].cost > cost) {
-                    mainCosts[cEntry.r].dummy = true;
-                    mainCosts[cEntry.r].cost = cost;
-                }
-
-                if (cEntry.label == label) {
-                    merge = mainCosts[cEntry.r].merge;
-                    prev = mainCosts[cEntry.r].prev;
-                } else {
-//                    if (cEntry.label != cLabel) {
-//                        cCosts = &(labels.at(cEntry.label));
-//                        cLabel = cEntry.label;
-//                    }
-//
-//                    auto &c = cCosts->at(cEntry.r);
-                    auto &c = labels.at(cEntry.label).at(cEntry.r);
-                    merge = c.merge;
-                    prev = c.prev;
-                }
-
-                if (merge) {
-                    // Is not a leaf
-                    if (prev != 0) {
-                        twoPathQueue_.emplace_back(cEntry.r, prev, 0, cEntry.maxCost);
-                        auto inverse = cEntry.label ^ prev;
-                        twoPathQueue_.emplace_back(cEntry.r, inverse, 0, cEntry.maxCost);
+                if (cEntry.ref == nullptr) {
+                    node = cEntry.r;
+                    if (mainCosts[cEntry.r].prev1 == nullptr) {
+                        if (cEntry.r != mainCosts[cEntry.r].prev)
+                            twoPathQueue_.emplace_back(mainCosts[cEntry.r].prev, cEntry.label, cEntry.cCost, cEntry.maxCost);
+                        prev = mainCosts[cEntry.r].prev;
+                        merge = false;
+                    } else {
+                        twoPathQueue_.emplace_back(mainCosts[cEntry.r].prev1, 0, cEntry.maxCost);
+                        twoPathQueue_.emplace_back(mainCosts[cEntry.r].prev2, 0, cEntry.maxCost);
+                        merge = true;
                     }
                 } else {
+                    node = cEntry.ref->node;
+                    if (cEntry.ref->prev2 == nullptr && cEntry.ref->prev1 != nullptr) {
+                        twoPathQueue_.emplace_back(cEntry.ref->prev1, cEntry.cCost, cEntry.maxCost);
+                        prev = cEntry.ref->prev1->node;
+                        merge = false;
+                    } else {
+                        if (cEntry.ref->prev1 != nullptr) {
+                            twoPathQueue_.emplace_back(cEntry.ref->prev1, 0, cEntry.maxCost);
+                            twoPathQueue_.emplace_back(cEntry.ref->prev2, 0, cEntry.maxCost);
+                        }
+                        merge = true;
+                    }
+                }
+
+                if(mainCosts[node].cost > cost) {
+                    mainCosts[node].dummy = true;
+                    mainCosts[node].cost = cost;
+                }
+
+                if (!merge) {
                     // TODO: Theoretically we could store the transition cost, would avoid nb lookup...
                     // TODO: Actually it is just the diff between the previous and these costs
                     auto cn = instance.getGraph()->nb[cEntry.r][prev];
@@ -448,7 +498,6 @@ namespace steiner{
                     state[prev].occurance += 1;
 
                     maxCost = max(maxCost, cEntry.maxCost);
-                    twoPathQueue_.emplace_back(prev, cEntry.label, cEntry.cCost, cEntry.maxCost);
                 }
             }
 
